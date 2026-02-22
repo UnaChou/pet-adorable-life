@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}商品分析 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<nav class="nav-bar">
+    <a href="/" class="logo">Pet Adorable Life</a>
+    <ul class="nav-links">
+        <li><a href="/">首頁</a></li>
+        <li><a href="/product/analyze">商品分析</a></li>
+        <li><a href="/organize">資訊整理</a></li>
+        <li><a href="/diary">寵物日記</a></li>
+    </ul>
+</nav>
+
+<main class="analyze-page">
+    <section class="analyze-hero">
+        <h1>商品分析</h1>
+        <p>上傳寵物商品圖片，AI 會自動擷取標題與摘要</p>
+    </section>
+
+    <section class="analyze-upload">
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
+            <div class="upload-placeholder" id="uploadPlaceholder">
+                <span class="upload-icon">📷</span>
+                <p>點擊或拖曳圖片到此處</p>
+                <p class="upload-hint">支援 PNG、JPG、WebP、GIF</p>
+            </div>
+            <div class="upload-preview" id="uploadPreview" style="display: none;">
+                <img id="previewImg" src="" alt="預覽">
+            </div>
+        </div>
+        <button type="button" class="btn-analyze" id="btnAnalyze" disabled>開始分析</button>
+    </section>
+
+    <section class="analyze-result" id="resultSection" style="display: none;">
+        <h2>分析結果 <span class="edit-hint">（可編修後儲存）</span></h2>
+        <form action="/organize/add" method="post" class="result-edit-form add-form" id="resultForm">
+            <div class="result-card">
+                <div class="form-group">
+                    <label for="resultTitle">商品名稱</label>
+                    <input type="text" id="resultTitle" name="title" class="result-title-input" placeholder="商品標題" maxlength="500">
+                </div>
+                <div class="form-group">
+                    <label for="resultSummary">商品摘要</label>
+                    <textarea id="resultSummary" name="summary" class="result-summary-input" rows="6" placeholder="商品描述、特色要點..."></textarea>
+                </div>
+                <button type="submit" class="btn-add-to-organize">💾 儲存並加入資訊整理</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="analyze-error" id="errorSection" style="display: none;">
+        <p class="error-msg" id="errorMsg"></p>
+    </section>
+
+    <section class="analyze-debug" id="debugSection" style="display: none;">
+        <h3>接收回傳的 data</h3>
+        <pre class="debug-raw" id="debugRaw"></pre>
+    </section>
+
+    <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>AI 分析中...</p>
+    </div>
+</main>
+
+<script>
+(function() {
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const previewImg = document.getElementById('previewImg');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const resultSection = document.getElementById('resultSection');
+    const resultTitleInput = document.getElementById('resultTitle');
+    const resultSummaryInput = document.getElementById('resultSummary');
+    const errorSection = document.getElementById('errorSection');
+    const errorMsg = document.getElementById('errorMsg');
+    const loading = document.getElementById('loading');
+    const debugSection = document.getElementById('debugSection');
+    const debugRaw = document.getElementById('debugRaw');
+
+    let selectedFile = null;
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) handleFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+        selectedFile = file;
+        previewImg.src = URL.createObjectURL(file);
+        uploadPlaceholder.style.display = 'none';
+        uploadPreview.style.display = 'block';
+        btnAnalyze.disabled = false;
+        resultSection.style.display = 'none';
+        errorSection.style.display = 'none';
+    }
+
+    btnAnalyze.addEventListener('click', async () => {
+        if (!selectedFile) return;
+        loading.style.display = 'flex';
+        resultSection.style.display = 'none';
+        errorSection.style.display = 'none';
+        debugSection.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+
+        let rawText = '';
+        try {
+            rawText = await (await fetch('/api/product/analyze', { method: 'POST', body: formData })).text();
+        } catch (err) {
+            debugRaw.textContent = '網路錯誤: ' + err.message;
+            debugSection.style.display = 'block';
+            errorMsg.textContent = err.message;
+            errorSection.style.display = 'block';
+            loading.style.display = 'none';
+            return;
+        }
+
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            debugRaw.textContent = 'JSON 解析失敗 (line 1 column 1)\n\n原始回傳:\n' + rawText;
+            debugSection.style.display = 'block';
+            errorMsg.textContent = '伺服器回傳非 JSON，請查看下方「接收回傳的 data」';
+            errorSection.style.display = 'block';
+            loading.style.display = 'none';
+            return;
+        }
+
+        // 永遠顯示接收到的完整 data
+        debugRaw.textContent = JSON.stringify(data, null, 2);
+        debugSection.style.display = 'block';
+
+        if (!data || data.error) {
+            errorMsg.textContent = data?.error || '分析失敗';
+            errorSection.style.display = 'block';
+        } else {
+            resultTitleInput.value = data.title || '(無標題)';
+            resultSummaryInput.value = data.summary || '';
+            resultSection.style.display = 'block';
+        }
+        loading.style.display = 'none';
+    });
+})();
+</script>
+{% endblock %}

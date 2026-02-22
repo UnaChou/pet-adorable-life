@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}資訊整理 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<nav class="nav-bar">
+    <a href="/" class="logo">Pet Adorable Life</a>
+    <ul class="nav-links">
+        <li><a href="/">首頁</a></li>
+        <li><a href="/product/analyze">商品分析</a></li>
+        <li><a href="/organize" class="active">資訊整理</a></li>
+        <li><a href="/diary">寵物日記</a></li>
+    </ul>
+</nav>
+
+<main class="organize-page">
+    <section class="organize-hero">
+        <h1>📋 資訊整理</h1>
+        <p>結構化整理商品資訊與寵物日記，一目了然</p>
+    </section>
+
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" data-tab="products-tab">📦 商品列表</button>
+            <button class="tab-btn" data-tab="diaries-tab">📔 寵物日記</button>
+        </div>
+
+        <div class="tab-content active" id="products-tab">
+            <div class="tab-actions">
+                <button type="button" class="btn-toggle-add" id="btnToggleAddProduct">➕ 新增商品</button>
+            </div>
+
+            <section class="organize-add" id="addProductSection" style="display: none;">
+                <h2>新增商品</h2>
+                <form action="{{ url_for('organize_add') }}" method="post" class="add-form">
+                    <div class="form-group">
+                        <label for="title">商品名稱</label>
+                        <input type="text" id="title" name="title" placeholder="例如：歐奇斯無穀成犬飼料" maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="summary">商品摘要</label>
+                        <textarea id="summary" name="summary" rows="5" placeholder="輸入商品描述、特色要點等..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-add">加入列表</button>
+                </form>
+            </section>
+
+            <section class="organize-list">
+                <div class="list-header">
+                    <h2>商品列表 <span class="count">共 {{ products|length }} 項</span></h2>
+                    {% if products %}
+                    <div class="list-actions">
+                        <label class="checkbox-wrap">
+                            <input type="checkbox" id="select-all" title="全選">
+                            <span>全選</span>
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if products %}
+                <form action="{{ url_for('organize_remove_batch') }}" method="post" id="batch-form" onsubmit="return confirmBatchDelete(this);">
+                    <div class="product-cards">
+                        {% for product in products %}
+                        <article class="product-card">
+                            <label class="product-checkbox">
+                                <input type="checkbox" name="product_ids" value="{{ product.id }}" class="product-id-checkbox">
+                            </label>
+                            <div class="product-card-body">
+                                <div class="product-meta">
+                                    <span class="product-id">#{{ product.id }}</span>
+                                    <span class="product-dates">
+                                        建立：{{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '-' }}
+                                        {% if product.updated_at %}
+                                        · 編輯：{{ product.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <h3 class="product-title">{{ product.title }}</h3>
+                                <div class="product-summary">{{ product.summary|replace('\n', '<br>')|safe }}</div>
+                            </div>
+                            <div class="product-card-actions">
+                                <a href="{{ url_for('organize_edit', product_id=product.id) }}" class="btn-edit" title="編輯">✎</a>
+                                <button type="submit" form="single-del-{{ product.id }}" class="btn-remove" title="移除此項">✕</button>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                    <div class="batch-submit-row">
+                        <button type="submit" class="btn-batch-remove" title="刪除所選項目">刪除所選</button>
+                    </div>
+                </form>
+                {% for product in products %}
+                <form id="single-del-{{ product.id }}" action="{{ url_for('organize_remove', product_id=product.id) }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此商品嗎？');">
+                </form>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">📦</span>
+                    <p>尚無商品，點擊「➕ 新增商品」或從 <a href="/product/analyze">商品分析</a> 加入</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+
+        <div class="tab-content" id="diaries-tab">
+            <section class="diary-list">
+                <div class="list-header">
+                    <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
+                </div>
+
+                {% if diaries %}
+                <div class="diary-cards">
+                    {% for d in diaries %}
+                    <article class="diary-card">
+                        <div class="diary-card-body">
+                            <div class="diary-meta">
+                                <span class="diary-id">#{{ d.id }}</span>
+                                <span class="diary-dates">
+                                    {{ d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else '-' }}
+                                </span>
+                            </div>
+                            {% if d.title %}
+                            <h4 class="diary-title">{{ d.title }}</h4>
+                            {% endif %}
+                            <div class="diary-emotion">{{ d.main_emotion }}</div>
+                            <div class="diary-describe">{{ d.describe_text|replace('\n', '<br>')|safe }}</div>
+                            {% if d.memo %}
+                            <div class="diary-memo">
+                                <strong>備註：</strong>{{ d.memo|replace('\n', '<br>')|safe }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="diary-card-actions">
+                            <button type="submit" form="organize-diary-single-del-{{ d.id }}" class="btn-remove" title="移除此項">✕</button>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% for d in diaries %}
+                <form id="organize-diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
+                    <input type="hidden" name="diary_ids" value="{{ d.id }}">
+                </form>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">📔</span>
+                    <p>尚無日記，請前往 <a href="/diary">寵物日記</a> 新增</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</main>
+<script>
+(function() {
+    // Tabs functionality
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Toggle Add Product Form
+    const btnToggleAddProduct = document.getElementById('btnToggleAddProduct');
+    const addProductSection = document.getElementById('addProductSection');
+
+    if (btnToggleAddProduct && addProductSection) {
+        btnToggleAddProduct.addEventListener('click', () => {
+            if (addProductSection.style.display === 'none') {
+                addProductSection.style.display = 'block';
+                btnToggleAddProduct.textContent = '➖ 隱藏新增商品';
+            } else {
+                addProductSection.style.display = 'none';
+                btnToggleAddProduct.textContent = '➕ 新增商品';
+            }
+        });
+    }
+
+    // Select All for Products
+    var selectAll = document.getElementById('select-all');
+    var checkboxes = document.querySelectorAll('.product-id-checkbox');
+    if (selectAll && checkboxes.length) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+        });
+        checkboxes.forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                var allChecked = Array.from(checkboxes).every(function(c) { return c.checked; });
+                var someChecked = Array.from(checkboxes).some(function(c) { return c.checked; });
+                selectAll.checked = allChecked;
+                selectAll.indeterminate = someChecked && !allChecked;
+            });
+        });
+    }
+    window.confirmBatchDelete = function(form) {
+        var checked = form.querySelectorAll('input[name="product_ids"]:checked');
+        if (checked.length === 0) {
+            alert('請先勾選要刪除的商品');
+            return false;
+        }
+        return confirm('確定要刪除所選的 ' + checked.length + ' 項商品嗎？');
+    };
+})();
+</script>
+{% endblock %}

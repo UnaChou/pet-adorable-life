@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}寵物日記 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<nav class="nav-bar">
+    <a href="/" class="logo">Pet Adorable Life</a>
+    <ul class="nav-links">
+        <li><a href="/">首頁</a></li>
+        <li><a href="/product/analyze">商品分析</a></li>
+        <li><a href="/organize">資訊整理</a></li>
+        <li><a href="/diary" class="active">寵物日記</a></li>
+    </ul>
+</nav>
+
+<main class="diary-page">
+    <section class="diary-hero">
+        <h1>📔 寵物日記</h1>
+        <p>上傳毛孩照片，AI 分析心情與情緒，記錄專屬日記</p>
+    </section>
+
+    <section class="diary-new">
+        <h2>新增日記</h2>
+        <div class="diary-upload">
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
+                <div class="upload-placeholder" id="uploadPlaceholder">
+                    <span class="upload-icon">📷</span>
+                    <p>點擊或拖曳圖片到此處</p>
+                    <p class="upload-hint">支援 PNG、JPG、WebP、GIF</p>
+                </div>
+                <div class="upload-preview" id="uploadPreview" style="display: none;">
+                    <img id="previewImg" src="" alt="預覽">
+                </div>
+            </div>
+            <button type="button" class="btn-analyze" id="btnAnalyze" disabled>AI 分析</button>
+        </div>
+
+        <section class="diary-result" id="resultSection" style="display: none;">
+            <h3>分析結果 <span class="edit-hint">（可編修後儲存）</span></h3>
+            <form action="{{ url_for('diary_save') }}" method="post" class="diary-edit-form">
+                <div class="diary-form-card">
+                    <div class="form-group">
+                        <label for="diaryTitle">標題</label>
+                        <input type="text" id="diaryTitle" name="title" placeholder="日記標題">
+                    </div>
+                    <div class="form-group">
+                        <label for="describeText">心情描述</label>
+                        <textarea id="describeText" name="describe_text" rows="5" placeholder="AI 分析的心情與情緒描述..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="mainEmotion">主要情緒</label>
+                        <input type="text" id="mainEmotion" name="main_emotion" placeholder="例如：開心、慵懶、好奇">
+                    </div>
+                    <div class="form-group">
+                        <label for="diaryMemo">備註（Memo）</label>
+                        <textarea id="diaryMemo" name="memo" rows="4" placeholder="寫下今日想記錄的點滴..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-save">💾 儲存</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="diary-error" id="errorSection" style="display: none;">
+            <p class="error-msg" id="errorMsg"></p>
+        </section>
+
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>AI 分析中...</p>
+        </div>
+    </section>
+
+    <section class="diary-list">
+        <div class="list-header">
+            <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
+        </div>
+
+        {% if diaries %}
+        <div class="diary-cards">
+            {% for d in diaries %}
+            <article class="diary-card">
+                <div class="diary-card-body">
+                    <div class="diary-meta">
+                        <span class="diary-id">#{{ d.id }}</span>
+                        <span class="diary-dates">
+                            {{ d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else '-' }}
+                        </span>
+                    </div>
+                    {% if d.title %}
+                    <h4 class="diary-title">{{ d.title }}</h4>
+                    {% endif %}
+                    <div class="diary-emotion">{{ d.main_emotion }}</div>
+                    <div class="diary-describe">{{ d.describe_text|replace('\n', '<br>')|safe }}</div>
+                    {% if d.memo %}
+                    <div class="diary-memo">
+                        <strong>備註：</strong>{{ d.memo|replace('\n', '<br>')|safe }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="diary-card-actions">
+                    <button type="submit" form="diary-single-del-{{ d.id }}" class="btn-remove" title="移除此項">✕</button>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% for d in diaries %}
+        <form id="diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
+            <input type="hidden" name="diary_ids" value="{{ d.id }}">
+        </form>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-icon">📔</span>
+            <p>尚無日記，從上方上傳照片開始記錄</p>
+        </div>
+        {% endif %}
+    </section>
+</main>
+
+<script>
+(function() {
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const previewImg = document.getElementById('previewImg');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const resultSection = document.getElementById('resultSection');
+    const diaryTitle = document.getElementById('diaryTitle');
+    const describeText = document.getElementById('describeText');
+    const mainEmotion = document.getElementById('mainEmotion');
+    const diaryMemo = document.getElementById('diaryMemo');
+    const errorSection = document.getElementById('errorSection');
+    const errorMsg = document.getElementById('errorMsg');
+    const loading = document.getElementById('loading');
+
+    let selectedFile = null;
+
+    if (!uploadZone) return;
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) handleFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+        selectedFile = file;
+        previewImg.src = URL.createObjectURL(file);
+        uploadPlaceholder.style.display = 'none';
+        uploadPreview.style.display = 'block';
+        btnAnalyze.disabled = false;
+        resultSection.style.display = 'none';
+        errorSection.style.display = 'none';
+    }
+
+    btnAnalyze.addEventListener('click', async () => {
+        if (!selectedFile) return;
+        loading.style.display = 'flex';
+        resultSection.style.display = 'none';
+        errorSection.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+
+        try {
+            const res = await fetch('/api/diary/analyze', { method: 'POST', body: formData });
+            const rawText = await res.text();
+            let data;
+            try {
+                data = rawText ? JSON.parse(rawText) : {};
+            } catch (e) {
+                errorMsg.textContent = '伺服器回傳非 JSON。' + (res.status !== 200 ? '狀態碼：' + res.status : '') + ' 請確認 Ollama 服務是否運行。';
+                errorSection.style.display = 'block';
+                loading.style.display = 'none';
+                return;
+            }
+            if (res.status !== 200 || data.error) {
+                errorMsg.textContent = data.error || '分析失敗';
+                errorSection.style.display = 'block';
+            } else {
+                diaryTitle.value = data.title || '';
+                describeText.value = data.describe || '';
+                mainEmotion.value = data.main_emotion || '';
+                diaryMemo.value = '';
+                resultSection.style.display = 'block';
+            }
+        } catch (err) {
+            errorMsg.textContent = err.message || '網路錯誤';
+            errorSection.style.display = 'block';
+        }
+        loading.style.display = 'none';
+    });
+})();
+</script>
+{% endblock %}

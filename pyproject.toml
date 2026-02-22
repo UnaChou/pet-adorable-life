@@ -1,0 +1,18 @@
+[project]
+name = "pet-adorable-life"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "una"}
+]
+requires-python = ">=3.14"
+dependencies = [
+    "pandas (>=3.0.1,<4.0.0)",
+    "flask (>=3.0.0,<4.0.0)",
+    "pymysql (>=1.1.0,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

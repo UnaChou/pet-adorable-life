@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}編輯商品 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<nav class="nav-bar">
+    <a href="/" class="logo">Pet Adorable Life</a>
+    <ul class="nav-links">
+        <li><a href="/">首頁</a></li>
+        <li><a href="/product/analyze">商品分析</a></li>
+        <li><a href="/organize" class="active">資訊整理</a></li>
+        <li><a href="/diary">寵物日記</a></li>
+    </ul>
+</nav>
+
+<main class="organize-page">
+    <section class="organize-hero">
+        <h1>✎ 編輯商品</h1>
+        <p>修改後將更新至 MySQL 資料庫</p>
+    </section>
+
+    <section class="organize-add">
+        <form action="{{ url_for('organize_update', product_id=product.id) }}" method="post" class="add-form">
+            <div class="form-group">
+                <label for="title">商品名稱</label>
+                <input type="text" id="title" name="title" value="{{ product.title }}" placeholder="例如：歐奇斯無穀成犬飼料" maxlength="500" required>
+            </div>
+            <div class="form-group">
+                <label for="summary">商品摘要</label>
+                <textarea id="summary" name="summary" rows="8" placeholder="輸入商品描述、特色要點等...">{{ product.summary }}</textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-add">儲存更新</button>
+                <a href="{{ url_for('organize') }}" class="btn-cancel">取消</a>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock %}
