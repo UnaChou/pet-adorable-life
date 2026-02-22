@@ -22,15 +22,22 @@
     <section class="diary-new">
         <h2>新增日記</h2>
         <div class="diary-upload">
-            <div class="upload-zone" id="uploadZone">
-                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
-                <div class="upload-placeholder" id="uploadPlaceholder">
-                    <span class="upload-icon">📷</span>
-                    <p>點擊或拖曳圖片到此處</p>
-                    <p class="upload-hint">支援 PNG、JPG、WebP、GIF</p>
-                </div>
-                <div class="upload-preview" id="uploadPreview" style="display: none;">
-                    <img id="previewImg" src="" alt="預覽">
+            <div class="upload-container">
+                <button type="button" class="btn-camera" id="btnCamera">📷 開啟相機</button>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <span class="upload-icon">📷</span>
+                        <p>點擊或拖曳圖片到此處</p>
+                        <p class="upload-hint">支援 PNG、JPG、WebP、GIF</p>
+                    </div>
+                    <div class="upload-preview" id="uploadPreview" style="display: none;">
+                        <img id="previewImg" src="" alt="預覽">
+                        <video id="cameraVideo" autoplay playsinline style="display: none;"></video>
+                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                        <button type="button" class="btn-capture" id="btnCapture" style="display: none;">📸 拍照</button>
+                        <button type="button" class="btn-cancel-camera" id="btnCancelCamera" style="display: none;">✕ 取消</button>
+                    </div>
                 </div>
             </div>
             <button type="button" class="btn-analyze" id="btnAnalyze" disabled>AI 分析</button>
@@ -79,9 +86,14 @@
 (function() {
     const uploadZone = document.getElementById('uploadZone');
     const fileInput = document.getElementById('fileInput');
+    const btnCamera = document.getElementById('btnCamera');
     const uploadPlaceholder = document.getElementById('uploadPlaceholder');
     const uploadPreview = document.getElementById('uploadPreview');
     const previewImg = document.getElementById('previewImg');
+    const cameraVideo = document.getElementById('cameraVideo');
+    const cameraCanvas = document.getElementById('cameraCanvas');
+    const btnCapture = document.getElementById('btnCapture');
+    const btnCancelCamera = document.getElementById('btnCancelCamera');
     const btnAnalyze = document.getElementById('btnAnalyze');
     const resultSection = document.getElementById('resultSection');
     const diaryTitle = document.getElementById('diaryTitle');
@@ -94,10 +106,91 @@
     const loading = document.getElementById('loading');
 
     let selectedFile = null;
+    let mediaStream = null;
 
     if (!uploadZone) return;
 
-    uploadZone.addEventListener('click', () => fileInput.click());
+    btnCamera.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' },
+                audio: false 
+            });
+            cameraVideo.srcObject = mediaStream;
+            cameraVideo.style.display = 'block';
+            previewImg.style.display = 'none';
+            uploadPlaceholder.style.display = 'none';
+            uploadPreview.style.display = 'block';
+            btnCapture.style.display = 'block';
+            btnCancelCamera.style.display = 'block';
+            btnAnalyze.disabled = true;
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            alert('無法開啟相機，請確保已授權相機權限');
+        }
+    });
+
+    btnCapture.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const context = cameraCanvas.getContext('2d');
+        cameraCanvas.width = cameraVideo.videoWidth;
+        cameraCanvas.height = cameraVideo.videoHeight;
+        context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+        
+        cameraCanvas.toBlob((blob) => {
+            selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+            previewImg.src = URL.createObjectURL(blob);
+            previewImg.style.display = 'block';
+            cameraVideo.style.display = 'none';
+            btnCapture.style.display = 'none';
+            btnCancelCamera.style.display = 'none';
+            uploadPlaceholder.style.display = 'none';
+            uploadPreview.style.display = 'block';
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            btnAnalyze.disabled = false;
+            resultSection.style.display = 'none';
+            errorSection.style.display = 'none';
+            
+            compressImage(selectedFile, 200).then(base64 => {
+                imageBase64Input.value = base64;
+            }).catch(err => {
+                console.error('Image compression failed:', err);
+            });
+        }, 'image/jpeg', 0.9);
+    });
+
+    btnCancelCamera.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stopCamera();
+    });
+
+    function stopCamera() {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null;
+        }
+        cameraVideo.style.display = 'none';
+        btnCapture.style.display = 'none';
+        btnCancelCamera.style.display = 'none';
+        if (selectedFile) {
+            previewImg.style.display = 'block';
+        } else {
+            uploadPlaceholder.style.display = 'block';
+            uploadPreview.style.display = 'none';
+        }
+    }
+
+    uploadZone.addEventListener('click', (e) => {
+        if (e.target === btnCapture || e.target === btnCancelCamera) return;
+        fileInput.click();
+    });
     uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadZone.classList.add('drag-over');

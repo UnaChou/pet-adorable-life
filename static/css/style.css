@@ -220,6 +220,8 @@ body {
 
 .analyze-upload {
     margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
 }
 
 .upload-zone {
@@ -259,7 +261,82 @@ body {
     opacity: 0.7 !important;
 }
 
-.upload-preview img {
+.btn-camera {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: white;
+    background: var(--sage);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-camera:hover {
+    background: var(--forest);
+}
+
+.btn-capture {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: white;
+    background: var(--terracotta);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-capture:hover {
+    background: #b86a4d;
+}
+
+.btn-cancel-camera {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: white;
+    background: #888;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-cancel-camera:hover {
+    background: #666;
+}
+
+.upload-container {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+}
+
+.upload-preview {
+    position: relative;
+}
+
+.upload-preview img,
+.upload-preview video {
     max-width: 100%;
     max-height: 280px;
     border-radius: 12px;
@@ -280,6 +357,9 @@ body {
     border-radius: 12px;
     cursor: pointer;
     transition: background 0.2s, opacity 0.2s;
+    position: relative;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 .btn-analyze:hover:not(:disabled) {
@@ -289,6 +369,13 @@ body {
 .btn-analyze:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn-analyze:not(:disabled) {
+    opacity: 1;
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 .analyze-result h2 {
@@ -864,10 +951,14 @@ body {
 
 .diary-upload {
     margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 .diary-upload .btn-analyze {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 100;
 }
 
 .diary-result {
