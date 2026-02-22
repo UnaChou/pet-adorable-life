@@ -383,6 +383,8 @@ body {
     border-radius: 10px;
     cursor: pointer;
     transition: background 0.2s;
+    display: block;
+    margin: 1.5rem auto 0;
 }
 
 .btn-add-to-organize:hover {
@@ -563,6 +565,7 @@ body {
     gap: 1rem;
     align-items: center;
     margin-top: 1.25rem;
+    justify-content: center;
 }
 
 .btn-cancel {
@@ -938,6 +941,8 @@ body {
     border-radius: 10px;
     cursor: pointer;
     transition: background 0.2s;
+    display: block;
+    margin: 1.5rem auto 0;
 }
 
 .btn-save:hover {

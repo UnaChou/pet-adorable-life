@@ -1,4 +1,4 @@
-pet_model_name = "qwen3-vl:4b"
+pet_model_name = "qwen3-vl:8b"
 # pet_model_name = "gemma3:27b"
 
 product_prompt = """
@@ -19,10 +19,10 @@ Format :
 **the output value language is Traditional	Chinese**
 Return JSON format:
 ```
-{{
+{
 "title": "str",
 "summary": "str"
-}}
+}
 ```
 """
 
@@ -36,10 +36,10 @@ MUST Text count limit is 300 words
 **the output value language is Traditional	Chinese**
 Return JSON format:
 ```
-{{
+{
 "title": "str",
 "describe": "str",
 "main_emotion": "str"
-}}
+}
 ```
 """
