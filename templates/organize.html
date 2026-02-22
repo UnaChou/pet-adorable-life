@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}資訊整理 - Pet Adorable Life{% endblock %}
+{% block title %}Pet Life - Pet Adorable Life{% endblock %}
 
 {% block content %}
 <nav class="nav-bar">
@@ -8,14 +8,14 @@
     <ul class="nav-links">
         <li><a href="/">首頁</a></li>
         <li><a href="/product/analyze">商品分析</a></li>
-        <li><a href="/organize" class="active">資訊整理</a></li>
+        <li><a href="/organize" class="active">Pet Life</a></li>
         <li><a href="/diary">寵物日記</a></li>
     </ul>
 </nav>
 
 <main class="organize-page">
     <section class="organize-hero">
-        <h1>📋 資訊整理</h1>
+        <h1>📋 Pet Life</h1>
         <p>結構化整理商品資訊與寵物日記，一目了然</p>
     </section>
 
@@ -48,14 +48,6 @@
             <section class="organize-list">
                 <div class="list-header">
                     <h2>商品列表 <span class="count">共 {{ products|length }} 項</span></h2>
-                    {% if products %}
-                    <div class="list-actions">
-                        <label class="checkbox-wrap">
-                            <input type="checkbox" id="select-all" title="全選">
-                            <span>全選</span>
-                        </label>
-                    </div>
-                    {% endif %}
                 </div>
 
                 {% if products %}
@@ -105,44 +97,59 @@
 
         <div class="tab-content" id="diaries-tab">
             <section class="diary-list">
-                <div class="list-header">
-                    <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
-                </div>
-
                 {% if diaries %}
-                <div class="diary-cards">
-                    {% for d in diaries %}
-                    <article class="diary-card">
-                        <div class="diary-card-body">
-                            <div class="diary-meta">
-                                <span class="diary-id">#{{ d.id }}</span>
-                                <span class="diary-dates">
-                                    {{ d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else '-' }}
-                                </span>
+                <form action="{{ url_for('diary_remove_batch') }}" method="post" id="diary-batch-form" onsubmit="return confirmDiaryBatchDelete(this);">
+                    <div class="list-header">
+                        <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
+                    </div>
+                    <div class="diary-cards">
+                        {% for d in diaries %}
+                        <article class="diary-card">
+                            <label class="diary-checkbox">
+                                <input type="checkbox" name="diary_ids" value="{{ d.id }}" class="diary-id-checkbox">
+                            </label>
+                            <div class="diary-card-body">
+                                {% if d.image_base64 %}
+                                <div class="diary-image-wrapper">
+                                    <img src="{{ d.image_base64 }}" alt="Diary Image" class="diary-thumbnail">
+                                </div>
+                                {% endif %}
+                                <div class="diary-meta">
+                                    <span class="diary-id">#{{ d.id }}</span>
+                                    <span class="diary-dates">
+                                        {{ d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else '-' }}
+                                    </span>
+                                </div>
+                                {% if d.title %}
+                                <h4 class="diary-title">{{ d.title }}</h4>
+                                {% endif %}
+                                <div class="diary-emotion">{{ d.main_emotion }}</div>
+                                <div class="diary-describe">{{ d.describe_text|replace('\n', '<br>')|safe }}</div>
+                                {% if d.memo %}
+                                <div class="diary-memo">
+                                    <strong>備註：</strong>{{ d.memo|replace('\n', '<br>')|safe }}
+                                </div>
+                                {% endif %}
                             </div>
-                            {% if d.title %}
-                            <h4 class="diary-title">{{ d.title }}</h4>
-                            {% endif %}
-                            <div class="diary-emotion">{{ d.main_emotion }}</div>
-                            <div class="diary-describe">{{ d.describe_text|replace('\n', '<br>')|safe }}</div>
-                            {% if d.memo %}
-                            <div class="diary-memo">
-                                <strong>備註：</strong>{{ d.memo|replace('\n', '<br>')|safe }}
+                            <div class="diary-card-actions">
+                                <button type="submit" form="organize-diary-single-del-{{ d.id }}" class="btn-remove" title="移除此項">✕</button>
                             </div>
-                            {% endif %}
-                        </div>
-                        <div class="diary-card-actions">
-                            <button type="submit" form="organize-diary-single-del-{{ d.id }}" class="btn-remove" title="移除此項">✕</button>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                    <div class="batch-submit-row">
+                        <button type="submit" class="btn-batch-remove" title="刪除所選日記">刪除所選</button>
+                    </div>
+                </form>
                 {% for d in diaries %}
                 <form id="organize-diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
                     <input type="hidden" name="diary_ids" value="{{ d.id }}">
                 </form>
                 {% endfor %}
                 {% else %}
+                <div class="list-header">
+                    <h2>日記列表 <span class="count">共 0 則</span></h2>
+                </div>
                 <div class="empty-state">
                     <span class="empty-icon">📔</span>
                     <p>尚無日記，請前往 <a href="/diary">寵物日記</a> 新增</p>
@@ -158,18 +165,31 @@
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
+    function switchTab(tabId) {
+        // Remove active class from all
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+
+        // Add active class to matched tab and corresponding content
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    }
+
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active class from all
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-
-            // Add active class to clicked tab and corresponding content
-            btn.classList.add('active');
-            const tabId = btn.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
+            switchTab(btn.getAttribute('data-tab'));
         });
     });
+
+    // Handle initial tab from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab');
+    if (initialTab) {
+        switchTab(initialTab + '-tab');
+    }
 
     // Toggle Add Product Form
     const btnToggleAddProduct = document.getElementById('btnToggleAddProduct');
@@ -210,6 +230,15 @@
             return false;
         }
         return confirm('確定要刪除所選的 ' + checked.length + ' 項商品嗎？');
+    };
+
+    window.confirmDiaryBatchDelete = function(form) {
+        var checked = form.querySelectorAll('input[name="diary_ids"]:checked');
+        if (checked.length === 0) {
+            alert('請先勾選要刪除的日記');
+            return false;
+        }
+        return confirm('確定要刪除所選的 ' + checked.length + ' 則日記嗎？');
     };
 })();
 </script>

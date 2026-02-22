@@ -8,7 +8,7 @@
     <ul class="nav-links">
         <li><a href="/">首頁</a></li>
         <li><a href="/product/analyze">商品分析</a></li>
-        <li><a href="/organize">資訊整理</a></li>
+        <li><a href="/organize">Pet Life</a></li>
         <li><a href="/diary" class="active">寵物日記</a></li>
     </ul>
 </nav>
@@ -39,6 +39,7 @@
         <section class="diary-result" id="resultSection" style="display: none;">
             <h3>分析結果 <span class="edit-hint">（可編修後儲存）</span></h3>
             <form action="{{ url_for('diary_save') }}" method="post" class="diary-edit-form">
+                <input type="hidden" name="image_base64" id="imageBase64">
                 <div class="diary-form-card">
                     <div class="form-group">
                         <label for="diaryTitle">標題</label>
@@ -71,51 +72,7 @@
         </div>
     </section>
 
-    <section class="diary-list">
-        <div class="list-header">
-            <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
-        </div>
 
-        {% if diaries %}
-        <div class="diary-cards">
-            {% for d in diaries %}
-            <article class="diary-card">
-                <div class="diary-card-body">
-                    <div class="diary-meta">
-                        <span class="diary-id">#{{ d.id }}</span>
-                        <span class="diary-dates">
-                            {{ d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else '-' }}
-                        </span>
-                    </div>
-                    {% if d.title %}
-                    <h4 class="diary-title">{{ d.title }}</h4>
-                    {% endif %}
-                    <div class="diary-emotion">{{ d.main_emotion }}</div>
-                    <div class="diary-describe">{{ d.describe_text|replace('\n', '<br>')|safe }}</div>
-                    {% if d.memo %}
-                    <div class="diary-memo">
-                        <strong>備註：</strong>{{ d.memo|replace('\n', '<br>')|safe }}
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="diary-card-actions">
-                    <button type="submit" form="diary-single-del-{{ d.id }}" class="btn-remove" title="移除此項">✕</button>
-                </div>
-            </article>
-            {% endfor %}
-        </div>
-        {% for d in diaries %}
-        <form id="diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
-            <input type="hidden" name="diary_ids" value="{{ d.id }}">
-        </form>
-        {% endfor %}
-        {% else %}
-        <div class="empty-state">
-            <span class="empty-icon">📔</span>
-            <p>尚無日記，從上方上傳照片開始記錄</p>
-        </div>
-        {% endif %}
-    </section>
 </main>
 
 <script>
@@ -131,6 +88,7 @@
     const describeText = document.getElementById('describeText');
     const mainEmotion = document.getElementById('mainEmotion');
     const diaryMemo = document.getElementById('diaryMemo');
+    const imageBase64Input = document.getElementById('imageBase64');
     const errorSection = document.getElementById('errorSection');
     const errorMsg = document.getElementById('errorMsg');
     const loading = document.getElementById('loading');
@@ -164,6 +122,76 @@
         btnAnalyze.disabled = false;
         resultSection.style.display = 'none';
         errorSection.style.display = 'none';
+        
+        compressImage(file, 200).then(base64 => {
+            imageBase64Input.value = base64;
+        }).catch(err => {
+            console.error('Image compression failed:', err);
+        });
+    }
+
+    function compressImage(file, maxSizeKB) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Initial scale down if image is huge (e.g., > 1200px)
+                    const MAX_DIMENSION = 1200;
+                    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    let quality = 0.9;
+                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    
+                    // Rough size estimation of base64: length * (3/4)
+                    let currentSize = Math.round((dataUrl.length * 3) / 4);
+
+                    function doCompress() {
+                        const maxSizeByte = maxSizeKB * 1024;
+                        if (currentSize <= maxSizeByte || quality <= 0.1) {
+                            resolve(dataUrl);
+                            return;
+                        }
+                        
+                        quality -= 0.1;
+                        dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        currentSize = Math.round((dataUrl.length * 3) / 4);
+                        
+                        // If still too big even at lowest quality, scale down resolution
+                        if (quality <= 0.1 && currentSize > maxSizeByte) {
+                            width *= 0.8;
+                            height *= 0.8;
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            quality = 0.5; // Reset quality for new resolution
+                        }
+                        
+                        doCompress();
+                    }
+                    
+                    doCompress();
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
     }
 
     btnAnalyze.addEventListener('click', async () => {
@@ -175,19 +203,44 @@
         const formData = new FormData();
         formData.append('image', selectedFile);
 
+        let res;
+        let rawText = '';
+        let success = false;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (!success && attempts < maxAttempts) {
+            attempts++;
+            try {
+                res = await fetch('/api/diary/analyze', { method: 'POST', body: formData });
+                rawText = await res.text();
+                if (res.ok) {
+                    success = true;
+                } else if (attempts < maxAttempts) {
+                    console.log(`Attempt ${attempts} failed, retrying...`);
+                }
+            } catch (err) {
+                if (attempts >= maxAttempts) {
+                    errorMsg.textContent = err.message || '網路錯誤';
+                    errorSection.style.display = 'block';
+                    loading.style.display = 'none';
+                    return;
+                }
+                console.log(`Attempt ${attempts} network error, retrying...`);
+            }
+        }
+
         try {
-            const res = await fetch('/api/diary/analyze', { method: 'POST', body: formData });
-            const rawText = await res.text();
             let data;
             try {
                 data = rawText ? JSON.parse(rawText) : {};
             } catch (e) {
-                errorMsg.textContent = '伺服器回傳非 JSON。' + (res.status !== 200 ? '狀態碼：' + res.status : '') + ' 請確認 Ollama 服務是否運行。';
+                errorMsg.textContent = '伺服器回傳非 JSON。' + (res && res.status !== 200 ? '狀態碼：' + res.status : '') + ' 請確認 Ollama 服務是否運行。';
                 errorSection.style.display = 'block';
                 loading.style.display = 'none';
                 return;
             }
-            if (res.status !== 200 || data.error) {
+            if (!res || res.status !== 200 || data.error) {
                 errorMsg.textContent = data.error || '分析失敗';
                 errorSection.style.display = 'block';
             } else {
@@ -198,7 +251,7 @@
                 resultSection.style.display = 'block';
             }
         } catch (err) {
-            errorMsg.textContent = err.message || '網路錯誤';
+            errorMsg.textContent = err.message || '發生未知的錯誤';
             errorSection.style.display = 'block';
         }
         loading.style.display = 'none';

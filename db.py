@@ -65,12 +65,18 @@ def init_db():
                     describe_text TEXT,
                     main_emotion VARCHAR(200),
                     memo TEXT,
+                    image_base64 LONGTEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )
             """)
             try:
                 cur.execute("ALTER TABLE pet_diaries ADD COLUMN title VARCHAR(500) AFTER id")
+            except pymysql.err.OperationalError as e:
+                if e.args[0] != 1060:
+                    raise
+            try:
+                cur.execute("ALTER TABLE pet_diaries ADD COLUMN image_base64 LONGTEXT AFTER memo")
             except pymysql.err.OperationalError as e:
                 if e.args[0] != 1060:
                     raise
@@ -167,7 +173,7 @@ def get_all_diaries():
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, title, describe_text, main_emotion, memo, created_at, updated_at
+                SELECT id, title, describe_text, main_emotion, memo, image_base64, created_at, updated_at
                 FROM pet_diaries
                 ORDER BY created_at DESC, id DESC
             """)
@@ -179,6 +185,7 @@ def get_all_diaries():
             "describe_text": r["describe_text"] or "",
             "main_emotion": r["main_emotion"] or "",
             "memo": r["memo"] or "",
+            "image_base64": r.get("image_base64") or "",
             "created_at": r["created_at"],
             "updated_at": r.get("updated_at"),
         }
@@ -186,13 +193,13 @@ def get_all_diaries():
     ]
 
 
-def add_diary(title, describe_text, main_emotion, memo):
+def add_diary(title, describe_text, main_emotion, memo, image_base64=""):
     """新增日記，回傳 id。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO pet_diaries (title, describe_text, main_emotion, memo) VALUES (%s, %s, %s, %s)",
-                (title or "", describe_text or "", main_emotion or "", memo or ""),
+                "INSERT INTO pet_diaries (title, describe_text, main_emotion, memo, image_base64) VALUES (%s, %s, %s, %s, %s)",
+                (title or "", describe_text or "", main_emotion or "", memo or "", image_base64 or ""),
             )
             return cur.lastrowid
 

@@ -98,7 +98,7 @@ def get_model_response_by_image(model, image_source, prompt=None):
         raw = result.get("response", "").strip()
         if not raw:
             return {"title": "解析失敗, 模型未回傳內容", "describe": ""}
-        print(raw)
+
         to_parse = _extract_json_object(raw)
 
         try:

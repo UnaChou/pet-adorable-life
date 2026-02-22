@@ -93,12 +93,52 @@ body {
     font-weight: 400;
 }
 
-/* 導覽卡片 */
+/* 導覽群組與卡片 */
+.nav-section-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+    margin: 3rem 0;
+}
+
+.nav-group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--forest);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(125, 155, 118, 0.2);
+}
+
+.nav-tag {
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: "Outfit", sans-serif;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+}
+
+.tag-ai {
+    background: rgba(125, 155, 118, 0.15);
+    color: var(--sage);
+    border: 1px solid rgba(125, 155, 118, 0.3);
+}
+
+.tag-life {
+    background: rgba(201, 123, 92, 0.15);
+    color: var(--terracotta);
+    border: 1px solid rgba(201, 123, 92, 0.3);
+}
+
 .nav-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 1.5rem;
-    margin: 3rem 0;
 }
 
 .card {
@@ -956,6 +996,19 @@ body {
 .diary-card-body {
     flex: 1;
     min-width: 0;
+}
+
+.diary-image-wrapper {
+    margin-bottom: 1rem;
+    max-width: 100%;
+}
+
+.diary-thumbnail {
+    max-height: 200px;
+    max-width: 100%;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(125, 155, 118, 0.2);
 }
 
 .diary-card-actions {

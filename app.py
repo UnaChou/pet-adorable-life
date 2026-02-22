@@ -157,8 +157,9 @@ def diary_save():
     describe_text = (request.form.get("describe_text") or "").strip()
     main_emotion = (request.form.get("main_emotion") or "").strip()
     memo = (request.form.get("memo") or "").strip()
-    db.add_diary(title, describe_text, main_emotion, memo)
-    return redirect(url_for("diary"))
+    image_base64 = (request.form.get("image_base64") or "").strip()
+    db.add_diary(title, describe_text, main_emotion, memo, image_base64)
+    return redirect(url_for("organize", tab="diaries"))
 
 
 @app.route("/diary/remove/batch", methods=["POST"])
