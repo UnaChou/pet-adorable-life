@@ -51,18 +51,22 @@
                 </div>
 
                 {% if products %}
-                <form action="{{ url_for('organize_remove_batch') }}" method="post" id="batch-form" onsubmit="return confirmBatchDelete(this);">
-                    <div class="product-cards">
+                <form action="{{ url_for('organize_remove_batch') }}" method="post" id="batch-form"
+                    onsubmit="return confirmBatchDelete(this);">
+                    <div class="product-cards timeline-list">
                         {% for product in products %}
-                        <article class="product-card">
+                        <article class="product-card timeline-item">
+                            <div class="timeline-dot"></div>
                             <label class="product-checkbox">
-                                <input type="checkbox" name="product_ids" value="{{ product.id }}" class="product-id-checkbox">
+                                <input type="checkbox" name="product_ids" value="{{ product.id }}"
+                                    class="product-id-checkbox">
                             </label>
                             <div class="product-card-body">
                                 <div class="product-meta">
                                     <span class="product-id">#{{ product.id }}</span>
                                     <span class="product-dates">
-                                        建立：{{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '-' }}
+                                        建立：{{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else
+                                        '-' }}
                                         {% if product.updated_at %}
                                         · 編輯：{{ product.updated_at.strftime('%Y-%m-%d %H:%M') }}
                                         {% endif %}
@@ -72,8 +76,10 @@
                                 <div class="product-summary">{{ product.summary|replace('\n', '<br>')|safe }}</div>
                             </div>
                             <div class="product-card-actions">
-                                <a href="{{ url_for('organize_edit', product_id=product.id) }}" class="btn-edit" title="編輯">✎</a>
-                                <button type="submit" form="single-del-{{ product.id }}" class="btn-remove" title="移除此項">✕</button>
+                                <a href="{{ url_for('organize_edit', product_id=product.id) }}" class="btn-edit"
+                                    title="編輯">✎</a>
+                                <button type="submit" form="single-del-{{ product.id }}" class="btn-remove"
+                                    title="移除此項">✕</button>
                             </div>
                         </article>
                         {% endfor %}
@@ -83,7 +89,8 @@
                     </div>
                 </form>
                 {% for product in products %}
-                <form id="single-del-{{ product.id }}" action="{{ url_for('organize_remove', product_id=product.id) }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此商品嗎？');">
+                <form id="single-del-{{ product.id }}" action="{{ url_for('organize_remove', product_id=product.id) }}"
+                    method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此商品嗎？');">
                 </form>
                 {% endfor %}
                 {% else %}
@@ -98,13 +105,15 @@
         <div class="tab-content" id="diaries-tab">
             <section class="diary-list">
                 {% if diaries %}
-                <form action="{{ url_for('diary_remove_batch') }}" method="post" id="diary-batch-form" onsubmit="return confirmDiaryBatchDelete(this);">
+                <form action="{{ url_for('diary_remove_batch') }}" method="post" id="diary-batch-form"
+                    onsubmit="return confirmDiaryBatchDelete(this);">
                     <div class="list-header">
                         <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
                     </div>
-                    <div class="diary-cards">
+                    <div class="diary-cards timeline-list">
                         {% for d in diaries %}
-                        <article class="diary-card">
+                        <article class="diary-card timeline-item">
+                            <div class="timeline-dot"></div>
                             <label class="diary-checkbox">
                                 <input type="checkbox" name="diary_ids" value="{{ d.id }}" class="diary-id-checkbox">
                             </label>
@@ -132,7 +141,8 @@
                                 {% endif %}
                             </div>
                             <div class="diary-card-actions">
-                                <button type="submit" form="organize-diary-single-del-{{ d.id }}" class="btn-remove" title="移除此項">✕</button>
+                                <button type="submit" form="organize-diary-single-del-{{ d.id }}" class="btn-remove"
+                                    title="移除此項">✕</button>
                             </div>
                         </article>
                         {% endfor %}
@@ -142,7 +152,8 @@
                     </div>
                 </form>
                 {% for d in diaries %}
-                <form id="organize-diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}" method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
+                <form id="organize-diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}"
+                    method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
                     <input type="hidden" name="diary_ids" value="{{ d.id }}">
                 </form>
                 {% endfor %}
@@ -160,86 +171,86 @@
     </div>
 </main>
 <script>
-(function() {
-    // Tabs functionality
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+    (function () {
+        // Tabs functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-    function switchTab(tabId) {
-        // Remove active class from all
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
+        function switchTab(tabId) {
+            // Remove active class from all
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
 
-        // Add active class to matched tab and corresponding content
-        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-        if (targetBtn) {
-            targetBtn.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-    }
-
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            switchTab(btn.getAttribute('data-tab'));
-        });
-    });
-
-    // Handle initial tab from URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const initialTab = urlParams.get('tab');
-    if (initialTab) {
-        switchTab(initialTab + '-tab');
-    }
-
-    // Toggle Add Product Form
-    const btnToggleAddProduct = document.getElementById('btnToggleAddProduct');
-    const addProductSection = document.getElementById('addProductSection');
-
-    if (btnToggleAddProduct && addProductSection) {
-        btnToggleAddProduct.addEventListener('click', () => {
-            if (addProductSection.style.display === 'none') {
-                addProductSection.style.display = 'block';
-                btnToggleAddProduct.textContent = '➖ 隱藏新增商品';
-            } else {
-                addProductSection.style.display = 'none';
-                btnToggleAddProduct.textContent = '➕ 新增商品';
+            // Add active class to matched tab and corresponding content
+            const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
             }
-        });
-    }
+        }
 
-    // Select All for Products
-    var selectAll = document.getElementById('select-all');
-    var checkboxes = document.querySelectorAll('.product-id-checkbox');
-    if (selectAll && checkboxes.length) {
-        selectAll.addEventListener('change', function() {
-            checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
-        });
-        checkboxes.forEach(function(cb) {
-            cb.addEventListener('change', function() {
-                var allChecked = Array.from(checkboxes).every(function(c) { return c.checked; });
-                var someChecked = Array.from(checkboxes).some(function(c) { return c.checked; });
-                selectAll.checked = allChecked;
-                selectAll.indeterminate = someChecked && !allChecked;
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchTab(btn.getAttribute('data-tab'));
             });
         });
-    }
-    window.confirmBatchDelete = function(form) {
-        var checked = form.querySelectorAll('input[name="product_ids"]:checked');
-        if (checked.length === 0) {
-            alert('請先勾選要刪除的商品');
-            return false;
-        }
-        return confirm('確定要刪除所選的 ' + checked.length + ' 項商品嗎？');
-    };
 
-    window.confirmDiaryBatchDelete = function(form) {
-        var checked = form.querySelectorAll('input[name="diary_ids"]:checked');
-        if (checked.length === 0) {
-            alert('請先勾選要刪除的日記');
-            return false;
+        // Handle initial tab from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTab = urlParams.get('tab');
+        if (initialTab) {
+            switchTab(initialTab + '-tab');
         }
-        return confirm('確定要刪除所選的 ' + checked.length + ' 則日記嗎？');
-    };
-})();
+
+        // Toggle Add Product Form
+        const btnToggleAddProduct = document.getElementById('btnToggleAddProduct');
+        const addProductSection = document.getElementById('addProductSection');
+
+        if (btnToggleAddProduct && addProductSection) {
+            btnToggleAddProduct.addEventListener('click', () => {
+                if (addProductSection.style.display === 'none') {
+                    addProductSection.style.display = 'block';
+                    btnToggleAddProduct.textContent = '➖ 隱藏新增商品';
+                } else {
+                    addProductSection.style.display = 'none';
+                    btnToggleAddProduct.textContent = '➕ 新增商品';
+                }
+            });
+        }
+
+        // Select All for Products
+        var selectAll = document.getElementById('select-all');
+        var checkboxes = document.querySelectorAll('.product-id-checkbox');
+        if (selectAll && checkboxes.length) {
+            selectAll.addEventListener('change', function () {
+                checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+            });
+            checkboxes.forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    var allChecked = Array.from(checkboxes).every(function (c) { return c.checked; });
+                    var someChecked = Array.from(checkboxes).some(function (c) { return c.checked; });
+                    selectAll.checked = allChecked;
+                    selectAll.indeterminate = someChecked && !allChecked;
+                });
+            });
+        }
+        window.confirmBatchDelete = function (form) {
+            var checked = form.querySelectorAll('input[name="product_ids"]:checked');
+            if (checked.length === 0) {
+                alert('請先勾選要刪除的商品');
+                return false;
+            }
+            return confirm('確定要刪除所選的 ' + checked.length + ' 項商品嗎？');
+        };
+
+        window.confirmDiaryBatchDelete = function (form) {
+            var checked = form.querySelectorAll('input[name="diary_ids"]:checked');
+            if (checked.length === 0) {
+                alert('請先勾選要刪除的日記');
+                return false;
+            }
+            return confirm('確定要刪除所選的 ' + checked.length + ' 則日記嗎？');
+        };
+    })();
 </script>
 {% endblock %}
