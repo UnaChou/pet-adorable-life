@@ -20,8 +20,10 @@
     </section>
 
     <section class="analyze-upload">
-        <div class="upload-container">
+        <div class="camera-header-actions">
             <button type="button" class="btn-camera" id="btnCamera">📷 開啟相機</button>
+        </div>
+        <div class="upload-container">
             <div class="upload-zone" id="uploadZone">
                 <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
                 <div class="upload-placeholder" id="uploadPlaceholder">
@@ -33,9 +35,12 @@
                     <img id="previewImg" src="" alt="預覽">
                     <video id="cameraVideo" autoplay playsinline style="display: none;"></video>
                     <canvas id="cameraCanvas" style="display: none;"></canvas>
-                    <button type="button" class="btn-capture" id="btnCapture" style="display: none;">📸 拍照</button>
-                    <button type="button" class="btn-cancel-camera" id="btnCancelCamera" style="display: none;">✕ 取消</button>
                 </div>
+            </div>
+            <div class="camera-controls">
+                <button type="button" class="btn-cancel-camera" id="btnCancelCamera" style="display: none;">✕
+                    取消</button>
+                <button type="button" class="btn-capture" id="btnCapture" style="display: none;">📸 拍照</button>
             </div>
         </div>
         <button type="button" class="btn-analyze" id="btnAnalyze" disabled>開始分析</button>
@@ -47,11 +52,13 @@
             <div class="result-card">
                 <div class="form-group">
                     <label for="resultTitle">商品名稱</label>
-                    <input type="text" id="resultTitle" name="title" class="result-title-input" placeholder="商品標題" maxlength="500">
+                    <input type="text" id="resultTitle" name="title" class="result-title-input" placeholder="商品標題"
+                        maxlength="500">
                 </div>
                 <div class="form-group">
                     <label for="resultSummary">商品摘要</label>
-                    <textarea id="resultSummary" name="summary" class="result-summary-input" rows="6" placeholder="商品描述、特色要點..."></textarea>
+                    <textarea id="resultSummary" name="summary" class="result-summary-input" rows="6"
+                        placeholder="商品描述、特色要點..."></textarea>
                 </div>
                 <button type="submit" class="btn-add-to-organize">💾 儲存並加入Pet Life</button>
             </div>
@@ -74,193 +81,193 @@
 </main>
 
 <script>
-(function() {
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
-    const btnCamera = document.getElementById('btnCamera');
-    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-    const uploadPreview = document.getElementById('uploadPreview');
-    const previewImg = document.getElementById('previewImg');
-    const cameraVideo = document.getElementById('cameraVideo');
-    const cameraCanvas = document.getElementById('cameraCanvas');
-    const btnCapture = document.getElementById('btnCapture');
-    const btnCancelCamera = document.getElementById('btnCancelCamera');
-    const btnAnalyze = document.getElementById('btnAnalyze');
-    const resultSection = document.getElementById('resultSection');
-    const resultTitleInput = document.getElementById('resultTitle');
-    const resultSummaryInput = document.getElementById('resultSummary');
-    const errorSection = document.getElementById('errorSection');
-    const errorMsg = document.getElementById('errorMsg');
-    const loading = document.getElementById('loading');
-    const debugSection = document.getElementById('debugSection');
-    const debugRaw = document.getElementById('debugRaw');
+    (function () {
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const btnCamera = document.getElementById('btnCamera');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const previewImg = document.getElementById('previewImg');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const btnCapture = document.getElementById('btnCapture');
+        const btnCancelCamera = document.getElementById('btnCancelCamera');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const resultSection = document.getElementById('resultSection');
+        const resultTitleInput = document.getElementById('resultTitle');
+        const resultSummaryInput = document.getElementById('resultSummary');
+        const errorSection = document.getElementById('errorSection');
+        const errorMsg = document.getElementById('errorMsg');
+        const loading = document.getElementById('loading');
+        const debugSection = document.getElementById('debugSection');
+        const debugRaw = document.getElementById('debugRaw');
 
-    let selectedFile = null;
-    let mediaStream = null;
+        let selectedFile = null;
+        let mediaStream = null;
 
-    btnCamera.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-            mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' },
-                audio: false 
-            });
-            cameraVideo.srcObject = mediaStream;
-            cameraVideo.style.display = 'block';
-            previewImg.style.display = 'none';
-            uploadPlaceholder.style.display = 'none';
-            uploadPreview.style.display = 'block';
-            btnCapture.style.display = 'block';
-            btnCancelCamera.style.display = 'block';
-            btnAnalyze.disabled = true;
-        } catch (err) {
-            console.error('Error accessing camera:', err);
-            alert('無法開啟相機，請確保已授權相機權限');
-        }
-    });
+        btnCamera.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+                cameraVideo.srcObject = mediaStream;
+                cameraVideo.style.display = 'block';
+                previewImg.style.display = 'none';
+                uploadPlaceholder.style.display = 'none';
+                uploadPreview.style.display = 'block';
+                btnCapture.style.display = 'block';
+                btnCancelCamera.style.display = 'block';
+                btnAnalyze.disabled = true;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('無法開啟相機，請確保已授權相機權限');
+            }
+        });
 
-    btnCapture.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const context = cameraCanvas.getContext('2d');
-        cameraCanvas.width = cameraVideo.videoWidth;
-        cameraCanvas.height = cameraVideo.videoHeight;
-        context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-        
-        cameraCanvas.toBlob((blob) => {
-            selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
-            previewImg.src = URL.createObjectURL(blob);
-            previewImg.style.display = 'block';
-            cameraVideo.style.display = 'none';
-            btnCapture.style.display = 'none';
-            btnCancelCamera.style.display = 'none';
-            uploadPlaceholder.style.display = 'none';
-            uploadPreview.style.display = 'block';
-            
+        btnCapture.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const context = cameraCanvas.getContext('2d');
+            cameraCanvas.width = cameraVideo.videoWidth;
+            cameraCanvas.height = cameraVideo.videoHeight;
+            context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+            cameraCanvas.toBlob((blob) => {
+                selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+                previewImg.src = URL.createObjectURL(blob);
+                previewImg.style.display = 'block';
+                cameraVideo.style.display = 'none';
+                btnCapture.style.display = 'none';
+                btnCancelCamera.style.display = 'none';
+                uploadPlaceholder.style.display = 'none';
+                uploadPreview.style.display = 'block';
+
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    mediaStream = null;
+                }
+
+                btnAnalyze.disabled = false;
+                resultSection.style.display = 'none';
+                errorSection.style.display = 'none';
+
+                handleFile(selectedFile);
+            }, 'image/jpeg', 0.9);
+        });
+
+        btnCancelCamera.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (mediaStream) {
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
             }
-            
+            cameraVideo.style.display = 'none';
+            btnCapture.style.display = 'none';
+            btnCancelCamera.style.display = 'none';
+            if (selectedFile) {
+                previewImg.style.display = 'block';
+            } else {
+                uploadPlaceholder.style.display = 'block';
+                uploadPreview.style.display = 'none';
+            }
+        });
+
+        uploadZone.addEventListener('click', (e) => {
+            if (e.target === btnCapture || e.target === btnCancelCamera) return;
+            fileInput.click();
+        });
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) handleFile(file);
+        });
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            previewImg.src = URL.createObjectURL(file);
+            uploadPlaceholder.style.display = 'none';
+            uploadPreview.style.display = 'block';
             btnAnalyze.disabled = false;
             resultSection.style.display = 'none';
             errorSection.style.display = 'none';
-            
-            handleFile(selectedFile);
-        }, 'image/jpeg', 0.9);
-    });
-
-    btnCancelCamera.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => track.stop());
-            mediaStream = null;
         }
-        cameraVideo.style.display = 'none';
-        btnCapture.style.display = 'none';
-        btnCancelCamera.style.display = 'none';
-        if (selectedFile) {
-            previewImg.style.display = 'block';
-        } else {
-            uploadPlaceholder.style.display = 'block';
-            uploadPreview.style.display = 'none';
-        }
-    });
 
-    uploadZone.addEventListener('click', (e) => {
-        if (e.target === btnCapture || e.target === btnCancelCamera) return;
-        fileInput.click();
-    });
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('drag-over');
-    });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) handleFile(file);
-    });
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) handleFile(file);
-    });
+        btnAnalyze.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            loading.style.display = 'flex';
+            resultSection.style.display = 'none';
+            errorSection.style.display = 'none';
+            debugSection.style.display = 'none';
 
-    function handleFile(file) {
-        selectedFile = file;
-        previewImg.src = URL.createObjectURL(file);
-        uploadPlaceholder.style.display = 'none';
-        uploadPreview.style.display = 'block';
-        btnAnalyze.disabled = false;
-        resultSection.style.display = 'none';
-        errorSection.style.display = 'none';
-    }
+            const formData = new FormData();
+            formData.append('image', selectedFile);
 
-    btnAnalyze.addEventListener('click', async () => {
-        if (!selectedFile) return;
-        loading.style.display = 'flex';
-        resultSection.style.display = 'none';
-        errorSection.style.display = 'none';
-        debugSection.style.display = 'none';
+            let rawText = '';
+            let success = false;
+            let attempts = 0;
+            const maxAttempts = 3;
 
-        const formData = new FormData();
-        formData.append('image', selectedFile);
-
-        let rawText = '';
-        let success = false;
-        let attempts = 0;
-        const maxAttempts = 3;
-
-        while (!success && attempts < maxAttempts) {
-            attempts++;
-            try {
-                const response = await fetch('/api/product/analyze', { method: 'POST', body: formData });
-                rawText = await response.text();
-                if (response.ok) {
-                    success = true;
-                } else if (attempts < maxAttempts) {
-                    console.log(`Attempt ${attempts} failed, retrying...`);
+            while (!success && attempts < maxAttempts) {
+                attempts++;
+                try {
+                    const response = await fetch('/api/product/analyze', { method: 'POST', body: formData });
+                    rawText = await response.text();
+                    if (response.ok) {
+                        success = true;
+                    } else if (attempts < maxAttempts) {
+                        console.log(`Attempt ${attempts} failed, retrying...`);
+                    }
+                } catch (err) {
+                    if (attempts >= maxAttempts) {
+                        debugRaw.textContent = '網路錯誤: ' + err.message;
+                        debugSection.style.display = 'block';
+                        errorMsg.textContent = err.message;
+                        errorSection.style.display = 'block';
+                        loading.style.display = 'none';
+                        return;
+                    }
+                    console.log(`Attempt ${attempts} network error, retrying...`);
                 }
-            } catch (err) {
-                if (attempts >= maxAttempts) {
-                    debugRaw.textContent = '網路錯誤: ' + err.message;
-                    debugSection.style.display = 'block';
-                    errorMsg.textContent = err.message;
-                    errorSection.style.display = 'block';
-                    loading.style.display = 'none';
-                    return;
-                }
-                console.log(`Attempt ${attempts} network error, retrying...`);
             }
-        }
 
-        let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch (e) {
-            debugRaw.textContent = 'JSON 解析失敗 (line 1 column 1)\n\n原始回傳:\n' + rawText;
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch (e) {
+                debugRaw.textContent = 'JSON 解析失敗 (line 1 column 1)\n\n原始回傳:\n' + rawText;
+                debugSection.style.display = 'block';
+                errorMsg.textContent = '伺服器回傳非 JSON，請查看下方「接收回傳的 data」';
+                errorSection.style.display = 'block';
+                loading.style.display = 'none';
+                return;
+            }
+
+            // 永遠顯示接收到的完整 data
+            debugRaw.textContent = JSON.stringify(data, null, 2);
             debugSection.style.display = 'block';
-            errorMsg.textContent = '伺服器回傳非 JSON，請查看下方「接收回傳的 data」';
-            errorSection.style.display = 'block';
+
+            if (!data || data.error) {
+                errorMsg.textContent = data?.error || '分析失敗';
+                errorSection.style.display = 'block';
+            } else {
+                resultTitleInput.value = data.title || '(無標題)';
+                resultSummaryInput.value = data.summary || '';
+                resultSection.style.display = 'block';
+            }
             loading.style.display = 'none';
-            return;
-        }
-
-        // 永遠顯示接收到的完整 data
-        debugRaw.textContent = JSON.stringify(data, null, 2);
-        debugSection.style.display = 'block';
-
-        if (!data || data.error) {
-            errorMsg.textContent = data?.error || '分析失敗';
-            errorSection.style.display = 'block';
-        } else {
-            resultTitleInput.value = data.title || '(無標題)';
-            resultSummaryInput.value = data.summary || '';
-            resultSection.style.display = 'block';
-        }
-        loading.style.display = 'none';
-    });
-})();
+        });
+    })();
 </script>
 {% endblock %}

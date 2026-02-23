@@ -261,68 +261,73 @@ body {
     opacity: 0.7 !important;
 }
 
+.camera-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.camera-header-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}
+
 .btn-camera {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 10;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     font-family: inherit;
-    color: white;
-    background: var(--sage);
+    color: var(--charcoal);
+    background: #FFEA98;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 4px 12px rgba(255, 234, 152, 0.5);
 }
 
 .btn-camera:hover {
-    background: var(--forest);
+    background: #FFDD55;
+    transform: translateY(-2px);
 }
 
 .btn-capture {
-    position: absolute;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    padding: 0.6rem 1.5rem;
-    font-size: 1rem;
+    padding: 0.6rem 2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     font-family: inherit;
-    color: white;
-    background: var(--terracotta);
+    color: var(--charcoal);
+    background: #FFEA98;
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 4px 12px rgba(255, 234, 152, 0.6);
 }
 
 .btn-capture:hover {
-    background: #b86a4d;
+    background: #FFDD55;
+    transform: translateY(-2px);
 }
 
 .btn-cancel-camera {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 10;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.85rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
     font-weight: 500;
     font-family: inherit;
-    color: white;
-    background: #888;
+    color: var(--charcoal);
+    background: var(--sand);
     border: none;
-    border-radius: 8px;
+    border-radius: 25px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s;
 }
 
 .btn-cancel-camera:hover {
-    background: #666;
+    background: #dfd3c6;
+    transform: translateY(-2px);
 }
 
 .upload-container {
@@ -544,7 +549,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ========== 資訊整理頁 ========== */
@@ -1232,6 +1239,13 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

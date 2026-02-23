@@ -22,10 +22,13 @@
     <section class="diary-new">
         <h2>新增日記</h2>
         <div class="diary-upload">
-            <div class="upload-container">
+            <div class="camera-header-actions">
                 <button type="button" class="btn-camera" id="btnCamera">📷 開啟相機</button>
+            </div>
+            <div class="upload-container">
                 <div class="upload-zone" id="uploadZone">
-                    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
+                    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                        hidden>
                     <div class="upload-placeholder" id="uploadPlaceholder">
                         <span class="upload-icon">📷</span>
                         <p>點擊或拖曳圖片到此處</p>
@@ -35,9 +38,12 @@
                         <img id="previewImg" src="" alt="預覽">
                         <video id="cameraVideo" autoplay playsinline style="display: none;"></video>
                         <canvas id="cameraCanvas" style="display: none;"></canvas>
-                        <button type="button" class="btn-capture" id="btnCapture" style="display: none;">📸 拍照</button>
-                        <button type="button" class="btn-cancel-camera" id="btnCancelCamera" style="display: none;">✕ 取消</button>
                     </div>
+                </div>
+                <div class="camera-controls">
+                    <button type="button" class="btn-cancel-camera" id="btnCancelCamera" style="display: none;">✕
+                        取消</button>
+                    <button type="button" class="btn-capture" id="btnCapture" style="display: none;">📸 拍照</button>
                 </div>
             </div>
             <button type="button" class="btn-analyze" id="btnAnalyze" disabled>AI 分析</button>
@@ -54,7 +60,8 @@
                     </div>
                     <div class="form-group">
                         <label for="describeText">心情描述</label>
-                        <textarea id="describeText" name="describe_text" rows="5" placeholder="AI 分析的心情與情緒描述..."></textarea>
+                        <textarea id="describeText" name="describe_text" rows="5"
+                            placeholder="AI 分析的心情與情緒描述..."></textarea>
                     </div>
                     <div class="form-group">
                         <label for="mainEmotion">主要情緒</label>
@@ -83,272 +90,272 @@
 </main>
 
 <script>
-(function() {
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
-    const btnCamera = document.getElementById('btnCamera');
-    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-    const uploadPreview = document.getElementById('uploadPreview');
-    const previewImg = document.getElementById('previewImg');
-    const cameraVideo = document.getElementById('cameraVideo');
-    const cameraCanvas = document.getElementById('cameraCanvas');
-    const btnCapture = document.getElementById('btnCapture');
-    const btnCancelCamera = document.getElementById('btnCancelCamera');
-    const btnAnalyze = document.getElementById('btnAnalyze');
-    const resultSection = document.getElementById('resultSection');
-    const diaryTitle = document.getElementById('diaryTitle');
-    const describeText = document.getElementById('describeText');
-    const mainEmotion = document.getElementById('mainEmotion');
-    const diaryMemo = document.getElementById('diaryMemo');
-    const imageBase64Input = document.getElementById('imageBase64');
-    const errorSection = document.getElementById('errorSection');
-    const errorMsg = document.getElementById('errorMsg');
-    const loading = document.getElementById('loading');
+    (function () {
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const btnCamera = document.getElementById('btnCamera');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const previewImg = document.getElementById('previewImg');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const btnCapture = document.getElementById('btnCapture');
+        const btnCancelCamera = document.getElementById('btnCancelCamera');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const resultSection = document.getElementById('resultSection');
+        const diaryTitle = document.getElementById('diaryTitle');
+        const describeText = document.getElementById('describeText');
+        const mainEmotion = document.getElementById('mainEmotion');
+        const diaryMemo = document.getElementById('diaryMemo');
+        const imageBase64Input = document.getElementById('imageBase64');
+        const errorSection = document.getElementById('errorSection');
+        const errorMsg = document.getElementById('errorMsg');
+        const loading = document.getElementById('loading');
 
-    let selectedFile = null;
-    let mediaStream = null;
+        let selectedFile = null;
+        let mediaStream = null;
 
-    if (!uploadZone) return;
+        if (!uploadZone) return;
 
-    btnCamera.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-            mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' },
-                audio: false 
-            });
-            cameraVideo.srcObject = mediaStream;
-            cameraVideo.style.display = 'block';
-            previewImg.style.display = 'none';
-            uploadPlaceholder.style.display = 'none';
-            uploadPreview.style.display = 'block';
-            btnCapture.style.display = 'block';
-            btnCancelCamera.style.display = 'block';
-            btnAnalyze.disabled = true;
-        } catch (err) {
-            console.error('Error accessing camera:', err);
-            alert('無法開啟相機，請確保已授權相機權限');
-        }
-    });
+        btnCamera.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+                cameraVideo.srcObject = mediaStream;
+                cameraVideo.style.display = 'block';
+                previewImg.style.display = 'none';
+                uploadPlaceholder.style.display = 'none';
+                uploadPreview.style.display = 'block';
+                btnCapture.style.display = 'block';
+                btnCancelCamera.style.display = 'block';
+                btnAnalyze.disabled = true;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('無法開啟相機，請確保已授權相機權限');
+            }
+        });
 
-    btnCapture.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const context = cameraCanvas.getContext('2d');
-        cameraCanvas.width = cameraVideo.videoWidth;
-        cameraCanvas.height = cameraVideo.videoHeight;
-        context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-        
-        cameraCanvas.toBlob((blob) => {
-            selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
-            previewImg.src = URL.createObjectURL(blob);
-            previewImg.style.display = 'block';
-            cameraVideo.style.display = 'none';
-            btnCapture.style.display = 'none';
-            btnCancelCamera.style.display = 'none';
-            uploadPlaceholder.style.display = 'none';
-            uploadPreview.style.display = 'block';
-            
+        btnCapture.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const context = cameraCanvas.getContext('2d');
+            cameraCanvas.width = cameraVideo.videoWidth;
+            cameraCanvas.height = cameraVideo.videoHeight;
+            context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+            cameraCanvas.toBlob((blob) => {
+                selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+                previewImg.src = URL.createObjectURL(blob);
+                previewImg.style.display = 'block';
+                cameraVideo.style.display = 'none';
+                btnCapture.style.display = 'none';
+                btnCancelCamera.style.display = 'none';
+                uploadPlaceholder.style.display = 'none';
+                uploadPreview.style.display = 'block';
+
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    mediaStream = null;
+                }
+
+                btnAnalyze.disabled = false;
+                resultSection.style.display = 'none';
+                errorSection.style.display = 'none';
+
+                compressImage(selectedFile, 200).then(base64 => {
+                    imageBase64Input.value = base64;
+                }).catch(err => {
+                    console.error('Image compression failed:', err);
+                });
+            }, 'image/jpeg', 0.9);
+        });
+
+        btnCancelCamera.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stopCamera();
+        });
+
+        function stopCamera() {
             if (mediaStream) {
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
             }
-            
+            cameraVideo.style.display = 'none';
+            btnCapture.style.display = 'none';
+            btnCancelCamera.style.display = 'none';
+            if (selectedFile) {
+                previewImg.style.display = 'block';
+            } else {
+                uploadPlaceholder.style.display = 'block';
+                uploadPreview.style.display = 'none';
+            }
+        }
+
+        uploadZone.addEventListener('click', (e) => {
+            if (e.target === btnCapture || e.target === btnCancelCamera) return;
+            fileInput.click();
+        });
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) handleFile(file);
+        });
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            previewImg.src = URL.createObjectURL(file);
+            uploadPlaceholder.style.display = 'none';
+            uploadPreview.style.display = 'block';
             btnAnalyze.disabled = false;
             resultSection.style.display = 'none';
             errorSection.style.display = 'none';
-            
-            compressImage(selectedFile, 200).then(base64 => {
+
+            compressImage(file, 200).then(base64 => {
                 imageBase64Input.value = base64;
             }).catch(err => {
                 console.error('Image compression failed:', err);
             });
-        }, 'image/jpeg', 0.9);
-    });
-
-    btnCancelCamera.addEventListener('click', (e) => {
-        e.stopPropagation();
-        stopCamera();
-    });
-
-    function stopCamera() {
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => track.stop());
-            mediaStream = null;
         }
-        cameraVideo.style.display = 'none';
-        btnCapture.style.display = 'none';
-        btnCancelCamera.style.display = 'none';
-        if (selectedFile) {
-            previewImg.style.display = 'block';
-        } else {
-            uploadPlaceholder.style.display = 'block';
-            uploadPreview.style.display = 'none';
-        }
-    }
 
-    uploadZone.addEventListener('click', (e) => {
-        if (e.target === btnCapture || e.target === btnCancelCamera) return;
-        fileInput.click();
-    });
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('drag-over');
-    });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) handleFile(file);
-    });
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) handleFile(file);
-    });
+        function compressImage(file, maxSizeKB) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function (event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function () {
+                        let canvas = document.createElement('canvas');
+                        let ctx = canvas.getContext('2d');
 
-    function handleFile(file) {
-        selectedFile = file;
-        previewImg.src = URL.createObjectURL(file);
-        uploadPlaceholder.style.display = 'none';
-        uploadPreview.style.display = 'block';
-        btnAnalyze.disabled = false;
-        resultSection.style.display = 'none';
-        errorSection.style.display = 'none';
-        
-        compressImage(file, 200).then(base64 => {
-            imageBase64Input.value = base64;
-        }).catch(err => {
-            console.error('Image compression failed:', err);
-        });
-    }
+                        let width = img.width;
+                        let height = img.height;
 
-    function compressImage(file, maxSizeKB) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function(event) {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = function() {
-                    let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d');
-                    
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    // Initial scale down if image is huge (e.g., > 1200px)
-                    const MAX_DIMENSION = 1200;
-                    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-                        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
-                        width *= ratio;
-                        height *= ratio;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    let quality = 0.9;
-                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    
-                    // Rough size estimation of base64: length * (3/4)
-                    let currentSize = Math.round((dataUrl.length * 3) / 4);
-
-                    function doCompress() {
-                        const maxSizeByte = maxSizeKB * 1024;
-                        if (currentSize <= maxSizeByte || quality <= 0.1) {
-                            resolve(dataUrl);
-                            return;
+                        // Initial scale down if image is huge (e.g., > 1200px)
+                        const MAX_DIMENSION = 1200;
+                        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                            const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+                            width *= ratio;
+                            height *= ratio;
                         }
-                        
-                        quality -= 0.1;
-                        dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        currentSize = Math.round((dataUrl.length * 3) / 4);
-                        
-                        // If still too big even at lowest quality, scale down resolution
-                        if (quality <= 0.1 && currentSize > maxSizeByte) {
-                            width *= 0.8;
-                            height *= 0.8;
-                            canvas.width = width;
-                            canvas.height = height;
-                            ctx.drawImage(img, 0, 0, width, height);
-                            quality = 0.5; // Reset quality for new resolution
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let quality = 0.9;
+                        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                        // Rough size estimation of base64: length * (3/4)
+                        let currentSize = Math.round((dataUrl.length * 3) / 4);
+
+                        function doCompress() {
+                            const maxSizeByte = maxSizeKB * 1024;
+                            if (currentSize <= maxSizeByte || quality <= 0.1) {
+                                resolve(dataUrl);
+                                return;
+                            }
+
+                            quality -= 0.1;
+                            dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            currentSize = Math.round((dataUrl.length * 3) / 4);
+
+                            // If still too big even at lowest quality, scale down resolution
+                            if (quality <= 0.1 && currentSize > maxSizeByte) {
+                                width *= 0.8;
+                                height *= 0.8;
+                                canvas.width = width;
+                                canvas.height = height;
+                                ctx.drawImage(img, 0, 0, width, height);
+                                quality = 0.5; // Reset quality for new resolution
+                            }
+
+                            doCompress();
                         }
-                        
+
                         doCompress();
-                    }
-                    
-                    doCompress();
+                    };
+                    img.onerror = reject;
                 };
-                img.onerror = reject;
-            };
-            reader.onerror = reject;
-        });
-    }
+                reader.onerror = reject;
+            });
+        }
 
-    btnAnalyze.addEventListener('click', async () => {
-        if (!selectedFile) return;
-        loading.style.display = 'flex';
-        resultSection.style.display = 'none';
-        errorSection.style.display = 'none';
+        btnAnalyze.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            loading.style.display = 'flex';
+            resultSection.style.display = 'none';
+            errorSection.style.display = 'none';
 
-        const formData = new FormData();
-        formData.append('image', selectedFile);
+            const formData = new FormData();
+            formData.append('image', selectedFile);
 
-        let res;
-        let rawText = '';
-        let success = false;
-        let attempts = 0;
-        const maxAttempts = 3;
+            let res;
+            let rawText = '';
+            let success = false;
+            let attempts = 0;
+            const maxAttempts = 3;
 
-        while (!success && attempts < maxAttempts) {
-            attempts++;
-            try {
-                res = await fetch('/api/diary/analyze', { method: 'POST', body: formData });
-                rawText = await res.text();
-                if (res.ok) {
-                    success = true;
-                } else if (attempts < maxAttempts) {
-                    console.log(`Attempt ${attempts} failed, retrying...`);
+            while (!success && attempts < maxAttempts) {
+                attempts++;
+                try {
+                    res = await fetch('/api/diary/analyze', { method: 'POST', body: formData });
+                    rawText = await res.text();
+                    if (res.ok) {
+                        success = true;
+                    } else if (attempts < maxAttempts) {
+                        console.log(`Attempt ${attempts} failed, retrying...`);
+                    }
+                } catch (err) {
+                    if (attempts >= maxAttempts) {
+                        errorMsg.textContent = err.message || '網路錯誤';
+                        errorSection.style.display = 'block';
+                        loading.style.display = 'none';
+                        return;
+                    }
+                    console.log(`Attempt ${attempts} network error, retrying...`);
                 }
-            } catch (err) {
-                if (attempts >= maxAttempts) {
-                    errorMsg.textContent = err.message || '網路錯誤';
+            }
+
+            try {
+                let data;
+                try {
+                    data = rawText ? JSON.parse(rawText) : {};
+                } catch (e) {
+                    errorMsg.textContent = '伺服器回傳非 JSON。' + (res && res.status !== 200 ? '狀態碼：' + res.status : '') + ' 請確認 Ollama 服務是否運行。';
                     errorSection.style.display = 'block';
                     loading.style.display = 'none';
                     return;
                 }
-                console.log(`Attempt ${attempts} network error, retrying...`);
-            }
-        }
-
-        try {
-            let data;
-            try {
-                data = rawText ? JSON.parse(rawText) : {};
-            } catch (e) {
-                errorMsg.textContent = '伺服器回傳非 JSON。' + (res && res.status !== 200 ? '狀態碼：' + res.status : '') + ' 請確認 Ollama 服務是否運行。';
+                if (!res || res.status !== 200 || data.error) {
+                    errorMsg.textContent = data.error || '分析失敗';
+                    errorSection.style.display = 'block';
+                } else {
+                    diaryTitle.value = data.title || '';
+                    describeText.value = data.describe || '';
+                    mainEmotion.value = data.main_emotion || '';
+                    diaryMemo.value = '';
+                    resultSection.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsg.textContent = err.message || '發生未知的錯誤';
                 errorSection.style.display = 'block';
-                loading.style.display = 'none';
-                return;
             }
-            if (!res || res.status !== 200 || data.error) {
-                errorMsg.textContent = data.error || '分析失敗';
-                errorSection.style.display = 'block';
-            } else {
-                diaryTitle.value = data.title || '';
-                describeText.value = data.describe || '';
-                mainEmotion.value = data.main_emotion || '';
-                diaryMemo.value = '';
-                resultSection.style.display = 'block';
-            }
-        } catch (err) {
-            errorMsg.textContent = err.message || '發生未知的錯誤';
-            errorSection.style.display = 'block';
-        }
-        loading.style.display = 'none';
-    });
-})();
+            loading.style.display = 'none';
+        });
+    })();
 </script>
 {% endblock %}
