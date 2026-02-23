@@ -188,4 +188,4 @@ def _get_watch_files():
 
 if __name__ == "__main__":
     extra_files = _get_watch_files()
-    app.run(debug=True, port=5001, extra_files=extra_files)
+    app.run(host="0.0.0.0", debug=True, port=5001, extra_files=extra_files)
