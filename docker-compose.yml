@@ -21,5 +21,22 @@ services:
       timeout: 5s
       retries: 5
 
+  web:
+    build: .
+    container_name: pet-adorable-life-web
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: pet_user
+      MYSQL_PASSWORD: pet_password
+      MYSQL_DATABASE: pet_adorable_life
+    volumes:
+      - .:/app
+    depends_on:
+      mysql:
+        condition: service_healthy
 volumes:
   mysql_data:
