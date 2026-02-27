@@ -10,9 +10,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 import pet_model_config
 
-# url = "http://127.0.0.1:11434/api/generate"
-url = "http://192.168.50.11:11434/api/generate"
-# http://192.168.50.11:11434
+url = os.getenv("OLLAMA_URL", "http://192.168.50.11:11434/api/generate")
 
 def _call_model_with_retry(data: Dict[str, Any], parse_response: bool = False) -> Optional[Dict[str, Any]]:
     """
