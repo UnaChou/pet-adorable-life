@@ -171,6 +171,68 @@ def diary_remove_batch():
     return redirect(url_for("diary"))
 
 
+# ========== Pets API ==========
+
+
+@app.route("/api/pets", methods=["GET"])
+def api_get_pets():
+    return jsonify({"pets": db.get_all_pets()})
+
+
+@app.route("/api/pets", methods=["POST"])
+def api_add_pet():
+    data = request.get_json() or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "名字不得為空"}), 400
+    pet_id = db.add_pet(
+        name=name,
+        breed=(data.get("breed") or "").strip(),
+        birthday=data.get("birthday") or None,
+        photo_base64=data.get("photo_base64") or "",
+    )
+    return jsonify(db.get_pet(pet_id)), 201
+
+
+@app.route("/api/pets/<int:pet_id>", methods=["GET"])
+def api_get_pet(pet_id):
+    pet = db.get_pet(pet_id)
+    if not pet:
+        return jsonify({"error": "找不到寵物"}), 404
+    return jsonify(pet)
+
+
+@app.route("/api/pets/<int:pet_id>", methods=["PUT"])
+def api_update_pet(pet_id):
+    if not db.get_pet(pet_id):
+        return jsonify({"error": "找不到寵物"}), 404
+    data = request.get_json() or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "名字不得為空"}), 400
+    db.update_pet(
+        pet_id=pet_id,
+        name=name,
+        breed=(data.get("breed") or "").strip(),
+        birthday=data.get("birthday") or None,
+        photo_base64=data.get("photo_base64"),
+    )
+    return jsonify(db.get_pet(pet_id))
+
+
+@app.route("/api/pets/<int:pet_id>", methods=["DELETE"])
+def api_delete_pet(pet_id):
+    if not db.get_pet(pet_id):
+        return jsonify({"error": "找不到寵物"}), 404
+    db.remove_pet(pet_id)
+    return "", 204
+
+
+@app.route("/pets")
+def pets_page():
+    return render_template("pets.html")
+
+
 def _get_watch_files():
     """收集需監聽的 .py 與 .html 檔案，變更時觸發重啟。"""
     root = os.path.dirname(os.path.abspath(__file__))
