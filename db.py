@@ -81,6 +81,33 @@ def init_db():
                 if e.args[0] != 1060:
                     raise
 
+            # pets 資料表
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS pets (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    breed VARCHAR(200),
+                    birthday DATE,
+                    photo_base64 LONGTEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            """)
+
+            # 為 products 加入 pet_id
+            try:
+                cur.execute("ALTER TABLE products ADD COLUMN pet_id INT AFTER summary")
+            except pymysql.err.OperationalError as e:
+                if e.args[0] != 1060:
+                    raise
+
+            # 為 pet_diaries 加入 pet_id
+            try:
+                cur.execute("ALTER TABLE pet_diaries ADD COLUMN pet_id INT AFTER main_emotion")
+            except pymysql.err.OperationalError as e:
+                if e.args[0] != 1060:
+                    raise
+
 
 def get_all_products():
     """取得所有商品，依建立日期新到舊排序，回傳完整資訊。"""
