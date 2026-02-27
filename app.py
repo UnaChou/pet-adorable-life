@@ -281,6 +281,44 @@ def api_delete_products():
     return "", 204
 
 
+# ========== Diaries API ==========
+
+
+@app.route("/api/diaries", methods=["GET"])
+def api_get_diaries():
+    pet_id = request.args.get("pet_id", type=int)
+    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id)})
+
+
+@app.route("/api/diaries", methods=["POST"])
+def api_add_diary():
+    data = request.get_json() or {}
+    diary_id = db.add_diary(
+        title=(data.get("title") or "").strip(),
+        describe_text=(data.get("describe_text") or "").strip(),
+        main_emotion=(data.get("main_emotion") or "").strip(),
+        memo=(data.get("memo") or "").strip(),
+        image_base64=(data.get("image_base64") or ""),
+        pet_id=data.get("pet_id") or None,
+    )
+    return jsonify({"id": diary_id}), 201
+
+
+@app.route("/api/diaries/<int:diary_id>", methods=["DELETE"])
+def api_delete_diary(diary_id):
+    db.remove_diaries([diary_id])
+    return "", 204
+
+
+@app.route("/api/diaries", methods=["DELETE"])
+def api_delete_diaries():
+    data = request.get_json() or {}
+    ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
+    if ids:
+        db.remove_diaries(ids)
+    return "", 204
+
+
 def _get_watch_files():
     """收集需監聽的 .py 與 .html 檔案，變更時觸發重啟。"""
     root = os.path.dirname(os.path.abspath(__file__))
