@@ -233,6 +233,54 @@ def pets_page():
     return render_template("pets.html")
 
 
+# ========== Products API ==========
+
+
+@app.route("/api/products", methods=["GET"])
+def api_get_products():
+    pet_id = request.args.get("pet_id", type=int)
+    return jsonify({"products": db.get_all_products(pet_id=pet_id)})
+
+
+@app.route("/api/products", methods=["POST"])
+def api_add_product():
+    data = request.get_json() or {}
+    title = (data.get("title") or "").strip() or "（未命名）"
+    summary = (data.get("summary") or "").strip()
+    pet_id = data.get("pet_id") or None
+    product_id = db.add_product(title, summary, pet_id=pet_id)
+    return jsonify(db.get_product(product_id)), 201
+
+
+@app.route("/api/products/<int:product_id>", methods=["PUT"])
+def api_update_product(product_id):
+    if not db.get_product(product_id):
+        return jsonify({"error": "找不到商品"}), 404
+    data = request.get_json() or {}
+    title = (data.get("title") or "").strip() or "（未命名）"
+    summary = (data.get("summary") or "").strip()
+    pet_id = data.get("pet_id") or None
+    db.update_product(product_id, title, summary, pet_id=pet_id)
+    return jsonify(db.get_product(product_id))
+
+
+@app.route("/api/products/<int:product_id>", methods=["DELETE"])
+def api_delete_product(product_id):
+    if not db.get_product(product_id):
+        return jsonify({"error": "找不到商品"}), 404
+    db.remove_product(product_id)
+    return "", 204
+
+
+@app.route("/api/products", methods=["DELETE"])
+def api_delete_products():
+    data = request.get_json() or {}
+    ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
+    if ids:
+        db.remove_products(ids)
+    return "", 204
+
+
 def _get_watch_files():
     """收集需監聽的 .py 與 .html 檔案，變更時觸發重啟。"""
     root = os.path.dirname(os.path.abspath(__file__))
