@@ -209,6 +209,18 @@ def remove_products(product_ids):
 # ========== Pets ==========
 
 
+def _format_pet(r):
+    return {
+        "id": r["id"],
+        "name": r["name"],
+        "breed": r.get("breed") or "",
+        "birthday": str(r["birthday"]) if r.get("birthday") else "",
+        "photo_base64": r.get("photo_base64") or "",
+        "created_at": r["created_at"],
+        "updated_at": r.get("updated_at"),
+    }
+
+
 def get_all_pets():
     """取得所有寵物，依建立時間升序。"""
     with get_connection() as conn:
@@ -267,18 +279,6 @@ def remove_pet(pet_id):
             cur.execute("UPDATE products SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
             cur.execute("UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
             cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
-
-
-def _format_pet(r):
-    return {
-        "id": r["id"],
-        "name": r["name"],
-        "breed": r.get("breed") or "",
-        "birthday": str(r["birthday"]) if r.get("birthday") else "",
-        "photo_base64": r.get("photo_base64") or "",
-        "created_at": r["created_at"],
-        "updated_at": r.get("updated_at"),
-    }
 
 
 # ========== Pet diary ==========
