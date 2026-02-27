@@ -35,7 +35,7 @@ def get_connection():
 
 
 def init_db():
-    """建立 products 資料表（若不存在），並確保有 updated_at 欄位。"""
+    """建立所有必要的資料表（products、pet_diaries、pets）並補齊缺漏欄位。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""

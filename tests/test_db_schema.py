@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 
 def test_init_db_creates_pets_table():
@@ -15,6 +15,16 @@ def test_init_db_creates_pets_table():
         import db
         db.init_db()
 
-    sql_calls = " ".join(str(c) for c in mock_cur.execute.call_args_list)
-    assert "pets" in sql_calls.lower()
-    assert "pet_id" in sql_calls.lower()
+    all_sql = [str(c.args[0]) if c.args else "" for c in mock_cur.execute.call_args_list]
+
+    # Verify CREATE TABLE IF NOT EXISTS pets was called
+    assert any("CREATE TABLE IF NOT EXISTS pets" in sql for sql in all_sql), \
+        "Expected CREATE TABLE IF NOT EXISTS pets in SQL calls"
+
+    # Verify ALTER TABLE products ADD COLUMN pet_id was called
+    assert any("ALTER TABLE products ADD COLUMN pet_id" in sql for sql in all_sql), \
+        "Expected ALTER TABLE products ADD COLUMN pet_id in SQL calls"
+
+    # Verify ALTER TABLE pet_diaries ADD COLUMN pet_id was called
+    assert any("ALTER TABLE pet_diaries ADD COLUMN pet_id" in sql for sql in all_sql), \
+        "Expected ALTER TABLE pet_diaries ADD COLUMN pet_id in SQL calls"
