@@ -109,21 +109,34 @@ def init_db():
                     raise
 
 
-def get_all_products():
-    """取得所有商品，依建立日期新到舊排序，回傳完整資訊。"""
+def get_all_products(pet_id=None):
+    """取得所有商品，依建立日期新到舊排序。pet_id 為 0 表示未指定寵物。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id, title, summary, created_at, updated_at
-                FROM products
-                ORDER BY created_at DESC, id DESC
-            """)
+            if pet_id == 0:
+                cur.execute("""
+                    SELECT id, title, summary, pet_id, created_at, updated_at
+                    FROM products WHERE pet_id IS NULL
+                    ORDER BY created_at DESC, id DESC
+                """)
+            elif pet_id:
+                cur.execute("""
+                    SELECT id, title, summary, pet_id, created_at, updated_at
+                    FROM products WHERE pet_id = %s
+                    ORDER BY created_at DESC, id DESC
+                """, (pet_id,))
+            else:
+                cur.execute("""
+                    SELECT id, title, summary, pet_id, created_at, updated_at
+                    FROM products ORDER BY created_at DESC, id DESC
+                """)
             rows = cur.fetchall()
     return [
         {
             "id": r["id"],
             "title": r["title"],
             "summary": r["summary"] or "",
+            "pet_id": r.get("pet_id"),
             "created_at": r["created_at"],
             "updated_at": r.get("updated_at"),
         }
@@ -131,13 +144,13 @@ def get_all_products():
     ]
 
 
-def add_product(title, summary):
+def add_product(title, summary, pet_id=None):
     """新增商品，回傳新商品的 id。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO products (title, summary) VALUES (%s, %s)",
-                (title, summary),
+                "INSERT INTO products (title, summary, pet_id) VALUES (%s, %s, %s)",
+                (title, summary, pet_id or None),
             )
             return cur.lastrowid
 
@@ -147,7 +160,7 @@ def get_product(product_id):
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, title, summary, created_at, updated_at FROM products WHERE id = %s",
+                "SELECT id, title, summary, pet_id, created_at, updated_at FROM products WHERE id = %s",
                 (product_id,),
             )
             row = cur.fetchone()
@@ -157,18 +170,19 @@ def get_product(product_id):
         "id": row["id"],
         "title": row["title"],
         "summary": row["summary"] or "",
+        "pet_id": row.get("pet_id"),
         "created_at": row["created_at"],
         "updated_at": row.get("updated_at"),
     }
 
 
-def update_product(product_id, title, summary):
+def update_product(product_id, title, summary, pet_id=None):
     """更新商品。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "UPDATE products SET title = %s, summary = %s WHERE id = %s",
-                (title, summary, product_id),
+                "UPDATE products SET title = %s, summary = %s, pet_id = %s WHERE id = %s",
+                (title, summary, pet_id or None, product_id),
             )
 
 
@@ -192,18 +206,105 @@ def remove_products(product_ids):
             )
 
 
-# ========== Pet diary ==========
+# ========== Pets ==========
 
 
-def get_all_diaries():
-    """取得所有日記，依建立日期新到舊。"""
+def get_all_pets():
+    """取得所有寵物，依建立時間升序。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, title, describe_text, main_emotion, memo, image_base64, created_at, updated_at
-                FROM pet_diaries
-                ORDER BY created_at DESC, id DESC
+                SELECT id, name, breed, birthday, photo_base64, created_at, updated_at
+                FROM pets ORDER BY created_at ASC
             """)
+            rows = cur.fetchall()
+    return [_format_pet(r) for r in rows]
+
+
+def add_pet(name, breed="", birthday=None, photo_base64=""):
+    """新增寵物，回傳 id。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO pets (name, breed, birthday, photo_base64) VALUES (%s, %s, %s, %s)",
+                (name, breed or None, birthday or None, photo_base64 or None),
+            )
+            return cur.lastrowid
+
+
+def get_pet(pet_id):
+    """依 id 取得單一寵物，不存在則回傳 None。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, name, breed, birthday, photo_base64, created_at, updated_at FROM pets WHERE id = %s",
+                (pet_id,),
+            )
+            row = cur.fetchone()
+    return _format_pet(row) if row else None
+
+
+def update_pet(pet_id, name, breed="", birthday=None, photo_base64=None):
+    """更新寵物。photo_base64=None 表示不更新照片。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if photo_base64 is not None:
+                cur.execute(
+                    "UPDATE pets SET name=%s, breed=%s, birthday=%s, photo_base64=%s WHERE id=%s",
+                    (name, breed or None, birthday or None, photo_base64 or None, pet_id),
+                )
+            else:
+                cur.execute(
+                    "UPDATE pets SET name=%s, breed=%s, birthday=%s WHERE id=%s",
+                    (name, breed or None, birthday or None, pet_id),
+                )
+
+
+def remove_pet(pet_id):
+    """刪除寵物，並將相關商品與日記的 pet_id 設為 NULL。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE products SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
+            cur.execute("UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
+            cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
+
+
+def _format_pet(r):
+    return {
+        "id": r["id"],
+        "name": r["name"],
+        "breed": r.get("breed") or "",
+        "birthday": str(r["birthday"]) if r.get("birthday") else "",
+        "photo_base64": r.get("photo_base64") or "",
+        "created_at": r["created_at"],
+        "updated_at": r.get("updated_at"),
+    }
+
+
+# ========== Pet diary ==========
+
+
+def get_all_diaries(pet_id=None):
+    """取得所有日記，依建立日期新到舊。pet_id 為 0 表示未指定寵物。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if pet_id == 0:
+                cur.execute("""
+                    SELECT id, title, describe_text, main_emotion, memo, image_base64, pet_id, created_at, updated_at
+                    FROM pet_diaries WHERE pet_id IS NULL
+                    ORDER BY created_at DESC, id DESC
+                """)
+            elif pet_id:
+                cur.execute("""
+                    SELECT id, title, describe_text, main_emotion, memo, image_base64, pet_id, created_at, updated_at
+                    FROM pet_diaries WHERE pet_id = %s
+                    ORDER BY created_at DESC, id DESC
+                """, (pet_id,))
+            else:
+                cur.execute("""
+                    SELECT id, title, describe_text, main_emotion, memo, image_base64, pet_id, created_at, updated_at
+                    FROM pet_diaries ORDER BY created_at DESC, id DESC
+                """)
             rows = cur.fetchall()
     return [
         {
@@ -213,6 +314,7 @@ def get_all_diaries():
             "main_emotion": r["main_emotion"] or "",
             "memo": r["memo"] or "",
             "image_base64": r.get("image_base64") or "",
+            "pet_id": r.get("pet_id"),
             "created_at": r["created_at"],
             "updated_at": r.get("updated_at"),
         }
@@ -220,13 +322,13 @@ def get_all_diaries():
     ]
 
 
-def add_diary(title, describe_text, main_emotion, memo, image_base64=""):
+def add_diary(title, describe_text, main_emotion, memo, image_base64="", pet_id=None):
     """新增日記，回傳 id。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO pet_diaries (title, describe_text, main_emotion, memo, image_base64) VALUES (%s, %s, %s, %s, %s)",
-                (title or "", describe_text or "", main_emotion or "", memo or "", image_base64 or ""),
+                "INSERT INTO pet_diaries (title, describe_text, main_emotion, memo, image_base64, pet_id) VALUES (%s, %s, %s, %s, %s, %s)",
+                (title or "", describe_text or "", main_emotion or "", memo or "", image_base64 or "", pet_id or None),
             )
             return cur.lastrowid
 
