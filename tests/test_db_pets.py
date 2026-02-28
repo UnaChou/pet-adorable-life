@@ -64,3 +64,45 @@ def test_add_product_accepts_pet_id():
         db.add_product("飼料", "描述", pet_id=1)
     call_args = mock_cur.execute.call_args[0]
     assert 1 in call_args[1]
+
+
+def test_get_all_pets_returns_empty_list():
+    mock_conn, mock_cur = _make_conn_mock(fetchall_val=[])
+    with patch("db.get_connection", return_value=mock_conn):
+        import db
+        result = db.get_all_pets()
+    assert result == []
+
+
+def test_get_all_pets_returns_formatted_list():
+    import datetime
+    row = {
+        "id": 1, "name": "小黑", "breed": "柴犬",
+        "birthday": datetime.date(2020, 1, 15),
+        "photo_base64": "abc", "created_at": datetime.datetime.now(), "updated_at": None,
+    }
+    mock_conn, mock_cur = _make_conn_mock(fetchall_val=[row])
+    with patch("db.get_connection", return_value=mock_conn):
+        import db
+        result = db.get_all_pets()
+    assert len(result) == 1
+    assert result[0]["name"] == "小黑"
+    assert result[0]["birthday"] == "2020-01-15"
+
+
+def test_update_pet_with_photo_updates_photo_field():
+    mock_conn, mock_cur = _make_conn_mock()
+    with patch("db.get_connection", return_value=mock_conn):
+        import db
+        db.update_pet(1, "小黑", "柴犬", "2020-01-01", photo_base64="base64data")
+    sql = mock_cur.execute.call_args[0][0]
+    assert "photo_base64" in sql
+
+
+def test_update_pet_without_photo_excludes_photo_field():
+    mock_conn, mock_cur = _make_conn_mock()
+    with patch("db.get_connection", return_value=mock_conn):
+        import db
+        db.update_pet(1, "小黑", "柴犬", "2020-01-01", photo_base64=None)
+    sql = mock_cur.execute.call_args[0][0]
+    assert "photo_base64" not in sql

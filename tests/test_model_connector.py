@@ -1,5 +1,7 @@
 """Tests for model_connector.py utility functions."""
 import base64
+import pytest
+import requests
 from unittest.mock import patch, MagicMock
 
 
@@ -102,3 +104,79 @@ def test_get_text_response_returns_string_on_success():
     with patch("model_connector._call_model_with_retry", return_value={"response": "hello"}):
         result = model_connector.get_model_response("model", "prompt")
     assert result == "hello"
+
+
+def test_encode_image_to_base64_file_not_found():
+    import model_connector
+    with pytest.raises(FileNotFoundError):
+        model_connector.encode_image_to_base64("/nonexistent/path/image.jpg")
+
+
+def test_encode_image_to_base64_existing_file(tmp_path):
+    import model_connector
+    f = tmp_path / "test.jpg"
+    f.write_bytes(b"imgdata")
+    result = model_connector.encode_image_to_base64(str(f))
+    assert result == base64.b64encode(b"imgdata").decode("utf-8")
+
+
+def test_extract_json_object_with_escape_sequence():
+    import model_connector
+    text = r'prefix {"key": "val\"ue"} suffix'
+    result = model_connector._extract_json_object(text)
+    assert '{"key"' in result
+
+
+def test_extract_json_object_unclosed_returns_from_start():
+    import model_connector
+    text = '{"key": "value"'
+    result = model_connector._extract_json_object(text)
+    assert result == text[text.find("{"):]
+
+
+def test_get_image_base64_from_string_path(tmp_path):
+    import model_connector
+    f = tmp_path / "img.jpg"
+    f.write_bytes(b"pixels")
+    result = model_connector._get_image_base64(str(f))
+    assert result == base64.b64encode(b"pixels").decode("utf-8")
+
+
+def test_get_model_response_calls_requests_post():
+    import model_connector
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"response": "hello world"}
+    with patch("requests.post", return_value=mock_resp):
+        result = model_connector.get_model_response("model", "prompt")
+    assert result == "hello world"
+
+
+def test_get_model_response_by_image_parses_json_response():
+    import model_connector
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"response": '{"title": "T", "summary": "S"}'}
+    with patch("requests.post", return_value=mock_resp):
+        result = model_connector.get_model_response_by_image("model", b"imgdata")
+    assert result is not None
+    assert result.get("title") == "T"
+
+
+def test_get_model_response_by_image_regex_fallback():
+    import model_connector
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"response": 'some text {"title": "T2", "summary": "S2"} end'}
+    with patch("requests.post", return_value=mock_resp):
+        result = model_connector.get_model_response_by_image("model", b"imgdata")
+    assert result is not None
+    assert result.get("title") == "T2"
+
+
+def test_get_model_response_by_image_non_dict_result():
+    import model_connector
+    with patch("model_connector._call_model_with_retry", return_value="not a dict"):
+        result = model_connector.get_model_response_by_image("model", b"img")
+    assert result is not None
+    assert result.get("title") == "解析失敗"

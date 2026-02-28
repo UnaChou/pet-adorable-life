@@ -36,3 +36,10 @@ def test_batch_delete_diaries_returns_204(client, mock_db):
     res = client.delete("/api/diaries", json={"ids": [1, 2]})
     assert res.status_code == 204
     mock_db.remove_diaries.assert_called_once_with([1, 2])
+
+
+def test_add_diary_db_failure_returns_500(client, mock_db):
+    mock_db.add_diary.return_value = 99
+    mock_db.get_diary.return_value = None  # simulate DB save failure
+    res = client.post("/api/diaries", json={"title": "T", "describe_text": "D", "main_emotion": "M", "memo": ""})
+    assert res.status_code == 500
