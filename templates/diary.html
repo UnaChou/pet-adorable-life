@@ -10,6 +10,7 @@
         <li><a href="/product/analyze">商品分析</a></li>
         <li><a href="/organize">Pet Life</a></li>
         <li><a href="/diary" class="active">寵物日記</a></li>
+        <li><a href="/pets">寵物</a></li>
     </ul>
 </nav>
 
@@ -51,29 +52,32 @@
 
         <section class="diary-result" id="resultSection" style="display: none;">
             <h3>分析結果 <span class="edit-hint">（可編修後儲存）</span></h3>
-            <form action="{{ url_for('diary_save') }}" method="post" class="diary-edit-form">
-                <input type="hidden" name="image_base64" id="imageBase64">
+            <div class="diary-edit-form">
+                <input type="hidden" id="imageBase64">
                 <div class="diary-form-card">
                     <div class="form-group">
                         <label for="diaryTitle">標題</label>
-                        <input type="text" id="diaryTitle" name="title" placeholder="日記標題">
+                        <input type="text" id="diaryTitle" placeholder="日記標題">
                     </div>
                     <div class="form-group">
                         <label for="describeText">心情描述</label>
-                        <textarea id="describeText" name="describe_text" rows="5"
-                            placeholder="AI 分析的心情與情緒描述..."></textarea>
+                        <textarea id="describeText" rows="5" placeholder="AI 分析的心情與情緒描述..."></textarea>
                     </div>
                     <div class="form-group">
                         <label for="mainEmotion">主要情緒</label>
-                        <input type="text" id="mainEmotion" name="main_emotion" placeholder="例如：開心、慵懶、好奇">
+                        <input type="text" id="mainEmotion" placeholder="例如：開心、慵懶、好奇">
                     </div>
                     <div class="form-group">
                         <label for="diaryMemo">備註（Memo）</label>
-                        <textarea id="diaryMemo" name="memo" rows="4" placeholder="寫下今日想記錄的點滴..."></textarea>
+                        <textarea id="diaryMemo" rows="4" placeholder="寫下今日想記錄的點滴..."></textarea>
                     </div>
-                    <button type="submit" class="btn-save">💾 儲存</button>
+                    <div class="form-group">
+                        <label for="diaryPetId">哪隻寵物</label>
+                        <select id="diaryPetId"><option value="">未指定</option></select>
+                    </div>
+                    <button type="button" class="btn-save" id="btnSaveDiary">💾 儲存</button>
                 </div>
-            </form>
+            </div>
         </section>
 
         <section class="diary-error" id="errorSection" style="display: none;">
@@ -355,6 +359,43 @@
                 errorSection.style.display = 'block';
             }
             loading.style.display = 'none';
+        });
+
+        // Load pets into selector
+        fetch('/api/pets').then(r => r.json()).then(data => {
+            const sel = document.getElementById('diaryPetId');
+            (data.pets || []).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+        });
+
+        // Save diary via fetch
+        document.getElementById('btnSaveDiary').addEventListener('click', async () => {
+            const body = {
+                title: document.getElementById('diaryTitle').value,
+                describe_text: document.getElementById('describeText').value,
+                main_emotion: document.getElementById('mainEmotion').value,
+                memo: document.getElementById('diaryMemo').value,
+                image_base64: document.getElementById('imageBase64').value,
+                pet_id: document.getElementById('diaryPetId').value ? parseInt(document.getElementById('diaryPetId').value) : null,
+            };
+            try {
+                const res = await fetch('/api/diaries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                if (res.ok) {
+                    window.location.href = '/organize?tab=diaries';
+                } else {
+                    alert('儲存失敗，請重試');
+                }
+            } catch (e) {
+                alert('操作失敗，請稍後再試');
+            }
         });
     })();
 </script>
