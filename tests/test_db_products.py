@@ -23,7 +23,9 @@ def test_get_all_products_no_filter():
         import db
         result = db.get_all_products()
     sql = cur.execute.call_args[0][0]
-    assert "pet_id" not in sql.lower() or "WHERE" not in sql
+    # no pet_id filter applied (pet_id may appear in the SELECT column list)
+    assert "pet_id is null" not in sql.lower()
+    assert "pet_id = " not in sql.lower()
 
 
 def test_get_all_products_pet_id_zero_uses_is_null():

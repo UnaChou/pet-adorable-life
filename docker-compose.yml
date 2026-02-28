@@ -34,6 +34,7 @@ services:
       MYSQL_PASSWORD: pet_password
       MYSQL_DATABASE: pet_adorable_life
       OLLAMA_URL: ${OLLAMA_URL:-http://192.168.50.11:11434/api/generate}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-key}
       FLASK_APP: app.py
       FLASK_DEBUG: "0"
     volumes:

@@ -11,7 +11,11 @@ import db
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
-app.secret_key = "pet-adorable-life-secret-key-change-in-production"
+_secret = os.getenv("SECRET_KEY", "dev-only-insecure-key")
+if _secret == "dev-only-insecure-key":
+    import warnings
+    warnings.warn("SECRET_KEY is not set — using insecure default. Set SECRET_KEY in production.", stacklevel=1)
+app.secret_key = _secret
 
 
 @app.before_request
