@@ -1,4 +1,3 @@
-import json
 import pytest
 
 
@@ -40,3 +39,9 @@ def test_delete_pet_returns_204(client, mock_db):
     res = client.delete("/api/pets/1")
     assert res.status_code == 204
     mock_db.remove_pet.assert_called_once_with(1)
+
+
+def test_update_pet_missing_name_returns_400(client, mock_db):
+    mock_db.get_pet.return_value = {"id": 1, "name": "小黑"}
+    res = client.put("/api/pets/1", json={"name": ""})
+    assert res.status_code == 400

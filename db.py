@@ -333,6 +333,30 @@ def add_diary(title, describe_text, main_emotion, memo, image_base64="", pet_id=
             return cur.lastrowid
 
 
+def get_diary(diary_id):
+    """依 id 取得單一日記，不存在則回傳 None。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, title, describe_text, main_emotion, memo, image_base64, pet_id, created_at, updated_at FROM pet_diaries WHERE id = %s",
+                (diary_id,),
+            )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "title": row.get("title") or "",
+        "describe_text": row["describe_text"] or "",
+        "main_emotion": row["main_emotion"] or "",
+        "memo": row["memo"] or "",
+        "image_base64": row.get("image_base64") or "",
+        "pet_id": row.get("pet_id"),
+        "created_at": row["created_at"],
+        "updated_at": row.get("updated_at"),
+    }
+
+
 def remove_diaries(diary_ids):
     """批次刪除日記。"""
     if not diary_ids:

@@ -176,6 +176,7 @@ def diary_remove_batch():
 
 @app.route("/api/pets", methods=["GET"])
 def api_get_pets():
+    """取得所有寵物"""
     return jsonify({"pets": db.get_all_pets()})
 
 
@@ -191,11 +192,15 @@ def api_add_pet():
         birthday=data.get("birthday") or None,
         photo_base64=data.get("photo_base64") or "",
     )
-    return jsonify(db.get_pet(pet_id)), 201
+    pet = db.get_pet(pet_id)
+    if not pet:
+        return jsonify({"error": "寵物建立失敗"}), 500
+    return jsonify(pet), 201
 
 
 @app.route("/api/pets/<int:pet_id>", methods=["GET"])
 def api_get_pet(pet_id):
+    """取得單一寵物"""
     pet = db.get_pet(pet_id)
     if not pet:
         return jsonify({"error": "找不到寵物"}), 404
@@ -204,6 +209,7 @@ def api_get_pet(pet_id):
 
 @app.route("/api/pets/<int:pet_id>", methods=["PUT"])
 def api_update_pet(pet_id):
+    """更新寵物資料"""
     if not db.get_pet(pet_id):
         return jsonify({"error": "找不到寵物"}), 404
     data = request.get_json() or {}
@@ -222,6 +228,7 @@ def api_update_pet(pet_id):
 
 @app.route("/api/pets/<int:pet_id>", methods=["DELETE"])
 def api_delete_pet(pet_id):
+    """刪除寵物"""
     if not db.get_pet(pet_id):
         return jsonify({"error": "找不到寵物"}), 404
     db.remove_pet(pet_id)
@@ -230,6 +237,7 @@ def api_delete_pet(pet_id):
 
 @app.route("/pets")
 def pets_page():
+    """寵物管理頁面"""
     return render_template("pets.html")
 
 
@@ -238,22 +246,28 @@ def pets_page():
 
 @app.route("/api/products", methods=["GET"])
 def api_get_products():
+    """取得所有商品"""
     pet_id = request.args.get("pet_id", type=int)
     return jsonify({"products": db.get_all_products(pet_id=pet_id)})
 
 
 @app.route("/api/products", methods=["POST"])
 def api_add_product():
+    """新增商品"""
     data = request.get_json() or {}
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
     product_id = db.add_product(title, summary, pet_id=pet_id)
-    return jsonify(db.get_product(product_id)), 201
+    product = db.get_product(product_id)
+    if not product:
+        return jsonify({"error": "商品建立失敗"}), 500
+    return jsonify(product), 201
 
 
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 def api_update_product(product_id):
+    """更新商品"""
     if not db.get_product(product_id):
         return jsonify({"error": "找不到商品"}), 404
     data = request.get_json() or {}
@@ -266,6 +280,7 @@ def api_update_product(product_id):
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
 def api_delete_product(product_id):
+    """刪除商品"""
     if not db.get_product(product_id):
         return jsonify({"error": "找不到商品"}), 404
     db.remove_product(product_id)
@@ -274,6 +289,7 @@ def api_delete_product(product_id):
 
 @app.route("/api/products", methods=["DELETE"])
 def api_delete_products():
+    """批次刪除商品"""
     data = request.get_json() or {}
     ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
     if ids:
@@ -286,12 +302,14 @@ def api_delete_products():
 
 @app.route("/api/diaries", methods=["GET"])
 def api_get_diaries():
+    """取得所有日記"""
     pet_id = request.args.get("pet_id", type=int)
     return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id)})
 
 
 @app.route("/api/diaries", methods=["POST"])
 def api_add_diary():
+    """新增日記"""
     data = request.get_json() or {}
     diary_id = db.add_diary(
         title=(data.get("title") or "").strip(),
@@ -301,17 +319,24 @@ def api_add_diary():
         image_base64=(data.get("image_base64") or ""),
         pet_id=data.get("pet_id") or None,
     )
-    return jsonify({"id": diary_id}), 201
+    diary = db.get_diary(diary_id)
+    if not diary:
+        return jsonify({"error": "日記儲存失敗"}), 500
+    return jsonify(diary), 201
 
 
 @app.route("/api/diaries/<int:diary_id>", methods=["DELETE"])
 def api_delete_diary(diary_id):
+    """刪除單筆日記"""
+    if not db.get_diary(diary_id):
+        return jsonify({"error": "找不到日記"}), 404
     db.remove_diaries([diary_id])
     return "", 204
 
 
 @app.route("/api/diaries", methods=["DELETE"])
 def api_delete_diaries():
+    """批次刪除日記"""
     data = request.get_json() or {}
     ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
     if ids:
