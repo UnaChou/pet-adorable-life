@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}註冊 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <div class="auth-card">
+        <h1 class="auth-title">Pet Adorable Life</h1>
+        <h2 class="auth-subtitle">建立帳號</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul class="auth-errors">
+            {% for msg in messages %}<li>{{ msg }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+        <form method="post" action="/register" class="auth-form">
+            <label for="username">帳號（英文字母、數字、底線）</label>
+            <input id="username" name="username" type="text" autocomplete="username" required maxlength="100">
+
+            <label for="password">密碼（至少 8 個字元）</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" required>
+
+            <label for="confirm_password">確認密碼</label>
+            <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required>
+
+            <button type="submit" class="btn-primary">註冊</button>
+        </form>
+
+        <p class="auth-link">已有帳號？<a href="/login">前往登入</a></p>
+    </div>
+</main>
+{% endblock %}
