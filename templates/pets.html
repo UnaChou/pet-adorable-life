@@ -26,19 +26,19 @@
             <h2>新增寵物</h2>
             <form id="addPetForm" class="add-form">
                 <div class="form-group">
-                    <label>名字 *</label>
+                    <label for="addName">名字 *</label>
                     <input type="text" id="addName" placeholder="例如：小黑" maxlength="200" required>
                 </div>
                 <div class="form-group">
-                    <label>品種 / 種類</label>
+                    <label for="addBreed">品種 / 種類</label>
                     <input type="text" id="addBreed" placeholder="例如：柴犬" maxlength="200">
                 </div>
                 <div class="form-group">
-                    <label>生日</label>
+                    <label for="addBirthday">生日</label>
                     <input type="date" id="addBirthday">
                 </div>
                 <div class="form-group">
-                    <label>照片</label>
+                    <label for="addPhoto">照片</label>
                     <input type="file" id="addPhoto" accept="image/*">
                 </div>
                 <button type="submit" class="btn-add">新增</button>
@@ -58,19 +58,19 @@
         <form id="editPetForm" class="add-form">
             <input type="hidden" id="editId">
             <div class="form-group">
-                <label>名字 *</label>
+                <label for="editName">名字 *</label>
                 <input type="text" id="editName" maxlength="200" required>
             </div>
             <div class="form-group">
-                <label>品種 / 種類</label>
+                <label for="editBreed">品種 / 種類</label>
                 <input type="text" id="editBreed" maxlength="200">
             </div>
             <div class="form-group">
-                <label>生日</label>
+                <label for="editBirthday">生日</label>
                 <input type="date" id="editBirthday">
             </div>
             <div class="form-group">
-                <label>更換照片（留空則保留現有）</label>
+                <label for="editPhoto">更換照片（留空則保留現有）</label>
                 <input type="file" id="editPhoto" accept="image/*">
             </div>
             <div class="form-actions">
@@ -98,6 +98,16 @@
         btnToggleAdd.textContent = open ? '➕ 新增寵物' : '➖ 隱藏';
     });
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function calcAge(birthday) {
         if (!birthday) return '';
         const diff = Date.now() - new Date(birthday).getTime();
@@ -118,6 +128,7 @@
         petsLoading.style.display = 'flex';
         try {
             const res = await fetch('/api/pets');
+            if (!res.ok) throw new Error('載入失敗');
             const data = await res.json();
             renderPets(data.pets || []);
         } catch (e) {
@@ -134,21 +145,21 @@
         }
         petsList.innerHTML = '<div class="product-cards timeline-list">' +
             pets.map(p => `
-            <article class="product-card timeline-item" data-id="${p.id}">
+            <article class="product-card timeline-item" data-id="${escapeHtml(p.id)}">
                 <div class="timeline-dot"></div>
                 <div class="product-card-body" style="display:flex;align-items:flex-start;gap:1rem;">
                     ${p.photo_base64
-                        ? `<img src="${p.photo_base64}" alt="${p.name}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;flex-shrink:0;">`
+                        ? `<img src="${escapeHtml(p.photo_base64)}" alt="${escapeHtml(p.name)}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;flex-shrink:0;">`
                         : '<div style="width:72px;height:72px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;">🐾</div>'}
                     <div>
-                        <h3 class="product-title">${p.name}</h3>
-                        ${p.breed ? `<div class="product-summary">${p.breed}</div>` : ''}
-                        ${p.birthday ? `<div class="product-summary">${p.birthday}　${calcAge(p.birthday)}</div>` : ''}
+                        <h3 class="product-title">${escapeHtml(p.name)}</h3>
+                        ${p.breed ? `<div class="product-summary">${escapeHtml(p.breed)}</div>` : ''}
+                        ${p.birthday ? `<div class="product-summary">${escapeHtml(p.birthday)}　${calcAge(p.birthday)}</div>` : ''}
                     </div>
                 </div>
                 <div class="product-card-actions">
-                    <button class="btn-edit btn-edit-pet" data-id="${p.id}" title="編輯">✎</button>
-                    <button class="btn-remove btn-remove-pet" data-id="${p.id}" title="刪除">✕</button>
+                    <button class="btn-edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
+                    <button class="btn-remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>
                 </div>
             </article>`).join('') +
         '</div>';
@@ -163,26 +174,30 @@
 
     addPetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const photoFile = document.getElementById('addPhoto').files[0];
-        const body = {
-            name: document.getElementById('addName').value.trim(),
-            breed: document.getElementById('addBreed').value.trim(),
-            birthday: document.getElementById('addBirthday').value || null,
-            photo_base64: photoFile ? await fileToBase64(photoFile) : '',
-        };
-        const res = await fetch('/api/pets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-        if (res.ok) {
-            addPetForm.reset();
-            addFormWrap.style.display = 'none';
-            btnToggleAdd.textContent = '➕ 新增寵物';
-            loadPets();
-        } else {
-            const err = await res.json();
-            alert(err.error || '新增失敗');
+        try {
+            const photoFile = document.getElementById('addPhoto').files[0];
+            const body = {
+                name: document.getElementById('addName').value.trim(),
+                breed: document.getElementById('addBreed').value.trim(),
+                birthday: document.getElementById('addBirthday').value || null,
+                photo_base64: photoFile ? await fileToBase64(photoFile) : '',
+            };
+            const res = await fetch('/api/pets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (res.ok) {
+                addPetForm.reset();
+                addFormWrap.style.display = 'none';
+                btnToggleAdd.textContent = '➕ 新增寵物';
+                loadPets();
+            } else {
+                const err = await res.json();
+                alert(err.error || '新增失敗');
+            }
+        } catch (e) {
+            alert('操作失敗，請稍後再試');
         }
     });
 
@@ -203,35 +218,43 @@
 
     editPetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = document.getElementById('editId').value;
-        const photoFile = document.getElementById('editPhoto').files[0];
-        const body = {
-            name: document.getElementById('editName').value.trim(),
-            breed: document.getElementById('editBreed').value.trim(),
-            birthday: document.getElementById('editBirthday').value || null,
-        };
-        if (photoFile) body.photo_base64 = await fileToBase64(photoFile);
-        const res = await fetch(`/api/pets/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-        if (res.ok) {
-            editDialog.style.display = 'none';
-            loadPets();
-        } else {
-            const err = await res.json();
-            alert(err.error || '更新失敗');
+        try {
+            const id = document.getElementById('editId').value;
+            const photoFile = document.getElementById('editPhoto').files[0];
+            const body = {
+                name: document.getElementById('editName').value.trim(),
+                breed: document.getElementById('editBreed').value.trim(),
+                birthday: document.getElementById('editBirthday').value || null,
+            };
+            if (photoFile) body.photo_base64 = await fileToBase64(photoFile);
+            const res = await fetch(`/api/pets/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (res.ok) {
+                editDialog.style.display = 'none';
+                loadPets();
+            } else {
+                const err = await res.json();
+                alert(err.error || '更新失敗');
+            }
+        } catch (e) {
+            alert('操作失敗，請稍後再試');
         }
     });
 
     async function deletePet(id) {
         if (!confirm('確定要刪除此寵物嗎？相關日記和商品的寵物歸屬將被清除。')) return;
-        const res = await fetch(`/api/pets/${id}`, { method: 'DELETE' });
-        if (res.ok || res.status === 204) {
-            loadPets();
-        } else {
-            alert('刪除失敗');
+        try {
+            const res = await fetch(`/api/pets/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                loadPets();
+            } else {
+                alert('刪除失敗');
+            }
+        } catch (e) {
+            alert('刪除失敗，請稍後再試');
         }
     }
 
