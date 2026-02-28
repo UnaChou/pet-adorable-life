@@ -3,7 +3,7 @@ Pet Adorable Life - 網站主程式
 """
 import os
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 
 import model_connector
 import pet_model_config
@@ -59,56 +59,13 @@ def api_product_analyze():
 @app.route("/organize")
 def organize():
     """資訊整理頁面"""
-    products = db.get_all_products()
-    diaries = db.get_all_diaries()
-    return render_template("organize.html", products=products, diaries=diaries)
-
-
-@app.route("/organize/add", methods=["POST"])
-def organize_add():
-    """新增商品到資訊整理"""
-    title = (request.form.get("title") or "").strip()
-    summary = (request.form.get("summary") or "").strip()
-    if title or summary:
-        db.add_product(title or "（未命名）", summary)
-    return redirect(url_for("organize"))
+    return render_template("organize.html")
 
 
 @app.route("/organize/edit/<int:product_id>")
 def organize_edit(product_id):
     """編輯商品頁面"""
-    product = db.get_product(product_id)
-    if not product:
-        return redirect(url_for("organize"))
-    return render_template("organize_edit.html", product=product)
-
-
-@app.route("/organize/update/<int:product_id>", methods=["POST"])
-def organize_update(product_id):
-    """更新商品並寫入 MySQL"""
-    product = db.get_product(product_id)
-    if not product:
-        return redirect(url_for("organize"))
-    title = (request.form.get("title") or "").strip()
-    summary = (request.form.get("summary") or "").strip()
-    db.update_product(product_id, title or "（未命名）", summary)
-    return redirect(url_for("organize"))
-
-
-@app.route("/organize/remove/<int:product_id>", methods=["POST"])
-def organize_remove(product_id):
-    """從資訊整理移除單一商品"""
-    db.remove_product(product_id)
-    return redirect(url_for("organize"))
-
-
-@app.route("/organize/remove/batch", methods=["POST"])
-def organize_remove_batch():
-    """批次刪除勾選的商品"""
-    ids = request.form.getlist("product_ids", type=int)
-    if ids:
-        db.remove_products(ids)
-    return redirect(url_for("organize"))
+    return render_template("organize_edit.html", product_id=product_id)
 
 
 # ========== Pet diary ==========
@@ -117,8 +74,7 @@ def organize_remove_batch():
 @app.route("/diary")
 def diary():
     """寵物日記頁面"""
-    diaries = db.get_all_diaries()
-    return render_template("diary.html", diaries=diaries)
+    return render_template("diary.html")
 
 
 @app.route("/api/diary/analyze", methods=["POST"])
@@ -148,27 +104,6 @@ def api_diary_analyze():
         })
     except Exception as e:
         return jsonify({"error": f"伺服器錯誤：{str(e)}"}), 500
-
-
-@app.route("/diary/save", methods=["POST"])
-def diary_save():
-    """儲存日記到 MySQL"""
-    title = (request.form.get("title") or "").strip()
-    describe_text = (request.form.get("describe_text") or "").strip()
-    main_emotion = (request.form.get("main_emotion") or "").strip()
-    memo = (request.form.get("memo") or "").strip()
-    image_base64 = (request.form.get("image_base64") or "").strip()
-    db.add_diary(title, describe_text, main_emotion, memo, image_base64)
-    return redirect(url_for("organize", tab="diaries"))
-
-
-@app.route("/diary/remove/batch", methods=["POST"])
-def diary_remove_batch():
-    """批次刪除勾選的日記"""
-    ids = request.form.getlist("diary_ids", type=int)
-    if ids:
-        db.remove_diaries(ids)
-    return redirect(url_for("diary"))
 
 
 # ========== Pets API ==========
