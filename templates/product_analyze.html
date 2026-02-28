@@ -10,6 +10,7 @@
         <li><a href="/product/analyze">商品分析</a></li>
         <li><a href="/organize">Pet Life</a></li>
         <li><a href="/diary">寵物日記</a></li>
+        <li><a href="/pets">寵物</a></li>
     </ul>
 </nav>
 
@@ -48,21 +49,23 @@
 
     <section class="analyze-result" id="resultSection" style="display: none;">
         <h2>分析結果 <span class="edit-hint">（可編修後儲存）</span></h2>
-        <form action="/organize/add" method="post" class="result-edit-form add-form" id="resultForm">
+        <div class="result-edit-form add-form" id="resultForm">
             <div class="result-card">
                 <div class="form-group">
                     <label for="resultTitle">商品名稱</label>
-                    <input type="text" id="resultTitle" name="title" class="result-title-input" placeholder="商品標題"
-                        maxlength="500">
+                    <input type="text" id="resultTitle" class="result-title-input" placeholder="商品標題" maxlength="500">
                 </div>
                 <div class="form-group">
                     <label for="resultSummary">商品摘要</label>
-                    <textarea id="resultSummary" name="summary" class="result-summary-input" rows="6"
-                        placeholder="商品描述、特色要點..."></textarea>
+                    <textarea id="resultSummary" class="result-summary-input" rows="6" placeholder="商品描述、特色要點..."></textarea>
                 </div>
-                <button type="submit" class="btn-add-to-organize">💾 儲存並加入Pet Life</button>
+                <div class="form-group">
+                    <label for="resultPetId">適用寵物</label>
+                    <select id="resultPetId"><option value="">未指定</option></select>
+                </div>
+                <button type="button" class="btn-add-to-organize" id="btnSaveProduct">💾 儲存並加入Pet Life</button>
             </div>
-        </form>
+        </div>
     </section>
 
     <section class="analyze-error" id="errorSection" style="display: none;">
@@ -267,6 +270,37 @@
                 resultSection.style.display = 'block';
             }
             loading.style.display = 'none';
+        });
+
+        // Load pets
+        fetch('/api/pets').then(r => r.json()).then(data => {
+            const sel = document.getElementById('resultPetId');
+            (data.pets || []).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            });
+        });
+
+        document.getElementById('btnSaveProduct').addEventListener('click', async () => {
+            const title = document.getElementById('resultTitle').value.trim();
+            const summary = document.getElementById('resultSummary').value.trim();
+            const pet_id = document.getElementById('resultPetId').value;
+            try {
+                const res = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, summary, pet_id: pet_id ? parseInt(pet_id) : null }),
+                });
+                if (res.ok) {
+                    window.location.href = '/organize';
+                } else {
+                    alert('儲存失敗，請重試');
+                }
+            } catch (e) {
+                alert('操作失敗，請稍後再試');
+            }
         });
     })();
 </script>
