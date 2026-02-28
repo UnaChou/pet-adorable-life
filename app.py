@@ -200,6 +200,15 @@ def api_add_product():
     return jsonify(product), 201
 
 
+@app.route("/api/products/<int:product_id>", methods=["GET"])
+def api_get_product(product_id):
+    """取得單一商品"""
+    product = db.get_product(product_id)
+    if not product:
+        return jsonify({"error": "找不到商品"}), 404
+    return jsonify(product)
+
+
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 def api_update_product(product_id):
     """更新商品"""

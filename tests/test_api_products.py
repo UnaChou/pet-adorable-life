@@ -37,3 +37,16 @@ def test_batch_delete_products_returns_204(client, mock_db):
     res = client.delete("/api/products", json={"ids": [1, 2, 3]})
     assert res.status_code == 204
     mock_db.remove_products.assert_called_once_with([1, 2, 3])
+
+
+def test_get_product_returns_200(client, mock_db):
+    mock_db.get_product.return_value = {"id": 1, "title": "T", "summary": "S", "pet_id": None, "created_at": None, "updated_at": None}
+    res = client.get("/api/products/1")
+    assert res.status_code == 200
+    assert res.get_json()["id"] == 1
+
+
+def test_get_product_not_found_returns_404(client, mock_db):
+    mock_db.get_product.return_value = None
+    res = client.get("/api/products/999")
+    assert res.status_code == 404

@@ -10,6 +10,7 @@
         <li><a href="/product/analyze">商品分析</a></li>
         <li><a href="/organize" class="active">Pet Life</a></li>
         <li><a href="/diary">寵物日記</a></li>
+        <li><a href="/pets">寵物</a></li>
     </ul>
 </nav>
 
@@ -18,6 +19,9 @@
         <h1>📋 Pet Life</h1>
         <p>結構化整理商品資訊與寵物日記，一目了然</p>
     </section>
+
+    <!-- Pet filter tabs -->
+    <div class="pet-filter-bar" id="petFilterBar" style="margin-bottom:12px;"></div>
 
     <div class="tabs-container">
         <div class="tabs-header">
@@ -29,228 +33,256 @@
             <div class="tab-actions">
                 <button type="button" class="btn-toggle-add" id="btnToggleAddProduct">➕ 新增商品</button>
             </div>
-
-            <section class="organize-add" id="addProductSection" style="display: none;">
+            <section class="organize-add" id="addProductSection" style="display:none;">
                 <h2>新增商品</h2>
-                <form action="{{ url_for('organize_add') }}" method="post" class="add-form">
+                <div class="add-form">
                     <div class="form-group">
-                        <label for="title">商品名稱</label>
-                        <input type="text" id="title" name="title" placeholder="例如：歐奇斯無穀成犬飼料" maxlength="200">
+                        <label for="addTitle">商品名稱</label>
+                        <input type="text" id="addTitle" placeholder="例如：歐奇斯無穀成犬飼料" maxlength="200">
                     </div>
                     <div class="form-group">
-                        <label for="summary">商品摘要</label>
-                        <textarea id="summary" name="summary" rows="5" placeholder="輸入商品描述、特色要點等..."></textarea>
+                        <label for="addSummary">商品摘要</label>
+                        <textarea id="addSummary" rows="5" placeholder="輸入商品描述、特色要點等..."></textarea>
                     </div>
-                    <button type="submit" class="btn-add">加入列表</button>
-                </form>
+                    <div class="form-group">
+                        <label for="addPetId">適用寵物</label>
+                        <select id="addPetId"><option value="">未指定</option></select>
+                    </div>
+                    <button type="button" class="btn-add" id="btnAddProduct">加入列表</button>
+                </div>
             </section>
-
-            <section class="organize-list">
-                <div class="list-header">
-                    <h2>商品列表 <span class="count">共 {{ products|length }} 項</span></h2>
-                </div>
-
-                {% if products %}
-                <form action="{{ url_for('organize_remove_batch') }}" method="post" id="batch-form"
-                    onsubmit="return confirmBatchDelete(this);">
-                    <div class="product-cards timeline-list">
-                        {% for product in products %}
-                        <article class="product-card timeline-item">
-                            <div class="timeline-dot"></div>
-                            <label class="product-checkbox">
-                                <input type="checkbox" name="product_ids" value="{{ product.id }}"
-                                    class="product-id-checkbox">
-                            </label>
-                            <div class="product-card-body">
-                                <div class="product-meta">
-                                    <span class="product-id">#{{ product.id }}</span>
-                                    <span class="product-dates">
-                                        建立：{{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else
-                                        '-' }}
-                                        {% if product.updated_at %}
-                                        · 編輯：{{ product.updated_at.strftime('%Y-%m-%d %H:%M') }}
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <h3 class="product-title">{{ product.title }}</h3>
-                                <div class="product-summary">{{ product.summary|replace('\n', '<br>')|safe }}</div>
-                            </div>
-                            <div class="product-card-actions">
-                                <a href="{{ url_for('organize_edit', product_id=product.id) }}" class="btn-edit"
-                                    title="編輯">✎</a>
-                                <button type="submit" form="single-del-{{ product.id }}" class="btn-remove"
-                                    title="移除此項">✕</button>
-                            </div>
-                        </article>
-                        {% endfor %}
-                    </div>
-                    <div class="batch-submit-row">
-                        <button type="submit" class="btn-batch-remove" title="刪除所選項目">刪除所選</button>
-                    </div>
-                </form>
-                {% for product in products %}
-                <form id="single-del-{{ product.id }}" action="{{ url_for('organize_remove', product_id=product.id) }}"
-                    method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此商品嗎？');">
-                </form>
-                {% endfor %}
-                {% else %}
-                <div class="empty-state">
-                    <span class="empty-icon">📦</span>
-                    <p>尚無商品，點擊「➕ 新增商品」或從 <a href="/product/analyze">商品分析</a> 加入</p>
-                </div>
-                {% endif %}
+            <section class="organize-list" id="productList">
+                <div class="loading" id="productsLoading"><div class="spinner"></div><p>載入中...</p></div>
             </section>
         </div>
 
         <div class="tab-content" id="diaries-tab">
-            <section class="diary-list">
-                {% if diaries %}
-                <form action="{{ url_for('diary_remove_batch') }}" method="post" id="diary-batch-form"
-                    onsubmit="return confirmDiaryBatchDelete(this);">
-                    <div class="list-header">
-                        <h2>日記列表 <span class="count">共 {{ diaries|length }} 則</span></h2>
-                    </div>
-                    <div class="diary-cards timeline-list">
-                        {% for d in diaries %}
-                        <article class="diary-card timeline-item">
-                            <div class="timeline-dot"></div>
-                            <label class="diary-checkbox">
-                                <input type="checkbox" name="diary_ids" value="{{ d.id }}" class="diary-id-checkbox">
-                            </label>
-                            <div class="diary-card-body">
-                                {% if d.image_base64 %}
-                                <div class="diary-image-wrapper">
-                                    <img src="{{ d.image_base64 }}" alt="Diary Image" class="diary-thumbnail">
-                                </div>
-                                {% endif %}
-                                <div class="diary-meta">
-                                    <span class="diary-id">#{{ d.id }}</span>
-                                    <span class="diary-dates">
-                                        {{ d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else '-' }}
-                                    </span>
-                                </div>
-                                {% if d.title %}
-                                <h4 class="diary-title">{{ d.title }}</h4>
-                                {% endif %}
-                                <div class="diary-emotion">{{ d.main_emotion }}</div>
-                                <div class="diary-describe">{{ d.describe_text|replace('\n', '<br>')|safe }}</div>
-                                {% if d.memo %}
-                                <div class="diary-memo">
-                                    <strong>備註：</strong>{{ d.memo|replace('\n', '<br>')|safe }}
-                                </div>
-                                {% endif %}
-                            </div>
-                            <div class="diary-card-actions">
-                                <button type="submit" form="organize-diary-single-del-{{ d.id }}" class="btn-remove"
-                                    title="移除此項">✕</button>
-                            </div>
-                        </article>
-                        {% endfor %}
-                    </div>
-                    <div class="batch-submit-row">
-                        <button type="submit" class="btn-batch-remove" title="刪除所選日記">刪除所選</button>
-                    </div>
-                </form>
-                {% for d in diaries %}
-                <form id="organize-diary-single-del-{{ d.id }}" action="{{ url_for('diary_remove_batch') }}"
-                    method="post" class="hidden-form" onsubmit="return confirm('確定要刪除此日記嗎？');">
-                    <input type="hidden" name="diary_ids" value="{{ d.id }}">
-                </form>
-                {% endfor %}
-                {% else %}
-                <div class="list-header">
-                    <h2>日記列表 <span class="count">共 0 則</span></h2>
-                </div>
-                <div class="empty-state">
-                    <span class="empty-icon">📔</span>
-                    <p>尚無日記，請前往 <a href="/diary">寵物日記</a> 新增</p>
-                </div>
-                {% endif %}
+            <section class="diary-list" id="diaryList">
+                <div class="loading" id="diariesLoading"><div class="spinner"></div><p>載入中...</p></div>
             </section>
         </div>
     </div>
 </main>
+
 <script>
-    (function () {
-        // Tabs functionality
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
+(function () {
+    let allPets = [];
+    let currentPetFilter = null; // null = 全部
 
-        function switchTab(tabId) {
-            // Remove active class from all
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
+    // Tab switching
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    function switchTab(tabId) {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (btn) { btn.classList.add('active'); document.getElementById(tabId).classList.add('active'); }
+    }
+    tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab'))));
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab')) switchTab(urlParams.get('tab') + '-tab');
 
-            // Add active class to matched tab and corresponding content
-            const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-            if (targetBtn) {
-                targetBtn.classList.add('active');
-                document.getElementById(tabId).classList.add('active');
-            }
+    // Toggle add form
+    const btnToggle = document.getElementById('btnToggleAddProduct');
+    const addSection = document.getElementById('addProductSection');
+    btnToggle.addEventListener('click', () => {
+        const open = addSection.style.display !== 'none';
+        addSection.style.display = open ? 'none' : 'block';
+        btnToggle.textContent = open ? '➕ 新增商品' : '➖ 隱藏新增商品';
+    });
+
+    // Load pets → render filter bar + populate selects
+    async function loadPets() {
+        try {
+            const res = await fetch('/api/pets');
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            allPets = data.pets || [];
+        } catch (e) {
+            allPets = [];
         }
+        renderPetFilter();
+        populatePetSelects();
+    }
 
-        tabBtns.forEach(btn => {
+    function renderPetFilter() {
+        const bar = document.getElementById('petFilterBar');
+        const tabs = [{ id: null, label: '全部' }, ...allPets.map(p => ({ id: p.id, label: p.name })), { id: 0, label: '未指定' }];
+        bar.innerHTML = tabs.map(t =>
+            `<button class="tab-btn pet-filter-btn ${t.id === currentPetFilter ? 'active' : ''}" data-pet="${t.id === null ? 'null' : t.id}">${t.label}</button>`
+        ).join('');
+        bar.querySelectorAll('.pet-filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                switchTab(btn.getAttribute('data-tab'));
+                const val = btn.dataset.pet;
+                currentPetFilter = val === 'null' ? null : parseInt(val);
+                renderPetFilter();
+                loadProducts();
+                loadDiaries();
             });
         });
+    }
 
-        // Handle initial tab from URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const initialTab = urlParams.get('tab');
-        if (initialTab) {
-            switchTab(initialTab + '-tab');
+    function populatePetSelects() {
+        const sel = document.getElementById('addPetId');
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">未指定</option>' +
+            allPets.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        sel.value = current;
+    }
+
+    function petFilterQuery() {
+        if (currentPetFilter === null) return '';
+        return `?pet_id=${currentPetFilter}`;
+    }
+
+    function petName(pet_id) {
+        const p = allPets.find(p => p.id === pet_id);
+        return p ? p.name : '';
+    }
+
+    // Products
+    async function loadProducts() {
+        document.getElementById('productsLoading').style.display = 'flex';
+        try {
+            const res = await fetch('/api/products' + petFilterQuery());
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            renderProducts(data.products || []);
+        } catch (e) {
+            document.getElementById('productList').innerHTML = '<p>載入失敗，請重新整理</p>';
+        } finally {
+            document.getElementById('productsLoading').style.display = 'none';
         }
+    }
 
-        // Toggle Add Product Form
-        const btnToggleAddProduct = document.getElementById('btnToggleAddProduct');
-        const addProductSection = document.getElementById('addProductSection');
+    function renderProducts(products) {
+        const el = document.getElementById('productList');
+        if (!products.length) {
+            el.innerHTML = '<div class="empty-state"><span class="empty-icon">📦</span><p>尚無商品，點擊「➕ 新增商品」或從 <a href="/product/analyze">商品分析</a> 加入</p></div>';
+            return;
+        }
+        el.innerHTML = `<div class="list-header"><h2>商品列表 <span class="count">共 ${products.length} 項</span></h2></div>
+            <div class="product-cards timeline-list">` +
+            products.map(p => `
+            <article class="product-card timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="product-card-body">
+                    <div class="product-meta">
+                        <span class="product-id">#${p.id}</span>
+                        ${p.pet_id ? `<span class="product-id">🐾 ${petName(p.pet_id)}</span>` : ''}
+                        <span class="product-dates">建立：${p.created_at ? new Date(p.created_at).toLocaleString('zh-TW') : '-'}</span>
+                    </div>
+                    <h3 class="product-title">${p.title}</h3>
+                    <div class="product-summary">${(p.summary || '').replace(/\n/g, '<br>')}</div>
+                </div>
+                <div class="product-card-actions">
+                    <a href="/organize/edit/${p.id}" class="btn-edit" title="編輯">✎</a>
+                    <button class="btn-remove" data-id="${p.id}" title="移除">✕</button>
+                </div>
+            </article>`).join('') +
+        '</div>';
 
-        if (btnToggleAddProduct && addProductSection) {
-            btnToggleAddProduct.addEventListener('click', () => {
-                if (addProductSection.style.display === 'none') {
-                    addProductSection.style.display = 'block';
-                    btnToggleAddProduct.textContent = '➖ 隱藏新增商品';
-                } else {
-                    addProductSection.style.display = 'none';
-                    btnToggleAddProduct.textContent = '➕ 新增商品';
+        el.querySelectorAll('.btn-remove').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('確定要刪除此商品嗎？')) return;
+                try {
+                    await fetch(`/api/products/${btn.dataset.id}`, { method: 'DELETE' });
+                    loadProducts();
+                } catch (e) {
+                    alert('刪除失敗，請稍後再試');
                 }
             });
-        }
+        });
+    }
 
-        // Select All for Products
-        var selectAll = document.getElementById('select-all');
-        var checkboxes = document.querySelectorAll('.product-id-checkbox');
-        if (selectAll && checkboxes.length) {
-            selectAll.addEventListener('change', function () {
-                checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+    document.getElementById('btnAddProduct').addEventListener('click', async () => {
+        const title = document.getElementById('addTitle').value.trim();
+        const summary = document.getElementById('addSummary').value.trim();
+        const pet_id = document.getElementById('addPetId').value || null;
+        try {
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, summary, pet_id: pet_id ? parseInt(pet_id) : null })
             });
-            checkboxes.forEach(function (cb) {
-                cb.addEventListener('change', function () {
-                    var allChecked = Array.from(checkboxes).every(function (c) { return c.checked; });
-                    var someChecked = Array.from(checkboxes).some(function (c) { return c.checked; });
-                    selectAll.checked = allChecked;
-                    selectAll.indeterminate = someChecked && !allChecked;
-                });
-            });
+            if (res.ok) {
+                document.getElementById('addTitle').value = '';
+                document.getElementById('addSummary').value = '';
+                addSection.style.display = 'none';
+                btnToggle.textContent = '➕ 新增商品';
+                loadProducts();
+            } else {
+                alert('新增失敗，請重試');
+            }
+        } catch (e) {
+            alert('操作失敗，請稍後再試');
         }
-        window.confirmBatchDelete = function (form) {
-            var checked = form.querySelectorAll('input[name="product_ids"]:checked');
-            if (checked.length === 0) {
-                alert('請先勾選要刪除的商品');
-                return false;
-            }
-            return confirm('確定要刪除所選的 ' + checked.length + ' 項商品嗎？');
-        };
+    });
 
-        window.confirmDiaryBatchDelete = function (form) {
-            var checked = form.querySelectorAll('input[name="diary_ids"]:checked');
-            if (checked.length === 0) {
-                alert('請先勾選要刪除的日記');
-                return false;
-            }
-            return confirm('確定要刪除所選的 ' + checked.length + ' 則日記嗎？');
-        };
-    })();
+    // Diaries
+    async function loadDiaries() {
+        document.getElementById('diariesLoading').style.display = 'flex';
+        try {
+            const res = await fetch('/api/diaries' + petFilterQuery());
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            renderDiaries(data.diaries || []);
+        } catch (e) {
+            document.getElementById('diaryList').innerHTML = '<p>載入失敗，請重新整理</p>';
+        } finally {
+            document.getElementById('diariesLoading').style.display = 'none';
+        }
+    }
+
+    function renderDiaries(diaries) {
+        const el = document.getElementById('diaryList');
+        if (!diaries.length) {
+            el.innerHTML = '<div class="list-header"><h2>日記列表 <span class="count">共 0 則</span></h2></div><div class="empty-state"><span class="empty-icon">📔</span><p>尚無日記，請前往 <a href="/diary">寵物日記</a> 新增</p></div>';
+            return;
+        }
+        el.innerHTML = `<div class="list-header"><h2>日記列表 <span class="count">共 ${diaries.length} 則</span></h2></div>
+            <div class="diary-cards timeline-list">` +
+            diaries.map(d => `
+            <article class="diary-card timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="diary-card-body">
+                    ${d.image_base64 ? `<div class="diary-image-wrapper"><img src="${d.image_base64}" alt="Diary Image" class="diary-thumbnail"></div>` : ''}
+                    <div class="diary-meta">
+                        <span class="diary-id">#${d.id}</span>
+                        ${d.pet_id ? `<span class="diary-id">🐾 ${petName(d.pet_id)}</span>` : ''}
+                        <span class="diary-dates">${d.created_at ? new Date(d.created_at).toLocaleString('zh-TW') : '-'}</span>
+                    </div>
+                    ${d.title ? `<h4 class="diary-title">${d.title}</h4>` : ''}
+                    <div class="diary-emotion">${d.main_emotion}</div>
+                    <div class="diary-describe">${(d.describe_text || '').replace(/\n/g, '<br>')}</div>
+                    ${d.memo ? `<div class="diary-memo"><strong>備註：</strong>${d.memo.replace(/\n/g, '<br>')}</div>` : ''}
+                </div>
+                <div class="diary-card-actions">
+                    <button class="btn-remove" data-id="${d.id}" title="移除">✕</button>
+                </div>
+            </article>`).join('') +
+        '</div>';
+
+        el.querySelectorAll('.btn-remove').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('確定要刪除此日記嗎？')) return;
+                try {
+                    await fetch(`/api/diaries/${btn.dataset.id}`, { method: 'DELETE' });
+                    loadDiaries();
+                } catch (e) {
+                    alert('刪除失敗，請稍後再試');
+                }
+            });
+        });
+    }
+
+    async function init() {
+        await loadPets();
+        loadProducts();
+        loadDiaries();
+    }
+    init();
+})();
 </script>
 {% endblock %}
