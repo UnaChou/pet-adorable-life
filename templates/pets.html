@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}寵物管理 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<nav class="nav-bar">
+    <a href="/" class="logo">Pet Adorable Life</a>
+    <ul class="nav-links">
+        <li><a href="/">首頁</a></li>
+        <li><a href="/product/analyze">商品分析</a></li>
+        <li><a href="/organize">Pet Life</a></li>
+        <li><a href="/diary">寵物日記</a></li>
+        <li><a href="/pets" class="active">寵物</a></li>
+    </ul>
+</nav>
+
+<main class="organize-page">
+    <section class="organize-hero">
+        <h1>🐾 寵物管理</h1>
+        <p>管理你的毛孩檔案</p>
+    </section>
+
+    <section class="pets-add-section">
+        <button class="btn-toggle-add" id="btnToggleAdd">➕ 新增寵物</button>
+        <div id="addFormWrap" style="display:none;" class="organize-add">
+            <h2>新增寵物</h2>
+            <form id="addPetForm" class="add-form">
+                <div class="form-group">
+                    <label>名字 *</label>
+                    <input type="text" id="addName" placeholder="例如：小黑" maxlength="200" required>
+                </div>
+                <div class="form-group">
+                    <label>品種 / 種類</label>
+                    <input type="text" id="addBreed" placeholder="例如：柴犬" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>生日</label>
+                    <input type="date" id="addBirthday">
+                </div>
+                <div class="form-group">
+                    <label>照片</label>
+                    <input type="file" id="addPhoto" accept="image/*">
+                </div>
+                <button type="submit" class="btn-add">新增</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="pets-list" id="petsList">
+        <div class="loading" id="petsLoading"><div class="spinner"></div><p>載入中...</p></div>
+    </section>
+</main>
+
+<!-- Edit dialog -->
+<div id="editDialog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:2rem;width:min(480px,90vw);max-height:90vh;overflow-y:auto;" class="organize-add">
+        <h2>✎ 編輯寵物</h2>
+        <form id="editPetForm" class="add-form">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>名字 *</label>
+                <input type="text" id="editName" maxlength="200" required>
+            </div>
+            <div class="form-group">
+                <label>品種 / 種類</label>
+                <input type="text" id="editBreed" maxlength="200">
+            </div>
+            <div class="form-group">
+                <label>生日</label>
+                <input type="date" id="editBirthday">
+            </div>
+            <div class="form-group">
+                <label>更換照片（留空則保留現有）</label>
+                <input type="file" id="editPhoto" accept="image/*">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-add">儲存</button>
+                <button type="button" class="btn-cancel" id="btnCloseEdit">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const petsList = document.getElementById('petsList');
+    const petsLoading = document.getElementById('petsLoading');
+    const addFormWrap = document.getElementById('addFormWrap');
+    const btnToggleAdd = document.getElementById('btnToggleAdd');
+    const addPetForm = document.getElementById('addPetForm');
+    const editDialog = document.getElementById('editDialog');
+    const editPetForm = document.getElementById('editPetForm');
+    const btnCloseEdit = document.getElementById('btnCloseEdit');
+
+    btnToggleAdd.addEventListener('click', () => {
+        const open = addFormWrap.style.display !== 'none';
+        addFormWrap.style.display = open ? 'none' : 'block';
+        btnToggleAdd.textContent = open ? '➕ 新增寵物' : '➖ 隱藏';
+    });
+
+    function calcAge(birthday) {
+        if (!birthday) return '';
+        const diff = Date.now() - new Date(birthday).getTime();
+        const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+        return years > 0 ? `${years} 歲` : '未滿 1 歲';
+    }
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function loadPets() {
+        petsLoading.style.display = 'flex';
+        try {
+            const res = await fetch('/api/pets');
+            const data = await res.json();
+            renderPets(data.pets || []);
+        } catch (e) {
+            petsList.innerHTML = '<p>載入失敗，請重新整理</p>';
+        } finally {
+            petsLoading.style.display = 'none';
+        }
+    }
+
+    function renderPets(pets) {
+        if (!pets.length) {
+            petsList.innerHTML = '<div class="empty-state"><span class="empty-icon">🐾</span><p>尚無寵物，點擊「➕ 新增寵物」建立第一個寵物檔案</p></div>';
+            return;
+        }
+        petsList.innerHTML = '<div class="product-cards timeline-list">' +
+            pets.map(p => `
+            <article class="product-card timeline-item" data-id="${p.id}">
+                <div class="timeline-dot"></div>
+                <div class="product-card-body" style="display:flex;align-items:flex-start;gap:1rem;">
+                    ${p.photo_base64
+                        ? `<img src="${p.photo_base64}" alt="${p.name}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;flex-shrink:0;">`
+                        : '<div style="width:72px;height:72px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;">🐾</div>'}
+                    <div>
+                        <h3 class="product-title">${p.name}</h3>
+                        ${p.breed ? `<div class="product-summary">${p.breed}</div>` : ''}
+                        ${p.birthday ? `<div class="product-summary">${p.birthday}　${calcAge(p.birthday)}</div>` : ''}
+                    </div>
+                </div>
+                <div class="product-card-actions">
+                    <button class="btn-edit btn-edit-pet" data-id="${p.id}" title="編輯">✎</button>
+                    <button class="btn-remove btn-remove-pet" data-id="${p.id}" title="刪除">✕</button>
+                </div>
+            </article>`).join('') +
+        '</div>';
+
+        petsList.querySelectorAll('.btn-edit-pet').forEach(btn => {
+            btn.addEventListener('click', () => openEdit(pets.find(p => p.id == btn.dataset.id)));
+        });
+        petsList.querySelectorAll('.btn-remove-pet').forEach(btn => {
+            btn.addEventListener('click', () => deletePet(parseInt(btn.dataset.id)));
+        });
+    }
+
+    addPetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const photoFile = document.getElementById('addPhoto').files[0];
+        const body = {
+            name: document.getElementById('addName').value.trim(),
+            breed: document.getElementById('addBreed').value.trim(),
+            birthday: document.getElementById('addBirthday').value || null,
+            photo_base64: photoFile ? await fileToBase64(photoFile) : '',
+        };
+        const res = await fetch('/api/pets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            addPetForm.reset();
+            addFormWrap.style.display = 'none';
+            btnToggleAdd.textContent = '➕ 新增寵物';
+            loadPets();
+        } else {
+            const err = await res.json();
+            alert(err.error || '新增失敗');
+        }
+    });
+
+    function openEdit(pet) {
+        if (!pet) return;
+        document.getElementById('editId').value = pet.id;
+        document.getElementById('editName').value = pet.name;
+        document.getElementById('editBreed').value = pet.breed || '';
+        document.getElementById('editBirthday').value = pet.birthday || '';
+        document.getElementById('editPhoto').value = '';
+        editDialog.style.display = 'flex';
+    }
+
+    btnCloseEdit.addEventListener('click', () => { editDialog.style.display = 'none'; });
+    editDialog.addEventListener('click', (e) => {
+        if (e.target === editDialog) editDialog.style.display = 'none';
+    });
+
+    editPetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editId').value;
+        const photoFile = document.getElementById('editPhoto').files[0];
+        const body = {
+            name: document.getElementById('editName').value.trim(),
+            breed: document.getElementById('editBreed').value.trim(),
+            birthday: document.getElementById('editBirthday').value || null,
+        };
+        if (photoFile) body.photo_base64 = await fileToBase64(photoFile);
+        const res = await fetch(`/api/pets/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            editDialog.style.display = 'none';
+            loadPets();
+        } else {
+            const err = await res.json();
+            alert(err.error || '更新失敗');
+        }
+    });
+
+    async function deletePet(id) {
+        if (!confirm('確定要刪除此寵物嗎？相關日記和商品的寵物歸屬將被清除。')) return;
+        const res = await fetch(`/api/pets/${id}`, { method: 'DELETE' });
+        if (res.ok || res.status === 204) {
+            loadPets();
+        } else {
+            alert('刪除失敗');
+        }
+    }
+
+    loadPets();
+})();
+</script>
+{% endblock %}
