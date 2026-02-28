@@ -22,7 +22,12 @@ poetry install       # Install dependencies
 poetry add <pkg>     # Add a new dependency
 ```
 
-Note: `pyproject.toml` requires Python >=3.14, but the `Dockerfile` uses Python 3.11-slim with `pip install` (not Poetry). There are **no automated tests** in this project.
+Note: `pyproject.toml` requires Python >=3.14, but the `Dockerfile` uses Python 3.11-slim with `pip install` (not Poetry).
+
+**Run tests (requires Docker container running):**
+```bash
+docker exec pet-adorable-life-web python -m pytest tests/ -v
+```
 
 ## Environment Setup
 
@@ -31,15 +36,16 @@ When running locally, copy `.env.example` to `.env` and configure:
 
 When using `docker-compose up`, env vars are injected automatically via the compose file.
 
-The app requires an **Ollama** instance running externally. The endpoint is hardcoded in `model_connector.py` (`http://192.168.50.11:11434/api/generate`). To change it, edit the `url` variable at the top of that file. Ollama is **not** part of `docker-compose.yml`.
+The app requires an **Ollama** instance running externally. The endpoint defaults to `http://192.168.50.11:11434/api/generate` and is configurable via the `OLLAMA_URL` env var (set in `.env` or `docker-compose.yml`). Ollama is **not** part of `docker-compose.yml`.
 
 ## Architecture
 
 **Stack:** Python Flask + PyMySQL + Ollama AI + MySQL 8.0 (Docker)
 
-The app is a pet care tool with two main domains:
-1. **Product analysis** — upload a product photo, AI extracts `title` and `summary` (5-point format)
-2. **Pet diary** — upload a pet photo, AI returns `title`, `describe`, and `main_emotion`
+The app is a pet care tool with three main domains:
+1. **Pet management** — CRUD for pet profiles (name, breed, birthday, photo)
+2. **Product analysis** — upload a product photo, AI extracts `title` and `summary` (5-point format); products can be attributed to a pet
+3. **Pet diary** — upload a pet photo, AI returns `title`, `describe`, and `main_emotion`; diary entries can be attributed to a pet
 
 **Key files:**
 - `app.py` — Flask routes and request handling
@@ -57,16 +63,23 @@ The app is a pet care tool with two main domains:
 3. Response JSON is parsed and returned to the frontend
 4. User confirms, then a second POST saves to MySQL
 
-**Routes overview:**
+**Routes overview (page routes — render templates):**
 - `/` — home/navigation
+- `/pets` — pet management page
 - `/product/analyze` — product image upload + AI analysis
-- `/organize` — aggregated view of all products and diaries (both tables)
-- `/organize/add|edit|update|remove` — product CRUD
-- `/diary` — diary list and image upload
-- `/diary/save` — save diary entry
-- `/api/product/analyze`, `/api/diary/analyze` — JSON API endpoints for AI analysis
+- `/organize` — products and diaries with pet filter tabs (all data loaded via fetch)
+- `/organize/edit/<id>` — product edit page (loads data via fetch GET, saves via fetch PUT)
+- `/diary` — diary image upload + AI analysis
 
-**Database:** Two tables — `products` and `pet_diaries`. Images are stored as base64 `LONGTEXT` in `pet_diaries`. Tables are auto-created by `db.py` on app startup, with `ALTER TABLE` guards for backward compatibility with existing databases.
+**REST API routes:**
+- `GET/POST /api/pets`, `GET/PUT/DELETE /api/pets/<id>`
+- `GET/POST /api/products`, `GET/PUT/DELETE /api/products/<id>`, `DELETE /api/products` (batch)
+- `GET/POST /api/diaries`, `DELETE /api/diaries/<id>`, `DELETE /api/diaries` (batch)
+- `POST /api/product/analyze`, `POST /api/diary/analyze` — AI analysis endpoints
+
+**pet_id filter pattern** (`?pet_id=N` on GET list endpoints): `None` = all records, `0` = IS NULL (unassigned), positive int = specific pet.
+
+**Database:** Three tables — `pets`, `products`, `pet_diaries`. `products` and `pet_diaries` have nullable `pet_id` FK (logical, no DB-level constraint). Images stored as base64 `LONGTEXT`. Tables auto-created on startup via `init_db()` with `ALTER TABLE` guards for backward compatibility.
 
 **Templates:** Jinja2 in `templates/`; base layout in `base.html`. Frontend uses vanilla JS with camera API and drag-and-drop upload. No build step — static assets served directly.
 
