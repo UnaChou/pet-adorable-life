@@ -143,7 +143,8 @@
 
     // Products
     async function loadProducts() {
-        document.getElementById('productsLoading').style.display = 'flex';
+        const productsSpinner = document.getElementById('productsLoading');
+        if (productsSpinner) productsSpinner.style.display = 'flex';
         try {
             const res = await fetch('/api/products' + petFilterQuery());
             if (!res.ok) throw new Error();
@@ -152,7 +153,8 @@
         } catch (e) {
             document.getElementById('productList').innerHTML = '<p>載入失敗，請重新整理</p>';
         } finally {
-            document.getElementById('productsLoading').style.display = 'none';
+            const s = document.getElementById('productsLoading');
+            if (s) s.style.display = 'none';
         }
     }
 
@@ -222,7 +224,8 @@
 
     // Diaries
     async function loadDiaries() {
-        document.getElementById('diariesLoading').style.display = 'flex';
+        const diariesSpinner = document.getElementById('diariesLoading');
+        if (diariesSpinner) diariesSpinner.style.display = 'flex';
         try {
             const res = await fetch('/api/diaries' + petFilterQuery());
             if (!res.ok) throw new Error();
@@ -231,7 +234,8 @@
         } catch (e) {
             document.getElementById('diaryList').innerHTML = '<p>載入失敗，請重新整理</p>';
         } finally {
-            document.getElementById('diariesLoading').style.display = 'none';
+            const s = document.getElementById('diariesLoading');
+            if (s) s.style.display = 'none';
         }
     }
 

@@ -1,6 +1,7 @@
 import requests
 import json
 import base64
+import logging
 import os
 import re
 from typing import Any, Dict, Optional, Union
@@ -9,72 +10,77 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 import pet_model_config
 
+logger = logging.getLogger(__name__)
+
 url = os.getenv("OLLAMA_URL", "http://192.168.50.11:11434/api/generate")
 
-def _call_model_with_retry(data: Dict[str, Any], parse_response: bool = False) -> Optional[Dict[str, Any]]:
-    """
-    Call the model API with retry logic for handling transient failures.
-    Only returns result if status code is 200 and response contains valid JSON.
-    
+
+def _parse_model_response(response: requests.Response, parse_response: bool) -> Dict[str, Any]:
+    """Parse the Ollama API response body.
+
     Args:
-        data: The request payload to send to the model API
-        parse_response: If True, also parse the 'response' field as JSON (for image analysis)
+        response: The HTTP response from the model API.
+        parse_response: If True, parse the nested 'response' field as JSON
+                        (used for image analysis endpoints).
+
+    Raises:
+        json.JSONDecodeError: If the HTTP body is not valid JSON.
+        ValueError: If the response structure is unexpected or content is missing.
+    """
+    json_response = response.json()
+    if not isinstance(json_response, dict):
+        raise ValueError("Response is not a JSON object")
+
+    if not parse_response:
+        return json_response
+
+    raw = json_response.get("response", "").strip()
+    if not raw:
+        raise ValueError("Model did not return content in response field")
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        to_parse = _extract_json_by_regex(raw)
+        parsed = json.loads(to_parse)
+
+    if not isinstance(parsed, dict):
+        raise ValueError("Parsed inner response is not a JSON object")
+    return parsed
+
+
+def _call_model_with_retry(data: Dict[str, Any], parse_response: bool = False) -> Optional[Dict[str, Any]]:
+    """Call the model API with retry logic for transient network failures.
+
+    Args:
+        data: Request payload to send to the model API.
+        parse_response: If True, parse the nested 'response' field as JSON
+                        (used for image analysis endpoints).
+
+    Returns:
+        Parsed dict on success, None on network failure or unparseable response.
     """
     @retry(
-        stop=stop_after_attempt(0),
+        stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=2),
-        retry=retry_if_exception_type((requests.exceptions.RequestException, ValueError))
+        retry=retry_if_exception_type(requests.exceptions.RequestException),
     )
-    def _make_request():
+    def _make_request() -> requests.Response:
         response = requests.post(url, json=data)
         if response.status_code != 200:
             raise requests.exceptions.RequestException(
                 f"Model API failed with status {response.status_code}: {response.text}"
             )
-        
-        try:
-            json_response = response.json()
-            if not isinstance(json_response, dict):
-                raise ValueError("Response is not a valid JSON object")
-            
-            if parse_response:
-                raw = json_response.get("response", "").strip()
-                if not raw:
-                    raise ValueError("Model did not return content in response")
-                try:
-                    parsed = json.loads(raw)
-                except json.JSONDecodeError:
-                    to_parse = _extract_json_by_regex(raw)
-                    parsed = json.loads(to_parse)
-                if isinstance(parsed, dict):
-                    return parsed
-                raise ValueError("Response is not a valid JSON object")
-            
-            return json_response
-        except Exception as e:
-            parsed = response.json()
-            if isinstance(parsed, dict):
-                raw = parsed.get("response", "").strip()
-                if not raw:
-                    raise ValueError("Model did not return content in response")
-                try:
-                    inner_parsed = json.loads(raw)
-                except json.JSONDecodeError:
-                    to_parse_inner = _extract_json_by_regex(raw)
-                    inner_parsed = json.loads(to_parse_inner)
-                if isinstance(inner_parsed, dict):
-                    return inner_parsed
-                raise ValueError("Response is not a valid JSON object")
-
-            raise ValueError("Response is not a valid JSON object")
+        return response
 
     try:
-        return _make_request()
+        response = _make_request()
+        return _parse_model_response(response, parse_response)
     except requests.exceptions.RequestException as e:
-        print(f"Model API request failed after retries: {e}")
+        logger.error("Model API request failed after retries: %s", e)
         return None
-    except ValueError as e:
-        print(f"Model API response parsing failed: {e}")
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.warning("Model API response parsing failed: %s", e)
         return None
 
 def get_model_response(model: str, prompt: str) -> Optional[str]:
@@ -89,7 +95,6 @@ def get_model_response(model: str, prompt: str) -> Optional[str]:
 
     result = _call_model_with_retry(data)
     if result and 'response' in result:
-        print(result['response'])
         return result['response']
     return None
 

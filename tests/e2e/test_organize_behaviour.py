@@ -114,7 +114,7 @@ class TestTabSwitching:
         _go(page, base_url)
         page.locator("button.tab-btn[data-tab='diaries-tab']").click()
         page.locator("#diaries-tab").wait_for(state="visible", timeout=_NAV_TIMEOUT)
-        active_btn = page.locator("button.tab-btn.active")
+        active_btn = page.locator(".tabs-header button.tab-btn.active")
         assert active_btn.get_attribute("data-tab") == "diaries-tab"
 
 
