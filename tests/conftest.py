@@ -13,6 +13,14 @@ def client():
 
 
 @pytest.fixture
+def authed_client(client):
+    """Client with user_id=1 already in session (simulates logged-in user)."""
+    with client.session_transaction() as sess:
+        sess["user_id"] = 1
+    yield client
+
+
+@pytest.fixture
 def mock_db():
     """Patch the db module in app so no real DB calls happen."""
     with patch("app.db") as m:

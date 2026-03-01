@@ -2,8 +2,10 @@
 Pet Adorable Life - 網站主程式
 """
 import os
+import re
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import model_connector
 import pet_model_config
@@ -11,7 +13,18 @@ import db
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
-app.secret_key = "pet-adorable-life-secret-key-change-in-production"
+_secret = os.getenv("SECRET_KEY", "dev-only-insecure-key")
+if _secret == "dev-only-insecure-key":
+    import warnings
+    warnings.warn("SECRET_KEY is not set — using insecure default. Set SECRET_KEY in production.", stacklevel=1)
+app.secret_key = _secret
+
+_EXEMPT_ENDPOINTS = {"login", "register", "logout", "static"}
+
+
+def current_user_id():
+    """回傳目前登入使用者的 id，未登入則為 None。"""
+    return session.get("user_id")
 
 _ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
 
@@ -32,6 +45,75 @@ def _ensure_db():
     if not getattr(app, "_db_initialized", False):
         db.init_db()
         app._db_initialized = True
+
+
+@app.before_request
+def _require_login():
+    """所有路由都需要登入，例外：login、register、logout、static。"""
+    if request.endpoint in _EXEMPT_ENDPOINTS:
+        return
+    if not current_user_id():
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "請先登入"}), 401
+        return redirect(url_for("login"))
+
+
+# ========== Auth routes ==========
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """登入頁面"""
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        password = request.form.get("password") or ""
+        user = db.get_user_by_username(username)
+        if not user or not check_password_hash(user["password_hash"], password):
+            flash("帳號或密碼錯誤")
+            return render_template("login.html"), 401
+        session["user_id"] = user["id"]
+        return redirect(url_for("index"))
+    return render_template("login.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """註冊頁面"""
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        password = request.form.get("password") or ""
+        confirm = request.form.get("confirm_password") or ""
+
+        if not username or len(username) > 100:
+            flash("帳號不得為空且長度須在 100 字以內")
+            return render_template("register.html"), 400
+        if not re.match(r"^\w+$", username):
+            flash("帳號只能包含英文字母、數字與底線")
+            return render_template("register.html"), 400
+        if len(password) < 8:
+            flash("密碼長度至少需要 8 個字元")
+            return render_template("register.html"), 400
+        if password != confirm:
+            flash("兩次輸入的密碼不一致")
+            return render_template("register.html"), 400
+        if db.get_user_by_username(username):
+            flash("此帳號已被使用，請選擇其他帳號")
+            return render_template("register.html"), 400
+
+        user_id = db.create_user(username, generate_password_hash(password))
+        session["user_id"] = user_id
+        return redirect(url_for("index"))
+    return render_template("register.html")
+
+
+@app.route("/logout")
+def logout():
+    """登出"""
+    session.pop("user_id", None)
+    return redirect(url_for("login"))
+
+
+# ========== Page routes ==========
 
 
 @app.route("/")
@@ -118,7 +200,7 @@ def api_diary_analyze():
 @app.route("/api/pets", methods=["GET"])
 def api_get_pets():
     """取得所有寵物"""
-    return jsonify({"pets": db.get_all_pets()})
+    return jsonify({"pets": db.get_all_pets(user_id=current_user_id())})
 
 
 @app.route("/api/pets", methods=["POST"])
@@ -127,13 +209,15 @@ def api_add_pet():
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"error": "名字不得為空"}), 400
+    uid = current_user_id()
     pet_id = db.add_pet(
         name=name,
         breed=(data.get("breed") or "").strip(),
         birthday=data.get("birthday") or None,
         photo_base64=data.get("photo_base64") or "",
+        user_id=uid,
     )
-    pet = db.get_pet(pet_id)
+    pet = db.get_pet(pet_id, user_id=uid)
     if not pet:
         return jsonify({"error": "寵物建立失敗"}), 500
     return jsonify(pet), 201
@@ -142,7 +226,7 @@ def api_add_pet():
 @app.route("/api/pets/<int:pet_id>", methods=["GET"])
 def api_get_pet(pet_id):
     """取得單一寵物"""
-    pet = db.get_pet(pet_id)
+    pet = db.get_pet(pet_id, user_id=current_user_id())
     if not pet:
         return jsonify({"error": "找不到寵物"}), 404
     return jsonify(pet)
@@ -151,7 +235,8 @@ def api_get_pet(pet_id):
 @app.route("/api/pets/<int:pet_id>", methods=["PUT"])
 def api_update_pet(pet_id):
     """更新寵物資料"""
-    if not db.get_pet(pet_id):
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
         return jsonify({"error": "找不到寵物"}), 404
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()
@@ -163,16 +248,18 @@ def api_update_pet(pet_id):
         breed=(data.get("breed") or "").strip(),
         birthday=data.get("birthday") or None,
         photo_base64=data.get("photo_base64"),
+        user_id=uid,
     )
-    return jsonify(db.get_pet(pet_id))
+    return jsonify(db.get_pet(pet_id, user_id=uid))
 
 
 @app.route("/api/pets/<int:pet_id>", methods=["DELETE"])
 def api_delete_pet(pet_id):
     """刪除寵物"""
-    if not db.get_pet(pet_id):
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
         return jsonify({"error": "找不到寵物"}), 404
-    db.remove_pet(pet_id)
+    db.remove_pet(pet_id, user_id=uid)
     return "", 204
 
 
@@ -189,18 +276,19 @@ def pets_page():
 def api_get_products():
     """取得所有商品"""
     pet_id = request.args.get("pet_id", type=int)
-    return jsonify({"products": db.get_all_products(pet_id=pet_id)})
+    return jsonify({"products": db.get_all_products(pet_id=pet_id, user_id=current_user_id())})
 
 
 @app.route("/api/products", methods=["POST"])
 def api_add_product():
     """新增商品"""
+    uid = current_user_id()
     data = request.get_json() or {}
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
-    product_id = db.add_product(title, summary, pet_id=pet_id)
-    product = db.get_product(product_id)
+    product_id = db.add_product(title, summary, pet_id=pet_id, user_id=uid)
+    product = db.get_product(product_id, user_id=uid)
     if not product:
         return jsonify({"error": "商品建立失敗"}), 500
     return jsonify(product), 201
@@ -209,7 +297,7 @@ def api_add_product():
 @app.route("/api/products/<int:product_id>", methods=["GET"])
 def api_get_product(product_id):
     """取得單一商品"""
-    product = db.get_product(product_id)
+    product = db.get_product(product_id, user_id=current_user_id())
     if not product:
         return jsonify({"error": "找不到商品"}), 404
     return jsonify(product)
@@ -218,22 +306,24 @@ def api_get_product(product_id):
 @app.route("/api/products/<int:product_id>", methods=["PUT"])
 def api_update_product(product_id):
     """更新商品"""
-    if not db.get_product(product_id):
+    uid = current_user_id()
+    if not db.get_product(product_id, user_id=uid):
         return jsonify({"error": "找不到商品"}), 404
     data = request.get_json() or {}
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
-    db.update_product(product_id, title, summary, pet_id=pet_id)
-    return jsonify(db.get_product(product_id))
+    db.update_product(product_id, title, summary, pet_id=pet_id, user_id=uid)
+    return jsonify(db.get_product(product_id, user_id=uid))
 
 
 @app.route("/api/products/<int:product_id>", methods=["DELETE"])
 def api_delete_product(product_id):
     """刪除商品"""
-    if not db.get_product(product_id):
+    uid = current_user_id()
+    if not db.get_product(product_id, user_id=uid):
         return jsonify({"error": "找不到商品"}), 404
-    db.remove_product(product_id)
+    db.remove_product(product_id, user_id=uid)
     return "", 204
 
 
@@ -243,7 +333,7 @@ def api_delete_products():
     data = request.get_json() or {}
     ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
     if ids:
-        db.remove_products(ids)
+        db.remove_products(ids, user_id=current_user_id())
     return "", 204
 
 
@@ -254,12 +344,13 @@ def api_delete_products():
 def api_get_diaries():
     """取得所有日記"""
     pet_id = request.args.get("pet_id", type=int)
-    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id)})
+    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id, user_id=current_user_id())})
 
 
 @app.route("/api/diaries", methods=["POST"])
 def api_add_diary():
     """新增日記"""
+    uid = current_user_id()
     data = request.get_json() or {}
     diary_id = db.add_diary(
         title=(data.get("title") or "").strip(),
@@ -268,8 +359,9 @@ def api_add_diary():
         memo=(data.get("memo") or "").strip(),
         image_base64=(data.get("image_base64") or ""),
         pet_id=data.get("pet_id") or None,
+        user_id=uid,
     )
-    diary = db.get_diary(diary_id)
+    diary = db.get_diary(diary_id, user_id=uid)
     if not diary:
         return jsonify({"error": "日記儲存失敗"}), 500
     return jsonify(diary), 201
@@ -278,9 +370,10 @@ def api_add_diary():
 @app.route("/api/diaries/<int:diary_id>", methods=["DELETE"])
 def api_delete_diary(diary_id):
     """刪除單筆日記"""
-    if not db.get_diary(diary_id):
+    uid = current_user_id()
+    if not db.get_diary(diary_id, user_id=uid):
         return jsonify({"error": "找不到日記"}), 404
-    db.remove_diaries([diary_id])
+    db.remove_diaries([diary_id], user_id=uid)
     return "", 204
 
 
@@ -290,7 +383,7 @@ def api_delete_diaries():
     data = request.get_json() or {}
     ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
     if ids:
-        db.remove_diaries(ids)
+        db.remove_diaries(ids, user_id=current_user_id())
     return "", 204
 
 
@@ -300,7 +393,6 @@ def _get_watch_files():
     watch_ext = (".py", ".html")
     files = []
     for dirpath, _dirnames, filenames in os.walk(root):
-        # 略過 __pycache__、.git、venv 等目錄
         if any(skip in dirpath for skip in ("__pycache__", ".git", "venv", ".venv", "node_modules", ".history")):
             continue
         for name in filenames:

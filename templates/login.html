@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}登入 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <div class="auth-card">
+        <h1 class="auth-title">Pet Adorable Life</h1>
+        <h2 class="auth-subtitle">登入帳號</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul class="auth-errors">
+            {% for msg in messages %}<li>{{ msg }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+        <form method="post" action="/login" class="auth-form">
+            <label for="username">帳號</label>
+            <input id="username" name="username" type="text" autocomplete="username" required>
+
+            <label for="password">密碼</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+            <button type="submit" class="btn-primary">登入</button>
+        </form>
+
+        <p class="auth-link">還沒有帳號？<a href="/register">立即註冊</a></p>
+    </div>
+</main>
+{% endblock %}
