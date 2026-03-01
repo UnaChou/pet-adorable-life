@@ -13,6 +13,18 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 app.secret_key = "pet-adorable-life-secret-key-change-in-production"
 
+_ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
+
+
+def _validate_image_file(file):
+    """回傳 (None, None) 表示驗證通過；否則回傳 (error_response, status_code)。"""
+    if file.filename == "":
+        return jsonify({"error": "未選擇檔案"}), 400
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in _ALLOWED_IMAGE_EXTS:
+        return jsonify({"error": f"不支援的格式，請使用: {', '.join(_ALLOWED_IMAGE_EXTS)}"}), 400
+    return None, None
+
 
 @app.before_request
 def _ensure_db():
@@ -40,12 +52,9 @@ def api_product_analyze():
     if "image" not in request.files:
         return jsonify({"error": "未上傳圖片"}), 400
     file = request.files["image"]
-    if file.filename == "":
-        return jsonify({"error": "未選擇檔案"}), 400
-    allowed = {"png", "jpg", "jpeg", "webp", "gif"}
-    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if ext not in allowed:
-        return jsonify({"error": f"不支援的格式，請使用: {', '.join(allowed)}"}), 400
+    err, status = _validate_image_file(file)
+    if err:
+        return err, status
 
     model_name = getattr(pet_model_config, "pet_model_name", "qwen3-vl:4b")
     result = model_connector.get_model_response_by_image(model_name, file)
@@ -84,12 +93,9 @@ def api_diary_analyze():
         if "image" not in request.files:
             return jsonify({"error": "未上傳圖片"}), 400
         file = request.files["image"]
-        if file.filename == "":
-            return jsonify({"error": "未選擇檔案"}), 400
-        allowed = {"png", "jpg", "jpeg", "webp", "gif"}
-        ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-        if ext not in allowed:
-            return jsonify({"error": f"不支援的格式，請使用: {', '.join(allowed)}"}), 400
+        err, status = _validate_image_file(file)
+        if err:
+            return err, status
 
         model_name = getattr(pet_model_config, "pet_model_name", "qwen3-vl:4b")
         result = model_connector.get_diary_response_by_image(model_name, file)

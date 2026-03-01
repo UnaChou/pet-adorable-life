@@ -1,24 +1,10 @@
 import pytest
-from unittest.mock import patch, MagicMock
-
-
-def _make_conn_mock(fetchone_val=None, fetchall_val=None, lastrowid=1):
-    mock_cur = MagicMock()
-    mock_cur.fetchone.return_value = fetchone_val
-    mock_cur.fetchall.return_value = fetchall_val or []
-    mock_cur.lastrowid = lastrowid
-    mock_cur.__enter__ = MagicMock(return_value=mock_cur)
-    mock_cur.__exit__ = MagicMock(return_value=False)
-
-    mock_conn = MagicMock()
-    mock_conn.cursor.return_value = mock_cur
-    mock_conn.__enter__ = MagicMock(return_value=mock_conn)
-    mock_conn.__exit__ = MagicMock(return_value=False)
-    return mock_conn, mock_cur
+from unittest.mock import patch
+from tests.helpers import make_conn as _make_conn
 
 
 def test_add_pet_returns_id():
-    mock_conn, mock_cur = _make_conn_mock(lastrowid=5)
+    mock_conn, mock_cur = _make_conn(lastrowid=5)
     with patch("db.get_connection", return_value=mock_conn):
         import db
         result = db.add_pet("小黑", "柴犬", "2020-01-15", "")
@@ -26,7 +12,7 @@ def test_add_pet_returns_id():
 
 
 def test_get_pet_returns_none_when_not_found():
-    mock_conn, mock_cur = _make_conn_mock(fetchone_val=None)
+    mock_conn, mock_cur = _make_conn(fetchone=None)
     with patch("db.get_connection", return_value=mock_conn):
         import db
         result = db.get_pet(999)
@@ -40,7 +26,7 @@ def test_get_pet_returns_dict():
         "birthday": datetime.date(2020, 1, 15),
         "photo_base64": "", "created_at": datetime.datetime.now(), "updated_at": None
     }
-    mock_conn, mock_cur = _make_conn_mock(fetchone_val=row)
+    mock_conn, mock_cur = _make_conn(fetchone=row)
     with patch("db.get_connection", return_value=mock_conn):
         import db
         result = db.get_pet(1)
@@ -49,7 +35,7 @@ def test_get_pet_returns_dict():
 
 
 def test_get_all_products_accepts_pet_id_filter():
-    mock_conn, mock_cur = _make_conn_mock(fetchall_val=[])
+    mock_conn, mock_cur = _make_conn(fetchall=[])
     with patch("db.get_connection", return_value=mock_conn):
         import db
         db.get_all_products(pet_id=2)
@@ -58,7 +44,7 @@ def test_get_all_products_accepts_pet_id_filter():
 
 
 def test_add_product_accepts_pet_id():
-    mock_conn, mock_cur = _make_conn_mock(lastrowid=3)
+    mock_conn, mock_cur = _make_conn(lastrowid=3)
     with patch("db.get_connection", return_value=mock_conn):
         import db
         db.add_product("飼料", "描述", pet_id=1)
@@ -67,7 +53,7 @@ def test_add_product_accepts_pet_id():
 
 
 def test_get_all_pets_returns_empty_list():
-    mock_conn, mock_cur = _make_conn_mock(fetchall_val=[])
+    mock_conn, mock_cur = _make_conn(fetchall=[])
     with patch("db.get_connection", return_value=mock_conn):
         import db
         result = db.get_all_pets()
@@ -81,7 +67,7 @@ def test_get_all_pets_returns_formatted_list():
         "birthday": datetime.date(2020, 1, 15),
         "photo_base64": "abc", "created_at": datetime.datetime.now(), "updated_at": None,
     }
-    mock_conn, mock_cur = _make_conn_mock(fetchall_val=[row])
+    mock_conn, mock_cur = _make_conn(fetchall=[row])
     with patch("db.get_connection", return_value=mock_conn):
         import db
         result = db.get_all_pets()
@@ -91,7 +77,7 @@ def test_get_all_pets_returns_formatted_list():
 
 
 def test_update_pet_with_photo_updates_photo_field():
-    mock_conn, mock_cur = _make_conn_mock()
+    mock_conn, mock_cur = _make_conn()
     with patch("db.get_connection", return_value=mock_conn):
         import db
         db.update_pet(1, "小黑", "柴犬", "2020-01-01", photo_base64="base64data")
@@ -100,7 +86,7 @@ def test_update_pet_with_photo_updates_photo_field():
 
 
 def test_update_pet_without_photo_excludes_photo_field():
-    mock_conn, mock_cur = _make_conn_mock()
+    mock_conn, mock_cur = _make_conn()
     with patch("db.get_connection", return_value=mock_conn):
         import db
         db.update_pet(1, "小黑", "柴犬", "2020-01-01", photo_base64=None)

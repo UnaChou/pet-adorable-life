@@ -1,20 +1,7 @@
 """Tests for db.py product CRUD functions."""
 import datetime
-from unittest.mock import patch, MagicMock
-
-
-def _make_conn(fetchone=None, fetchall=None, lastrowid=1):
-    cur = MagicMock()
-    cur.fetchone.return_value = fetchone
-    cur.fetchall.return_value = fetchall or []
-    cur.lastrowid = lastrowid
-    cur.__enter__ = MagicMock(return_value=cur)
-    cur.__exit__ = MagicMock(return_value=False)
-    conn = MagicMock()
-    conn.cursor.return_value = cur
-    conn.__enter__ = MagicMock(return_value=conn)
-    conn.__exit__ = MagicMock(return_value=False)
-    return conn, cur
+from unittest.mock import patch
+from tests.helpers import make_conn as _make_conn
 
 
 def test_get_all_products_no_filter():
