@@ -17,6 +17,8 @@
         {% endwith %}
 
         <form method="post" action="/login" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
             <label for="username">帳號</label>
             <input id="username" name="username" type="text" autocomplete="username" required>
 
@@ -26,6 +28,7 @@
             <button type="submit" class="btn-primary">登入</button>
         </form>
 
+        <p class="auth-link"><a href="/forgot-password">忘記密碼？</a></p>
         <p class="auth-link">還沒有帳號？<a href="/register">立即註冊</a></p>
     </div>
 </main>

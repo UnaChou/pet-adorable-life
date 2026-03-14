@@ -17,8 +17,13 @@
         {% endwith %}
 
         <form method="post" action="/register" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
             <label for="username">帳號（英文字母、數字、底線）</label>
             <input id="username" name="username" type="text" autocomplete="username" required maxlength="100">
+
+            <label for="email">電子信箱</label>
+            <input id="email" name="email" type="email" autocomplete="email" required maxlength="255">
 
             <label for="password">密碼（至少 8 個字元）</label>
             <input id="password" name="password" type="password" autocomplete="new-password" required>

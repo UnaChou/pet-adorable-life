@@ -34,90 +34,131 @@ def get_connection():
         conn.close()
 
 
-def _guard_alter(cur, sql):
-    """執行 ALTER TABLE，忽略 Duplicate column name (1060)。"""
+def _guard_alter(cur, sql, ignore_codes=(1060,)):
+    """執行 ALTER TABLE / CREATE INDEX，忽略指定 MySQL 錯誤碼。"""
     try:
         cur.execute(sql)
     except pymysql.err.OperationalError as e:
-        if e.args[0] != 1060:
+        if e.args[0] not in ignore_codes:
             raise
+
+
+def _init_products_table(cur):
+    """建立 products 表及補齊缺漏欄位。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(500) NOT NULL,
+            summary TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    """)
+    _guard_alter(cur, """
+        ALTER TABLE products
+        ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        AFTER created_at
+    """)
+
+
+def _init_pet_diaries_table(cur):
+    """建立 pet_diaries 表及補齊缺漏欄位。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pet_diaries (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(500),
+            describe_text TEXT,
+            main_emotion VARCHAR(200),
+            memo TEXT,
+            image_base64 LONGTEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    """)
+    _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN title VARCHAR(500) AFTER id")
+    _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN image_base64 LONGTEXT AFTER memo")
+
+
+def _init_pets_table(cur):
+    """建立 pets 表。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(200) NOT NULL,
+            breed VARCHAR(200),
+            birthday DATE,
+            photo_base64 LONGTEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    """)
+
+
+def _init_users_table(cur):
+    """建立 users 表及補齊缺漏欄位。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(100) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    _guard_alter(cur, "ALTER TABLE users ADD COLUMN email VARCHAR(255) AFTER username")
+    _guard_alter(
+        cur,
+        "ALTER TABLE users ADD UNIQUE INDEX idx_users_email (email)",
+        ignore_codes=(1060, 1061),
+    )
+
+
+def _init_password_reset_tokens_table(cur):
+    """建立 password_reset_tokens 表。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            token_hash VARCHAR(255) NOT NULL UNIQUE,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_token_hash (token_hash),
+            INDEX idx_user_id (user_id)
+        )
+    """)
+
+
+def _apply_relationship_columns(cur):
+    """補齊關聯欄位（pet_id 與 user_id）。"""
+    _guard_alter(cur, "ALTER TABLE products ADD COLUMN pet_id INT AFTER summary")
+    _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN pet_id INT AFTER main_emotion")
+    _guard_alter(cur, "ALTER TABLE pets ADD COLUMN user_id INT AFTER id")
+    _guard_alter(cur, "ALTER TABLE products ADD COLUMN user_id INT AFTER pet_id")
+    _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN user_id INT AFTER pet_id")
 
 
 def init_db():
     """建立所有必要的資料表並補齊缺漏欄位。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS products (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    title VARCHAR(500) NOT NULL,
-                    summary TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )
-            """)
-            _guard_alter(cur, """
-                ALTER TABLE products
-                ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                AFTER created_at
-            """)
-
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS pet_diaries (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    title VARCHAR(500),
-                    describe_text TEXT,
-                    main_emotion VARCHAR(200),
-                    memo TEXT,
-                    image_base64 LONGTEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )
-            """)
-            _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN title VARCHAR(500) AFTER id")
-            _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN image_base64 LONGTEXT AFTER memo")
-
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS pets (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(200) NOT NULL,
-                    breed VARCHAR(200),
-                    birthday DATE,
-                    photo_base64 LONGTEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )
-            """)
-
-            # ユーザー管理テーブル
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL UNIQUE,
-                    password_hash VARCHAR(255) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            _guard_alter(cur, "ALTER TABLE products ADD COLUMN pet_id INT AFTER summary")
-            _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN pet_id INT AFTER main_emotion")
-
-            # user_id 欄位（支援資料隔離）
-            _guard_alter(cur, "ALTER TABLE pets ADD COLUMN user_id INT AFTER id")
-            _guard_alter(cur, "ALTER TABLE products ADD COLUMN user_id INT AFTER pet_id")
-            _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN user_id INT AFTER pet_id")
+            _init_products_table(cur)
+            _init_pet_diaries_table(cur)
+            _init_pets_table(cur)
+            _init_users_table(cur)
+            _init_password_reset_tokens_table(cur)
+            _apply_relationship_columns(cur)
 
 
 # ========== Users ==========
 
 
-def create_user(username, password_hash):
+def create_user(username, email, password_hash):
     """新增使用者，回傳 id。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
-                (username, password_hash),
+                "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+                (username, email or None, password_hash),
             )
             return cur.lastrowid
 
@@ -138,10 +179,85 @@ def get_user_by_id(user_id):
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, username, password_hash, created_at FROM users WHERE id = %s",
+                "SELECT id, username, password_hash, email, created_at FROM users WHERE id = %s",
                 (user_id,),
             )
             return cur.fetchone()
+
+
+def get_user_by_email(email):
+    """依 email 取得使用者，不存在則回傳 None。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, username, password_hash, email, created_at FROM users WHERE email = %s",
+                (email,),
+            )
+            return cur.fetchone()
+
+
+def update_user_password(user_id, password_hash):
+    """更新使用者密碼。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET password_hash = %s WHERE id = %s",
+                (password_hash, user_id),
+            )
+
+
+def create_reset_token(user_id, token_hash, expires_at):
+    """新增密碼重設 token。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (%s, %s, %s)",
+                (user_id, token_hash, expires_at),
+            )
+
+
+def get_reset_token(token_hash):
+    """依 token_hash 查詢重設 token 記錄。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, user_id, expires_at, used_at FROM password_reset_tokens WHERE token_hash = %s",
+                (token_hash,),
+            )
+            return cur.fetchone()
+
+
+def mark_reset_token_used(token_id):
+    """將 token 標記為已使用。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE password_reset_tokens SET used_at = NOW() WHERE id = %s",
+                (token_id,),
+            )
+
+
+def invalidate_user_reset_tokens(user_id):
+    """作廢使用者所有未使用的重設 token。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = %s AND used_at IS NULL",
+                (user_id,),
+            )
+
+
+def count_recent_reset_requests(user_id, since_minutes=60):
+    """計算指定時間內的重設請求次數（Rate limiting 用）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) AS cnt FROM password_reset_tokens"
+                " WHERE user_id = %s AND created_at > NOW() - INTERVAL %s MINUTE",
+                (user_id, since_minutes),
+            )
+            row = cur.fetchone()
+            return row["cnt"] if row else 0
 
 
 # ========== Products ==========

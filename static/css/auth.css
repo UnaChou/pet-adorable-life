@@ -1,0 +1,135 @@
+/* ========== 認證頁面 (登入/註冊) ========== */
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--cream);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--soft-shadow);
+    border: 1px solid rgba(125, 155, 118, 0.15);
+    padding: 2.5rem 2rem;
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.auth-title {
+    font-family: "Outfit", sans-serif;
+    font-weight: 600;
+    font-size: 1.75rem;
+    color: var(--forest);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+    font-size: 1rem;
+    color: var(--charcoal);
+    text-align: center;
+    opacity: 0.75;
+    margin-bottom: 1.75rem;
+    font-weight: 500;
+}
+
+.auth-errors {
+    list-style: none;
+    margin-bottom: 1.5rem;
+    padding: 0;
+}
+
+.auth-errors li {
+    background: rgba(201, 123, 92, 0.15);
+    color: var(--terracotta);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--terracotta);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.auth-form label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--charcoal);
+    margin-bottom: 0.4rem;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    border: 1px solid rgba(125, 155, 118, 0.3);
+    border-radius: 10px;
+    background: var(--cream);
+    color: var(--charcoal);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(125, 155, 118, 0.1);
+}
+
+.auth-form input::placeholder {
+    color: var(--charcoal);
+    opacity: 0.5;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: white;
+    background: var(--sage);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    margin-top: 0.5rem;
+}
+
+.btn-primary:hover {
+    background: var(--forest);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.auth-link {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    margin-top: 1.5rem;
+}
+
+.auth-link a {
+    color: var(--sage);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.auth-link a:hover {
+    color: var(--forest);
+    text-decoration: underline;
+}

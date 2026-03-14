@@ -13,3 +13,4 @@ __pycache__/
 # OS generated files
 .DS_Store
 .worktrees/
+*:Zone.Identifier

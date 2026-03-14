@@ -21,7 +21,7 @@ def test_create_user_returns_id():
     conn, cur = _make_conn(lastrowid=7)
     with patch("db.get_connection", return_value=conn):
         import db
-        result = db.create_user("alice", "hashed_pw")
+        result = db.create_user("alice", "alice@example.com", "hashed_pw")
     assert result == 7
     call_sql = cur.execute.call_args[0][0]
     assert "INSERT INTO users" in call_sql

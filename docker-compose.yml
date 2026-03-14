@@ -34,16 +34,22 @@ services:
       MYSQL_PASSWORD: pet_password
       MYSQL_DATABASE: pet_adorable_life
       OLLAMA_URL: ${OLLAMA_URL:-http://192.168.50.11:11434/api/generate}
-      SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-key}
+      SECRET_KEY: ${SECRET_KEY}
       FLASK_APP: app.py
       FLASK_DEBUG: "0"
+      MAIL_SERVER: ${MAIL_SERVER:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USE_TLS: ${MAIL_USE_TLS:-true}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_DEFAULT_SENDER: ${MAIL_DEFAULT_SENDER:-}
     volumes:
       - .:/app
     depends_on:
       mysql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5001/"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/'); print('healthy')"]
       interval: 30s
       timeout: 10s
       retries: 3
