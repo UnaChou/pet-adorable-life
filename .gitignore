@@ -10,5 +10,8 @@ __pycache__/
 # Editor
 .history/
 
+# AI/Agent
+AGENTS.md
+
 # OS generated files
 .DS_Store
