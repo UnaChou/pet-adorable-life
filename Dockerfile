@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # 安裝所需套件
-RUN pip install --no-cache-dir flask pymysql pandas tenacity requests
+RUN pip install --no-cache-dir flask pymysql pandas tenacity requests flask-mail
 
 # 複製應用程式程式碼
 COPY . .

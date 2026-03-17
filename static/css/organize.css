@@ -1,0 +1,402 @@
+/* ========== 資訊整理頁 ========== */
+.nav-links a.active {
+    color: var(--terracotta);
+    font-weight: 600;
+}
+
+.organize-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.organize-hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.organize-hero h1 {
+    font-family: "Outfit", sans-serif;
+    font-weight: 600;
+    font-size: 1.75rem;
+    color: var(--forest);
+    margin-bottom: 0.5rem;
+}
+
+.organize-hero p {
+    color: var(--charcoal);
+    opacity: 0.85;
+    font-size: 1rem;
+}
+
+.organize-add {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--soft-shadow);
+    border: 1px solid rgba(125, 155, 118, 0.15);
+}
+
+.organize-add h2 {
+    font-size: 1.1rem;
+    color: var(--forest);
+    margin-bottom: 1.25rem;
+    font-weight: 600;
+}
+
+.add-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.add-form label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--charcoal);
+    margin-bottom: 0.4rem;
+}
+
+.add-form input,
+.add-form textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    border: 1px solid rgba(125, 155, 118, 0.3);
+    border-radius: 10px;
+    background: var(--cream);
+    color: var(--charcoal);
+    transition: border-color 0.2s;
+}
+
+.add-form input:focus,
+.add-form textarea:focus {
+    outline: none;
+    border-color: var(--sage);
+}
+
+.add-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-add {
+    padding: 0.7rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: white;
+    background: var(--sage);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-add:hover {
+    background: var(--forest);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1.25rem;
+    justify-content: center;
+}
+
+.btn-cancel {
+    padding: 0.7rem 1.5rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--charcoal);
+    background: transparent;
+    border: 1px solid rgba(125, 155, 118, 0.4);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-cancel:hover {
+    background: rgba(125, 155, 118, 0.1);
+    border-color: var(--sage);
+}
+
+.organize-list h2 {
+    font-size: 1.1rem;
+    color: var(--forest);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.list-header .count {
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.list-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    user-select: none;
+}
+
+.checkbox-wrap input {
+    cursor: pointer;
+}
+
+.hidden-form {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.inline-form {
+    margin: 0;
+}
+
+.btn-batch-remove {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: var(--terracotta);
+    background: rgba(201, 123, 92, 0.15);
+    border: 1px solid rgba(201, 123, 92, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-batch-remove:hover {
+    background: rgba(201, 123, 92, 0.25);
+    color: var(--terracotta);
+}
+
+.batch-submit-row {
+    margin-top: 1rem;
+}
+
+/* Timeline specific styles */
+.timeline-list {
+    position: relative;
+    padding-left: 2.5rem;
+}
+
+.timeline-list::before {
+    content: '';
+    position: absolute;
+    left: 0.8rem;
+    top: 1.5rem;
+    bottom: 1.5rem;
+    width: 2px;
+    background: rgba(125, 155, 118, 0.3);
+    border-radius: 2px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -2.05rem;
+    top: 1.5rem;
+    width: 14px;
+    height: 14px;
+    background: var(--sage);
+    border: 3px solid var(--cream);
+    border-radius: 50%;
+    z-index: 1;
+    box-shadow: 0 0 0 2px rgba(125, 155, 118, 0.1);
+}
+
+.timeline-item:hover .timeline-dot {
+    background: var(--terracotta);
+    border-color: var(--cream);
+    transform: scale(1.2);
+    transition: all 0.3s ease;
+}
+
+.product-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.product-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: white;
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--soft-shadow);
+    border: 1px solid rgba(125, 155, 118, 0.15);
+}
+
+.product-checkbox {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding-top: 0.2rem;
+}
+
+.product-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--sage);
+}
+
+.product-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--charcoal);
+    opacity: 0.75;
+}
+
+.product-id {
+    font-weight: 500;
+    color: var(--forest);
+}
+
+.product-dates {
+    font-size: 0.78rem;
+}
+
+.product-card .product-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--forest);
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+}
+
+.product-card .product-summary {
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    line-height: 1.65;
+    opacity: 0.9;
+}
+
+.product-card-actions {
+    flex-shrink: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.product-card-actions .inline-form {
+    margin: 0;
+}
+
+.btn-edit {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--charcoal);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.6;
+    text-decoration: none;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.btn-edit:hover {
+    opacity: 1;
+    background: rgba(125, 155, 118, 0.2);
+    color: var(--forest);
+}
+
+.btn-remove {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--charcoal);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.btn-remove:hover {
+    opacity: 1;
+    background: rgba(201, 123, 92, 0.15);
+    color: var(--terracotta);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 16px;
+    border: 1px dashed rgba(125, 155, 118, 0.3);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-state p {
+    color: var(--charcoal);
+    font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+.empty-state a {
+    color: var(--sage);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.empty-state a:hover {
+    color: var(--forest);
+    text-decoration: underline;
+}
+

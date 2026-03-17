@@ -15,3 +15,5 @@ AGENTS.md
 
 # OS generated files
 .DS_Store
+.worktrees/
+*:Zone.Identifier
