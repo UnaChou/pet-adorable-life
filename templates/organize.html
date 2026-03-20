@@ -22,7 +22,7 @@
             <div class="tab-actions">
                 <button type="button" class="btn-toggle-add" id="btnToggleAddProduct">➕ 新增商品</button>
             </div>
-            <section class="organize-add" id="addProductSection" style="display:none;">
+            <section class="organize-add hidden" id="addProductSection">
                 <h2>新增商品</h2>
                 <div class="add-form">
                     <div class="form-group">
@@ -75,8 +75,8 @@
     const btnToggle = document.getElementById('btnToggleAddProduct');
     const addSection = document.getElementById('addProductSection');
     btnToggle.addEventListener('click', () => {
-        const open = addSection.style.display !== 'none';
-        addSection.style.display = open ? 'none' : 'block';
+        const open = !addSection.classList.contains('hidden');
+        addSection.classList.toggle('hidden');
         btnToggle.textContent = open ? '➕ 新增商品' : '➖ 隱藏新增商品';
     });
 
@@ -133,7 +133,7 @@
     // Products
     async function loadProducts() {
         const productsSpinner = document.getElementById('productsLoading');
-        if (productsSpinner) productsSpinner.style.display = 'flex';
+        if (productsSpinner) productsSpinner.classList.remove('hidden');
         try {
             const res = await fetch('/api/products' + petFilterQuery());
             if (!res.ok) throw new Error();
@@ -143,7 +143,7 @@
             document.getElementById('productList').innerHTML = '<p>載入失敗，請重新整理</p>';
         } finally {
             const s = document.getElementById('productsLoading');
-            if (s) s.style.display = 'none';
+            if (s) s.classList.add('hidden');
         }
     }
 
@@ -200,7 +200,7 @@
             if (res.ok) {
                 document.getElementById('addTitle').value = '';
                 document.getElementById('addSummary').value = '';
-                addSection.style.display = 'none';
+                addSection.classList.add('hidden');
                 btnToggle.textContent = '➕ 新增商品';
                 loadProducts();
             } else {
@@ -214,7 +214,7 @@
     // Diaries
     async function loadDiaries() {
         const diariesSpinner = document.getElementById('diariesLoading');
-        if (diariesSpinner) diariesSpinner.style.display = 'flex';
+        if (diariesSpinner) diariesSpinner.classList.remove('hidden');
         try {
             const res = await fetch('/api/diaries' + petFilterQuery());
             if (!res.ok) throw new Error();
@@ -224,7 +224,7 @@
             document.getElementById('diaryList').innerHTML = '<p>載入失敗，請重新整理</p>';
         } finally {
             const s = document.getElementById('diariesLoading');
-            if (s) s.style.display = 'none';
+            if (s) s.classList.add('hidden');
         }
     }
 

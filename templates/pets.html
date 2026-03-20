@@ -11,7 +11,7 @@
 
     <section class="pets-add-section">
         <button class="btn-toggle-add" id="btnToggleAdd">➕ 新增寵物</button>
-        <div id="addFormWrap" style="display:none;" class="organize-add">
+        <div id="addFormWrap" class="hidden organize-add">
             <h2>新增寵物</h2>
             <form id="addPetForm" class="add-form">
                 <div class="form-group">
@@ -41,7 +41,7 @@
 </main>
 
 <!-- Edit dialog -->
-<div id="editDialog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+<div id="editDialog" class="hidden modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:12px;padding:2rem;width:min(480px,90vw);max-height:90vh;overflow-y:auto;" class="organize-add">
         <h2>✎ 編輯寵物</h2>
         <form id="editPetForm" class="add-form">
@@ -82,8 +82,8 @@
     const btnCloseEdit = document.getElementById('btnCloseEdit');
 
     btnToggleAdd.addEventListener('click', () => {
-        const open = addFormWrap.style.display !== 'none';
-        addFormWrap.style.display = open ? 'none' : 'block';
+        const open = !addFormWrap.classList.contains('hidden');
+        addFormWrap.classList.toggle('hidden');
         btnToggleAdd.textContent = open ? '➕ 新增寵物' : '➖ 隱藏';
     });
 
@@ -114,7 +114,7 @@
     }
 
     async function loadPets() {
-        petsLoading.style.display = 'flex';
+        petsLoading.classList.remove('hidden');
         try {
             const res = await fetch('/api/pets');
             if (!res.ok) throw new Error('載入失敗');
@@ -123,7 +123,7 @@
         } catch (e) {
             petsList.innerHTML = '<p>載入失敗，請重新整理</p>';
         } finally {
-            petsLoading.style.display = 'none';
+            petsLoading.classList.add('hidden');
         }
     }
 
@@ -178,7 +178,7 @@
             });
             if (res.ok) {
                 addPetForm.reset();
-                addFormWrap.style.display = 'none';
+                addFormWrap.classList.add('hidden');
                 btnToggleAdd.textContent = '➕ 新增寵物';
                 loadPets();
             } else {
@@ -197,12 +197,12 @@
         document.getElementById('editBreed').value = pet.breed || '';
         document.getElementById('editBirthday').value = pet.birthday || '';
         document.getElementById('editPhoto').value = '';
-        editDialog.style.display = 'flex';
+        editDialog.classList.remove('hidden');
     }
 
-    btnCloseEdit.addEventListener('click', () => { editDialog.style.display = 'none'; });
+    btnCloseEdit.addEventListener('click', () => { editDialog.classList.add('hidden'); });
     editDialog.addEventListener('click', (e) => {
-        if (e.target === editDialog) editDialog.style.display = 'none';
+        if (e.target === editDialog) editDialog.classList.add('hidden');
     });
 
     editPetForm.addEventListener('submit', async (e) => {
@@ -222,7 +222,7 @@
                 body: JSON.stringify(body),
             });
             if (res.ok) {
-                editDialog.style.display = 'none';
+                editDialog.classList.add('hidden');
                 loadPets();
             } else {
                 const err = await res.json();

@@ -21,22 +21,22 @@
                     <p>點擊或拖曳圖片到此處</p>
                     <p class="upload-hint">支援 PNG、JPG、WebP、GIF</p>
                 </div>
-                <div class="upload-preview" id="uploadPreview" style="display: none;">
+                <div class="upload-preview hidden" id="uploadPreview">
                     <img id="previewImg" src="" alt="預覽">
-                    <video id="cameraVideo" autoplay playsinline style="display: none;"></video>
-                    <canvas id="cameraCanvas" style="display: none;"></canvas>
+                    <video id="cameraVideo" autoplay playsinline class="hidden"></video>
+                    <canvas id="cameraCanvas" class="hidden"></canvas>
                 </div>
             </div>
             <div class="camera-controls">
-                <button type="button" class="btn-cancel-camera" id="btnCancelCamera" style="display: none;">✕
+                <button type="button" class="btn-cancel-camera hidden" id="btnCancelCamera">✕
                     取消</button>
-                <button type="button" class="btn-capture" id="btnCapture" style="display: none;">📸 拍照</button>
+                <button type="button" class="btn-capture hidden" id="btnCapture">📸 拍照</button>
             </div>
         </div>
         <button type="button" class="btn-analyze" id="btnAnalyze" disabled>開始分析</button>
     </section>
 
-    <section class="analyze-result" id="resultSection" style="display: none;">
+    <section class="analyze-result hidden" id="resultSection">
         <h2>分析結果 <span class="edit-hint">（可編修後儲存）</span></h2>
         <div class="result-edit-form add-form" id="resultForm">
             <div class="result-card">
@@ -57,16 +57,16 @@
         </div>
     </section>
 
-    <section class="analyze-error" id="errorSection" style="display: none;">
+    <section class="analyze-error hidden" id="errorSection">
         <p class="error-msg" id="errorMsg"></p>
     </section>
 
-    <section class="analyze-debug" id="debugSection" style="display: none;">
+    <section class="analyze-debug hidden" id="debugSection">
         <h3>接收回傳的 data</h3>
         <pre class="debug-raw" id="debugRaw"></pre>
     </section>
 
-    <div class="loading" id="loading" style="display: none;">
+    <div class="loading hidden" id="loading">
         <div class="spinner"></div>
         <p>AI 分析中...</p>
     </div>
@@ -106,12 +106,12 @@
                     audio: false
                 });
                 cameraVideo.srcObject = mediaStream;
-                cameraVideo.style.display = 'block';
-                previewImg.style.display = 'none';
-                uploadPlaceholder.style.display = 'none';
-                uploadPreview.style.display = 'block';
-                btnCapture.style.display = 'block';
-                btnCancelCamera.style.display = 'block';
+                cameraVideo.classList.remove('hidden');
+                previewImg.classList.add('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                uploadPreview.classList.remove('hidden');
+                btnCapture.classList.remove('hidden');
+                btnCancelCamera.classList.remove('hidden');
                 btnAnalyze.disabled = true;
             } catch (err) {
                 console.error('Error accessing camera:', err);
@@ -129,12 +129,12 @@
             cameraCanvas.toBlob((blob) => {
                 selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
                 previewImg.src = URL.createObjectURL(blob);
-                previewImg.style.display = 'block';
-                cameraVideo.style.display = 'none';
-                btnCapture.style.display = 'none';
-                btnCancelCamera.style.display = 'none';
-                uploadPlaceholder.style.display = 'none';
-                uploadPreview.style.display = 'block';
+                previewImg.classList.remove('hidden');
+                cameraVideo.classList.add('hidden');
+                btnCapture.classList.add('hidden');
+                btnCancelCamera.classList.add('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                uploadPreview.classList.remove('hidden');
 
                 if (mediaStream) {
                     mediaStream.getTracks().forEach(track => track.stop());
@@ -142,8 +142,8 @@
                 }
 
                 btnAnalyze.disabled = false;
-                resultSection.style.display = 'none';
-                errorSection.style.display = 'none';
+                resultSection.classList.add('hidden');
+                errorSection.classList.add('hidden');
 
                 handleFile(selectedFile);
             }, 'image/jpeg', 0.9);
@@ -155,14 +155,14 @@
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
             }
-            cameraVideo.style.display = 'none';
-            btnCapture.style.display = 'none';
-            btnCancelCamera.style.display = 'none';
+            cameraVideo.classList.add('hidden');
+            btnCapture.classList.add('hidden');
+            btnCancelCamera.classList.add('hidden');
             if (selectedFile) {
-                previewImg.style.display = 'block';
+                previewImg.classList.remove('hidden');
             } else {
-                uploadPlaceholder.style.display = 'block';
-                uploadPreview.style.display = 'none';
+                uploadPlaceholder.classList.remove('hidden');
+                uploadPreview.classList.add('hidden');
             }
         });
 
@@ -189,19 +189,19 @@
         function handleFile(file) {
             selectedFile = file;
             previewImg.src = URL.createObjectURL(file);
-            uploadPlaceholder.style.display = 'none';
-            uploadPreview.style.display = 'block';
+            uploadPlaceholder.classList.add('hidden');
+            uploadPreview.classList.remove('hidden');
             btnAnalyze.disabled = false;
-            resultSection.style.display = 'none';
-            errorSection.style.display = 'none';
+            resultSection.classList.add('hidden');
+            errorSection.classList.add('hidden');
         }
 
         btnAnalyze.addEventListener('click', async () => {
             if (!selectedFile) return;
-            loading.style.display = 'flex';
-            resultSection.style.display = 'none';
-            errorSection.style.display = 'none';
-            debugSection.style.display = 'none';
+            loading.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            errorSection.classList.add('hidden');
+            debugSection.classList.add('hidden');
 
             const formData = new FormData();
             formData.append('image', selectedFile);
@@ -224,10 +224,10 @@
                 } catch (err) {
                     if (attempts >= maxAttempts) {
                         debugRaw.textContent = '網路錯誤: ' + err.message;
-                        debugSection.style.display = 'block';
+                        debugSection.classList.remove('hidden');
                         errorMsg.textContent = err.message;
-                        errorSection.style.display = 'block';
-                        loading.style.display = 'none';
+                        errorSection.classList.remove('hidden');
+                        loading.classList.add('hidden');
                         return;
                     }
                     console.log(`Attempt ${attempts} network error, retrying...`);
@@ -239,26 +239,26 @@
                 data = JSON.parse(rawText);
             } catch (e) {
                 debugRaw.textContent = 'JSON 解析失敗 (line 1 column 1)\n\n原始回傳:\n' + rawText;
-                debugSection.style.display = 'block';
+                debugSection.classList.remove('hidden');
                 errorMsg.textContent = '伺服器回傳非 JSON，請查看下方「接收回傳的 data」';
-                errorSection.style.display = 'block';
-                loading.style.display = 'none';
+                errorSection.classList.remove('hidden');
+                loading.classList.add('hidden');
                 return;
             }
 
             // 永遠顯示接收到的完整 data
             debugRaw.textContent = JSON.stringify(data, null, 2);
-            debugSection.style.display = 'block';
+            debugSection.classList.remove('hidden');
 
             if (!data || data.error) {
                 errorMsg.textContent = data?.error || '分析失敗';
-                errorSection.style.display = 'block';
+                errorSection.classList.remove('hidden');
             } else {
                 resultTitleInput.value = data.title || '(無標題)';
                 resultSummaryInput.value = data.summary || '';
-                resultSection.style.display = 'block';
+                resultSection.classList.remove('hidden');
             }
-            loading.style.display = 'none';
+            loading.classList.add('hidden');
         });
 
         // Load pets
