@@ -1,0 +1,1847 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.0.2, pluggy-1.6.0 -- /usr/local/bin/python3
+cachedir: .pytest_cache
+rootdir: /app
+configfile: pyproject.toml
+collecting ... collected 274 items
+
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_no_image_field_returns_400 FAILED [  0%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_no_image_response_has_error_key PASSED [  0%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_no_image_error_is_string PASSED [  1%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_empty_filename_returns_400 FAILED [  1%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_empty_filename_response_has_error_key PASSED [  1%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_pdf_returns_400 FAILED [  2%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_txt_returns_400 FAILED [  2%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_docx_returns_400 FAILED [  2%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_exe_returns_400 FAILED [  3%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_mp4_returns_400 FAILED [  3%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_zip_returns_400 FAILED [  4%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_unsupported_format_error_mentions_supported_types FAILED [  4%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_no_extension_returns_400 FAILED [  4%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_wrong_field_name_returns_400 FAILED [  5%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_400_response_is_json PASSED [  5%]
+tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_400_content_type_is_json PASSED [  5%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_no_image_field_returns_400 FAILED [  6%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_no_image_response_has_error_key PASSED [  6%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_no_image_error_is_string PASSED [  6%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_empty_filename_returns_400 FAILED [  7%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_empty_filename_response_has_error_key PASSED [  7%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_pdf_returns_400 FAILED [  8%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_txt_returns_400 FAILED [  8%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_docx_returns_400 FAILED [  8%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_exe_returns_400 FAILED [  9%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_mp4_returns_400 FAILED [  9%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_zip_returns_400 FAILED [  9%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_unsupported_format_error_mentions_supported_types FAILED [ 10%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_no_extension_returns_400 FAILED [ 10%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_wrong_field_name_returns_400 FAILED [ 10%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_400_response_is_json PASSED [ 11%]
+tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_400_content_type_is_json PASSED [ 11%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.pdf] FAILED [ 12%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.txt] FAILED [ 12%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.docx] FAILED [ 12%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.exe] FAILED [ 13%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.svg] FAILED [ 13%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.mp4] FAILED [ 13%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.zip] FAILED [ 14%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.pdf] FAILED [ 14%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.txt] FAILED [ 14%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.docx] FAILED [ 15%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.exe] FAILED [ 15%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.svg] FAILED [ 16%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.mp4] FAILED [ 16%]
+tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.zip] FAILED [ 16%]
+tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_returns_200 FAILED [ 17%]
+tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_response_has_pets_key FAILED [ 17%]
+tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_pets_value_is_list FAILED [ 17%]
+tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_content_type_is_json PASSED [ 18%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_creates_pet_returns_201 FAILED [ 18%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_response_contains_pet_data FAILED [ 18%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_response_contains_id FAILED [ 19%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_empty_name_returns_400 FAILED [ 19%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_missing_name_key_returns_400 FAILED [ 20%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_whitespace_only_name_returns_400 FAILED [ 20%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_error_response_has_error_key PASSED [ 20%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_pet_appears_in_list_after_creation FAILED [ 21%]
+tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_pet_with_birthday FAILED [ 21%]
+tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_returns_200_for_existing_pet ERROR [ 21%]
+tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_response_matches_created_pet ERROR [ 22%]
+tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_returns_404_for_nonexistent_pet FAILED [ 22%]
+tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_404_response_has_error_key PASSED [ 22%]
+tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_response_has_expected_fields ERROR [ 23%]
+tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_returns_200 ERROR    [ 23%]
+tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_updated_fields_reflected_in_response ERROR [ 24%]
+tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_updated_fields_persisted_on_subsequent_get ERROR [ 24%]
+tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_returns_404_for_nonexistent_pet FAILED [ 24%]
+tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_empty_name_returns_400 ERROR [ 25%]
+tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_birthday_can_be_updated ERROR [ 25%]
+tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_returns_204 FAILED   [ 25%]
+tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_delete_response_body_is_empty FAILED [ 26%]
+tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_pet_no_longer_retrievable_after_delete FAILED [ 26%]
+tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_pet_absent_from_list_after_delete FAILED [ 27%]
+tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_returns_404_for_nonexistent_pet FAILED [ 27%]
+tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_page_title_set ERROR [ 27%]
+tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_nav_bar_visible ERROR [ 28%]
+tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_organize_nav_link_is_active ERROR [ 28%]
+tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_hero_section_visible ERROR [ 28%]
+tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_tabs_container_present ERROR [ 29%]
+tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_tabs_header_present ERROR [ 29%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_products_tab_active_on_load ERROR [ 29%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_products_tab_content_visible_on_load ERROR [ 30%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_diaries_tab_content_hidden_on_load ERROR [ 30%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_clicking_diaries_tab_makes_content_visible ERROR [ 31%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_clicking_diaries_tab_hides_products_content ERROR [ 31%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_clicking_products_tab_restores_products_content ERROR [ 31%]
+tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_active_class_moves_to_clicked_tab ERROR [ 32%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_filter_bar_container_present ERROR [ 32%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_all_button_rendered_after_js_loads ERROR [ 32%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_all_button_text_is_quanbu ERROR [ 33%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_unassigned_button_rendered ERROR [ 33%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_all_button_active_by_default ERROR [ 33%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_filter_bar_with_existing_pet ERROR [ 34%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_clicking_filter_button_updates_active_state ERROR [ 34%]
+tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_clicking_all_button_resets_filter ERROR [ 35%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_product_button_present ERROR [ 35%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_product_section_hidden_by_default ERROR [ 35%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_clicking_toggle_shows_add_section ERROR [ 36%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_clicking_toggle_twice_hides_section ERROR [ 36%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_title_input ERROR [ 36%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_summary_textarea ERROR [ 37%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_pet_select ERROR [ 37%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_submit_button ERROR [ 37%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_button_label_changes_when_open ERROR [ 38%]
+tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_button_label_resets_when_closed ERROR [ 38%]
+tests/e2e/test_organize_behaviour.py::TestProductListRendering::test_product_list_section_present ERROR [ 39%]
+tests/e2e/test_organize_behaviour.py::TestProductListRendering::test_products_loading_spinner_disappears ERROR [ 39%]
+tests/e2e/test_organize_behaviour.py::TestProductListRendering::test_add_product_flow ERROR [ 39%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_returns_200 ERROR  [ 40%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_title_contains_pet_adorable_life ERROR [ 40%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_nav_bar_present ERROR [ 40%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_nav_links_include_all_sections ERROR [ 41%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_hero_heading_visible ERROR [ 41%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_feature_cards_present ERROR [ 41%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_product_analyze_card_links_correctly ERROR [ 42%]
+tests/e2e/test_page_navigation.py::TestHomePage::test_diary_card_links_correctly ERROR [ 42%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_returns_200 ERROR  [ 43%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_page_heading_visible ERROR [ 43%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_add_pet_toggle_button_present ERROR [ 43%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_add_form_hidden_by_default ERROR [ 44%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_add_form_toggles_open ERROR [ 44%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_add_form_has_name_input ERROR [ 44%]
+tests/e2e/test_page_navigation.py::TestPetsPage::test_pets_list_section_present ERROR [ 45%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_returns_200 ERROR [ 45%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_page_heading_visible ERROR [ 45%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_tab_switcher_present ERROR [ 46%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_products_tab_button_present ERROR [ 46%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_diaries_tab_button_present ERROR [ 47%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_products_tab_active_by_default ERROR [ 47%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_tab_switch_to_diaries ERROR [ 47%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_pet_filter_bar_present ERROR [ 48%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_pet_filter_bar_has_all_button_after_load ERROR [ 48%]
+tests/e2e/test_page_navigation.py::TestOrganizePage::test_add_product_toggle_button_present ERROR [ 48%]
+tests/e2e/test_page_navigation.py::TestProductAnalyzePage::test_returns_200 ERROR [ 49%]
+tests/e2e/test_page_navigation.py::TestProductAnalyzePage::test_title_mentions_product_or_analyze ERROR [ 49%]
+tests/e2e/test_page_navigation.py::TestProductAnalyzePage::test_nav_bar_present ERROR [ 50%]
+tests/e2e/test_page_navigation.py::TestDiaryPage::test_returns_200 ERROR [ 50%]
+tests/e2e/test_page_navigation.py::TestDiaryPage::test_title_mentions_diary ERROR [ 50%]
+tests/e2e/test_page_navigation.py::TestDiaryPage::test_nav_bar_present ERROR [ 51%]
+tests/e2e/test_page_navigation.py::TestOrganizeEditPage::test_returns_200_for_valid_id ERROR [ 51%]
+tests/test_api_diaries.py::test_get_diaries PASSED                       [ 51%]
+tests/test_api_diaries.py::test_get_diaries_with_pet_filter PASSED       [ 52%]
+tests/test_api_diaries.py::test_add_diary_returns_201 PASSED             [ 52%]
+tests/test_api_diaries.py::test_delete_diary_returns_204 PASSED          [ 52%]
+tests/test_api_diaries.py::test_delete_diary_not_found_returns_404 PASSED [ 53%]
+tests/test_api_diaries.py::test_batch_delete_diaries_returns_204 PASSED  [ 53%]
+tests/test_api_diaries.py::test_add_diary_db_failure_returns_500 PASSED  [ 54%]
+tests/test_api_pets.py::test_get_pets_returns_list PASSED                [ 54%]
+tests/test_api_pets.py::test_add_pet_returns_201 PASSED                  [ 54%]
+tests/test_api_pets.py::test_add_pet_missing_name_returns_400 PASSED     [ 55%]
+tests/test_api_pets.py::test_get_pet_not_found_returns_404 PASSED        [ 55%]
+tests/test_api_pets.py::test_update_pet_returns_200 PASSED               [ 55%]
+tests/test_api_pets.py::test_delete_pet_returns_204 PASSED               [ 56%]
+tests/test_api_pets.py::test_update_pet_missing_name_returns_400 PASSED  [ 56%]
+tests/test_api_products.py::test_get_products PASSED                     [ 56%]
+tests/test_api_products.py::test_get_products_with_pet_filter PASSED     [ 57%]
+tests/test_api_products.py::test_add_product_returns_201 PASSED          [ 57%]
+tests/test_api_products.py::test_update_product_not_found_returns_404 PASSED [ 58%]
+tests/test_api_products.py::test_delete_product_returns_204 PASSED       [ 58%]
+tests/test_api_products.py::test_batch_delete_products_returns_204 PASSED [ 58%]
+tests/test_api_products.py::test_get_product_returns_200 PASSED          [ 59%]
+tests/test_api_products.py::test_get_product_not_found_returns_404 PASSED [ 59%]
+tests/test_api_products.py::test_update_product_success PASSED           [ 59%]
+tests/test_api_products.py::test_delete_product_not_found_returns_404 PASSED [ 60%]
+tests/test_app_pages.py::test_index_page PASSED                          [ 60%]
+tests/test_app_pages.py::test_product_analyze_page PASSED                [ 60%]
+tests/test_app_pages.py::test_organize_page PASSED                       [ 61%]
+tests/test_app_pages.py::test_organize_edit_page PASSED                  [ 61%]
+tests/test_app_pages.py::test_diary_page PASSED                          [ 62%]
+tests/test_app_pages.py::test_pets_page PASSED                           [ 62%]
+tests/test_app_pages.py::test_product_analyze_no_image_returns_400 PASSED [ 62%]
+tests/test_app_pages.py::test_product_analyze_empty_filename_returns_400 PASSED [ 63%]
+tests/test_app_pages.py::test_product_analyze_unsupported_format_returns_400 PASSED [ 63%]
+tests/test_app_pages.py::test_product_analyze_model_returns_none_returns_500 PASSED [ 63%]
+tests/test_app_pages.py::test_product_analyze_model_returns_error_returns_500 PASSED [ 64%]
+tests/test_app_pages.py::test_product_analyze_success PASSED             [ 64%]
+tests/test_app_pages.py::test_product_analyze_webp_allowed PASSED        [ 64%]
+tests/test_app_pages.py::test_diary_analyze_no_image_returns_400 PASSED  [ 65%]
+tests/test_app_pages.py::test_diary_analyze_empty_filename_returns_400 PASSED [ 65%]
+tests/test_app_pages.py::test_diary_analyze_unsupported_format_returns_400 PASSED [ 66%]
+tests/test_app_pages.py::test_diary_analyze_model_returns_none_returns_500 PASSED [ 66%]
+tests/test_app_pages.py::test_diary_analyze_model_returns_error_returns_500 PASSED [ 66%]
+tests/test_app_pages.py::test_diary_analyze_success PASSED               [ 67%]
+tests/test_app_pages.py::test_diary_analyze_exception_returns_500 PASSED [ 67%]
+tests/test_app_pages.py::test_add_pet_null_return_returns_500 PASSED     [ 67%]
+tests/test_app_pages.py::test_get_pet_found_returns_200 PASSED           [ 68%]
+tests/test_app_pages.py::test_update_pet_not_found_returns_404 PASSED    [ 68%]
+tests/test_app_pages.py::test_delete_pet_not_found_returns_404 PASSED    [ 68%]
+tests/test_app_pages.py::test_add_product_null_return_returns_500 PASSED [ 69%]
+tests/test_app_pages.py::test_batch_delete_products_empty_ids PASSED     [ 69%]
+tests/test_auth.py::test_protected_page_redirects_to_login_when_unauthenticated PASSED [ 70%]
+tests/test_auth.py::test_protected_api_returns_401_when_unauthenticated PASSED [ 70%]
+tests/test_auth.py::test_login_page_accessible_unauthenticated PASSED    [ 70%]
+tests/test_auth.py::test_register_page_accessible_unauthenticated PASSED [ 71%]
+tests/test_auth.py::test_login_requires_csrf_token PASSED                [ 71%]
+tests/test_auth.py::test_login_success_sets_session_and_redirects PASSED [ 71%]
+tests/test_auth.py::test_login_wrong_password_returns_401 PASSED         [ 72%]
+tests/test_auth.py::test_login_unknown_user_returns_401 PASSED           [ 72%]
+tests/test_auth.py::test_register_requires_csrf_token PASSED             [ 72%]
+tests/test_auth.py::test_register_success_creates_user_and_redirects PASSED [ 73%]
+tests/test_auth.py::test_register_duplicate_username_returns_400 PASSED  [ 73%]
+tests/test_auth.py::test_register_password_mismatch_returns_400 PASSED   [ 74%]
+tests/test_auth.py::test_register_short_password_returns_400 PASSED      [ 74%]
+tests/test_auth.py::test_register_empty_username_returns_400 PASSED      [ 74%]
+tests/test_auth.py::test_register_invalid_username_chars_returns_400 PASSED [ 75%]
+tests/test_auth.py::test_register_duplicate_email_returns_400 PASSED     [ 75%]
+tests/test_auth.py::test_forgot_password_requires_csrf_token PASSED      [ 75%]
+tests/test_auth.py::test_forgot_password_creates_token_with_valid_csrf PASSED [ 76%]
+tests/test_auth.py::test_forgot_password_rate_limited_skips_db_lookup PASSED [ 76%]
+tests/test_auth.py::test_reset_password_rejects_invalid_token_format PASSED [ 77%]
+tests/test_auth.py::test_reset_password_requires_csrf_token PASSED       [ 77%]
+tests/test_auth.py::test_reset_password_success_clears_session_and_updates_password PASSED [ 77%]
+tests/test_auth.py::test_logout_clears_session_and_redirects_to_login PASSED [ 78%]
+tests/test_db_diaries.py::test_get_all_diaries_no_filter PASSED          [ 78%]
+tests/test_db_diaries.py::test_get_all_diaries_pet_id_zero_uses_is_null PASSED [ 78%]
+tests/test_db_diaries.py::test_get_all_diaries_specific_pet PASSED       [ 79%]
+tests/test_db_diaries.py::test_add_diary_returns_id PASSED               [ 79%]
+tests/test_db_diaries.py::test_add_diary_with_no_pet PASSED              [ 79%]
+tests/test_db_diaries.py::test_get_diary_returns_dict PASSED             [ 80%]
+tests/test_db_diaries.py::test_get_diary_not_found_returns_none PASSED   [ 80%]
+tests/test_db_diaries.py::test_remove_diaries_batch PASSED               [ 81%]
+tests/test_db_diaries.py::test_remove_diaries_empty_list_no_op PASSED    [ 81%]
+tests/test_db_diaries.py::test_remove_pet_nullifies_references PASSED    [ 81%]
+tests/test_db_pets.py::test_add_pet_returns_id PASSED                    [ 82%]
+tests/test_db_pets.py::test_get_pet_returns_none_when_not_found PASSED   [ 82%]
+tests/test_db_pets.py::test_get_pet_returns_dict PASSED                  [ 82%]
+tests/test_db_pets.py::test_get_all_products_accepts_pet_id_filter PASSED [ 83%]
+tests/test_db_pets.py::test_add_product_accepts_pet_id PASSED            [ 83%]
+tests/test_db_pets.py::test_get_all_pets_returns_empty_list PASSED       [ 83%]
+tests/test_db_pets.py::test_get_all_pets_returns_formatted_list PASSED   [ 84%]
+tests/test_db_pets.py::test_update_pet_with_photo_updates_photo_field PASSED [ 84%]
+tests/test_db_pets.py::test_update_pet_without_photo_excludes_photo_field PASSED [ 85%]
+tests/test_db_products.py::test_get_all_products_no_filter PASSED        [ 85%]
+tests/test_db_products.py::test_get_all_products_pet_id_zero_uses_is_null PASSED [ 85%]
+tests/test_db_products.py::test_get_all_products_returns_list PASSED     [ 86%]
+tests/test_db_products.py::test_get_product_returns_dict PASSED          [ 86%]
+tests/test_db_products.py::test_get_product_not_found_returns_none PASSED [ 86%]
+tests/test_db_products.py::test_update_product_executes_sql PASSED       [ 87%]
+tests/test_db_products.py::test_remove_product_executes_delete PASSED    [ 87%]
+tests/test_db_products.py::test_remove_products_batch PASSED             [ 87%]
+tests/test_db_products.py::test_remove_products_empty_list_no_op PASSED  [ 88%]
+tests/test_db_schema.py::test_get_db_config_returns_required_keys PASSED [ 88%]
+tests/test_db_schema.py::test_get_connection_commits_on_success PASSED   [ 89%]
+tests/test_db_schema.py::test_get_connection_rolls_back_on_exception PASSED [ 89%]
+tests/test_db_schema.py::test_init_db_raises_on_non_duplicate_column_error PASSED [ 89%]
+tests/test_db_schema.py::test_init_db_creates_pets_table PASSED          [ 90%]
+tests/test_db_users.py::test_create_user_returns_id PASSED               [ 90%]
+tests/test_db_users.py::test_get_user_by_username_returns_user PASSED    [ 90%]
+tests/test_db_users.py::test_get_user_by_username_returns_none_when_not_found PASSED [ 91%]
+tests/test_db_users.py::test_get_user_by_id_returns_user PASSED          [ 91%]
+tests/test_db_users.py::test_get_user_by_id_returns_none_when_not_found PASSED [ 91%]
+tests/test_model_connector.py::test_extract_json_by_regex_finds_object PASSED [ 92%]
+tests/test_model_connector.py::test_extract_json_by_regex_no_match_returns_input PASSED [ 92%]
+tests/test_model_connector.py::test_extract_json_object_simple PASSED    [ 93%]
+tests/test_model_connector.py::test_extract_json_object_no_brace_returns_input PASSED [ 93%]
+tests/test_model_connector.py::test_extract_json_object_nested PASSED    [ 93%]
+tests/test_model_connector.py::test_get_image_base64_from_bytes PASSED   [ 94%]
+tests/test_model_connector.py::test_get_image_base64_from_file_object PASSED [ 94%]
+tests/test_model_connector.py::test_get_model_response_by_image_returns_none_on_failure PASSED [ 94%]
+tests/test_model_connector.py::test_get_model_response_by_image_returns_dict_on_success PASSED [ 95%]
+tests/test_model_connector.py::test_get_diary_response_by_image_delegates PASSED [ 95%]
+tests/test_model_connector.py::test_get_diary_response_uses_fallback_prompt_when_missing PASSED [ 95%]
+tests/test_model_connector.py::test_get_text_response_returns_none_on_failure PASSED [ 96%]
+tests/test_model_connector.py::test_get_text_response_returns_string_on_success PASSED [ 96%]
+tests/test_model_connector.py::test_encode_image_to_base64_file_not_found PASSED [ 97%]
+tests/test_model_connector.py::test_encode_image_to_base64_existing_file PASSED [ 97%]
+tests/test_model_connector.py::test_extract_json_object_with_escape_sequence PASSED [ 97%]
+tests/test_model_connector.py::test_extract_json_object_unclosed_returns_from_start PASSED [ 98%]
+tests/test_model_connector.py::test_get_image_base64_from_string_path PASSED [ 98%]
+tests/test_model_connector.py::test_get_model_response_calls_requests_post PASSED [ 98%]
+tests/test_model_connector.py::test_get_model_response_by_image_parses_json_response PASSED [ 99%]
+tests/test_model_connector.py::test_get_model_response_by_image_regex_fallback PASSED [ 99%]
+tests/test_model_connector.py::test_get_model_response_by_image_non_dict_result PASSED [100%]
+
+==================================== ERRORS ====================================
+_____ ERROR at setup of TestGetSinglePet.test_returns_200_for_existing_pet _____
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_____ ERROR at setup of TestGetSinglePet.test_response_matches_created_pet _____
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_____ ERROR at setup of TestGetSinglePet.test_response_has_expected_fields _____
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_______________ ERROR at setup of TestUpdatePet.test_returns_200 _______________
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+__ ERROR at setup of TestUpdatePet.test_updated_fields_reflected_in_response ___
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_ ERROR at setup of TestUpdatePet.test_updated_fields_persisted_on_subsequent_get _
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_________ ERROR at setup of TestUpdatePet.test_empty_name_returns_400 __________
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_________ ERROR at setup of TestUpdatePet.test_birthday_can_be_updated _________
+
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    @pytest.fixture()
+    def transient_pet(api):
+        """
+        Creates a pet before a test and deletes it afterwards.
+        Yields the full pet dict returned by the API.
+        """
+        resp = api.post("/api/pets", json={"name": "E2E測試寵物", "breed": "測試犬"})
+>       assert resp.status_code == 201, f"Failed to create transient pet: {resp.text}"
+E       AssertionError: Failed to create transient pet: {"error":"\u8acb\u5148\u767b\u5165"}
+E         
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/conftest.py:119: AssertionError
+_______ ERROR at setup of TestOrganisePageStructure.test_page_title_set ________
+file /app/tests/e2e/test_organize_behaviour.py, line 31
+      def test_page_title_set(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:31
+_______ ERROR at setup of TestOrganisePageStructure.test_nav_bar_visible _______
+file /app/tests/e2e/test_organize_behaviour.py, line 35
+      def test_nav_bar_visible(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:35
+_ ERROR at setup of TestOrganisePageStructure.test_organize_nav_link_is_active _
+file /app/tests/e2e/test_organize_behaviour.py, line 41
+      def test_organize_nav_link_is_active(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:41
+____ ERROR at setup of TestOrganisePageStructure.test_hero_section_visible _____
+file /app/tests/e2e/test_organize_behaviour.py, line 47
+      def test_hero_section_visible(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:47
+___ ERROR at setup of TestOrganisePageStructure.test_tabs_container_present ____
+file /app/tests/e2e/test_organize_behaviour.py, line 53
+      def test_tabs_container_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:53
+_____ ERROR at setup of TestOrganisePageStructure.test_tabs_header_present _____
+file /app/tests/e2e/test_organize_behaviour.py, line 59
+      def test_tabs_header_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:59
+_____ ERROR at setup of TestTabSwitching.test_products_tab_active_on_load ______
+file /app/tests/e2e/test_organize_behaviour.py, line 71
+      def test_products_tab_active_on_load(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:71
+_ ERROR at setup of TestTabSwitching.test_products_tab_content_visible_on_load _
+file /app/tests/e2e/test_organize_behaviour.py, line 77
+      def test_products_tab_content_visible_on_load(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:77
+__ ERROR at setup of TestTabSwitching.test_diaries_tab_content_hidden_on_load __
+file /app/tests/e2e/test_organize_behaviour.py, line 83
+      def test_diaries_tab_content_hidden_on_load(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:83
+_ ERROR at setup of TestTabSwitching.test_clicking_diaries_tab_makes_content_visible _
+file /app/tests/e2e/test_organize_behaviour.py, line 91
+      def test_clicking_diaries_tab_makes_content_visible(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:91
+_ ERROR at setup of TestTabSwitching.test_clicking_diaries_tab_hides_products_content _
+file /app/tests/e2e/test_organize_behaviour.py, line 97
+      def test_clicking_diaries_tab_hides_products_content(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:97
+_ ERROR at setup of TestTabSwitching.test_clicking_products_tab_restores_products_content _
+file /app/tests/e2e/test_organize_behaviour.py, line 103
+      def test_clicking_products_tab_restores_products_content(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:103
+__ ERROR at setup of TestTabSwitching.test_active_class_moves_to_clicked_tab ___
+file /app/tests/e2e/test_organize_behaviour.py, line 113
+      def test_active_class_moves_to_clicked_tab(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:113
+_____ ERROR at setup of TestPetFilterBar.test_filter_bar_container_present _____
+file /app/tests/e2e/test_organize_behaviour.py, line 126
+      def test_filter_bar_container_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:126
+__ ERROR at setup of TestPetFilterBar.test_all_button_rendered_after_js_loads __
+file /app/tests/e2e/test_organize_behaviour.py, line 132
+      def test_all_button_rendered_after_js_loads(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:132
+______ ERROR at setup of TestPetFilterBar.test_all_button_text_is_quanbu _______
+file /app/tests/e2e/test_organize_behaviour.py, line 138
+      def test_all_button_text_is_quanbu(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:138
+______ ERROR at setup of TestPetFilterBar.test_unassigned_button_rendered ______
+file /app/tests/e2e/test_organize_behaviour.py, line 144
+      def test_unassigned_button_rendered(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:144
+_____ ERROR at setup of TestPetFilterBar.test_all_button_active_by_default _____
+file /app/tests/e2e/test_organize_behaviour.py, line 154
+      def test_all_button_active_by_default(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:154
+_____ ERROR at setup of TestPetFilterBar.test_filter_bar_with_existing_pet _____
+file /app/tests/e2e/test_organize_behaviour.py, line 160
+      def test_filter_bar_with_existing_pet(self, page, base_url, transient_pet, api):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:160
+_ ERROR at setup of TestPetFilterBar.test_clicking_filter_button_updates_active_state _
+file /app/tests/e2e/test_organize_behaviour.py, line 173
+      def test_clicking_filter_button_updates_active_state(self, page, base_url, transient_pet):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:173
+__ ERROR at setup of TestPetFilterBar.test_clicking_all_button_resets_filter ___
+file /app/tests/e2e/test_organize_behaviour.py, line 182
+      def test_clicking_all_button_resets_filter(self, page, base_url, transient_pet):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:182
+__ ERROR at setup of TestAddProductFormToggle.test_add_product_button_present __
+file /app/tests/e2e/test_organize_behaviour.py, line 198
+      def test_add_product_button_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:198
+_ ERROR at setup of TestAddProductFormToggle.test_add_product_section_hidden_by_default _
+file /app/tests/e2e/test_organize_behaviour.py, line 204
+      def test_add_product_section_hidden_by_default(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:204
+_ ERROR at setup of TestAddProductFormToggle.test_clicking_toggle_shows_add_section _
+file /app/tests/e2e/test_organize_behaviour.py, line 210
+      def test_clicking_toggle_shows_add_section(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:210
+_ ERROR at setup of TestAddProductFormToggle.test_clicking_toggle_twice_hides_section _
+file /app/tests/e2e/test_organize_behaviour.py, line 217
+      def test_clicking_toggle_twice_hides_section(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:217
+___ ERROR at setup of TestAddProductFormToggle.test_add_form_has_title_input ___
+file /app/tests/e2e/test_organize_behaviour.py, line 226
+      def test_add_form_has_title_input(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:226
+_ ERROR at setup of TestAddProductFormToggle.test_add_form_has_summary_textarea _
+file /app/tests/e2e/test_organize_behaviour.py, line 232
+      def test_add_form_has_summary_textarea(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:232
+___ ERROR at setup of TestAddProductFormToggle.test_add_form_has_pet_select ____
+file /app/tests/e2e/test_organize_behaviour.py, line 238
+      def test_add_form_has_pet_select(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:238
+__ ERROR at setup of TestAddProductFormToggle.test_add_form_has_submit_button __
+file /app/tests/e2e/test_organize_behaviour.py, line 244
+      def test_add_form_has_submit_button(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:244
+_ ERROR at setup of TestAddProductFormToggle.test_button_label_changes_when_open _
+file /app/tests/e2e/test_organize_behaviour.py, line 250
+      def test_button_label_changes_when_open(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:250
+_ ERROR at setup of TestAddProductFormToggle.test_button_label_resets_when_closed _
+file /app/tests/e2e/test_organize_behaviour.py, line 257
+      def test_button_label_resets_when_closed(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:257
+_ ERROR at setup of TestProductListRendering.test_product_list_section_present _
+file /app/tests/e2e/test_organize_behaviour.py, line 272
+      def test_product_list_section_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:272
+_ ERROR at setup of TestProductListRendering.test_products_loading_spinner_disappears _
+file /app/tests/e2e/test_organize_behaviour.py, line 278
+      def test_products_loading_spinner_disappears(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:278
+_______ ERROR at setup of TestProductListRendering.test_add_product_flow _______
+file /app/tests/e2e/test_organize_behaviour.py, line 285
+      def test_add_product_flow(self, page, base_url, api):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_organize_behaviour.py:285
+_______________ ERROR at setup of TestHomePage.test_returns_200 ________________
+file /app/tests/e2e/test_page_navigation.py, line 31
+      def test_returns_200(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:31
+_____ ERROR at setup of TestHomePage.test_title_contains_pet_adorable_life _____
+file /app/tests/e2e/test_page_navigation.py, line 35
+      def test_title_contains_pet_adorable_life(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:35
+_____________ ERROR at setup of TestHomePage.test_nav_bar_present ______________
+file /app/tests/e2e/test_page_navigation.py, line 39
+      def test_nav_bar_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:39
+______ ERROR at setup of TestHomePage.test_nav_links_include_all_sections ______
+file /app/tests/e2e/test_page_navigation.py, line 45
+      def test_nav_links_include_all_sections(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:45
+___________ ERROR at setup of TestHomePage.test_hero_heading_visible ___________
+file /app/tests/e2e/test_page_navigation.py, line 52
+      def test_hero_heading_visible(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:52
+__________ ERROR at setup of TestHomePage.test_feature_cards_present ___________
+file /app/tests/e2e/test_page_navigation.py, line 58
+      def test_feature_cards_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:58
+___ ERROR at setup of TestHomePage.test_product_analyze_card_links_correctly ___
+file /app/tests/e2e/test_page_navigation.py, line 64
+      def test_product_analyze_card_links_correctly(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:64
+________ ERROR at setup of TestHomePage.test_diary_card_links_correctly ________
+file /app/tests/e2e/test_page_navigation.py, line 69
+      def test_diary_card_links_correctly(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:69
+_______________ ERROR at setup of TestPetsPage.test_returns_200 ________________
+file /app/tests/e2e/test_page_navigation.py, line 80
+      def test_returns_200(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:80
+___________ ERROR at setup of TestPetsPage.test_page_heading_visible ___________
+file /app/tests/e2e/test_page_navigation.py, line 84
+      def test_page_heading_visible(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:84
+______ ERROR at setup of TestPetsPage.test_add_pet_toggle_button_present _______
+file /app/tests/e2e/test_page_navigation.py, line 90
+      def test_add_pet_toggle_button_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:90
+________ ERROR at setup of TestPetsPage.test_add_form_hidden_by_default ________
+file /app/tests/e2e/test_page_navigation.py, line 96
+      def test_add_form_hidden_by_default(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:96
+__________ ERROR at setup of TestPetsPage.test_add_form_toggles_open ___________
+file /app/tests/e2e/test_page_navigation.py, line 102
+      def test_add_form_toggles_open(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:102
+_________ ERROR at setup of TestPetsPage.test_add_form_has_name_input __________
+file /app/tests/e2e/test_page_navigation.py, line 109
+      def test_add_form_has_name_input(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:109
+________ ERROR at setup of TestPetsPage.test_pets_list_section_present _________
+file /app/tests/e2e/test_page_navigation.py, line 116
+      def test_pets_list_section_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:116
+_____________ ERROR at setup of TestOrganizePage.test_returns_200 ______________
+file /app/tests/e2e/test_page_navigation.py, line 128
+      def test_returns_200(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:128
+_________ ERROR at setup of TestOrganizePage.test_page_heading_visible _________
+file /app/tests/e2e/test_page_navigation.py, line 132
+      def test_page_heading_visible(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:132
+_________ ERROR at setup of TestOrganizePage.test_tab_switcher_present _________
+file /app/tests/e2e/test_page_navigation.py, line 138
+      def test_tab_switcher_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:138
+_____ ERROR at setup of TestOrganizePage.test_products_tab_button_present ______
+file /app/tests/e2e/test_page_navigation.py, line 144
+      def test_products_tab_button_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:144
+______ ERROR at setup of TestOrganizePage.test_diaries_tab_button_present ______
+file /app/tests/e2e/test_page_navigation.py, line 150
+      def test_diaries_tab_button_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:150
+____ ERROR at setup of TestOrganizePage.test_products_tab_active_by_default ____
+file /app/tests/e2e/test_page_navigation.py, line 156
+      def test_products_tab_active_by_default(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:156
+________ ERROR at setup of TestOrganizePage.test_tab_switch_to_diaries _________
+file /app/tests/e2e/test_page_navigation.py, line 162
+      def test_tab_switch_to_diaries(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:162
+________ ERROR at setup of TestOrganizePage.test_pet_filter_bar_present ________
+file /app/tests/e2e/test_page_navigation.py, line 169
+      def test_pet_filter_bar_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:169
+_ ERROR at setup of TestOrganizePage.test_pet_filter_bar_has_all_button_after_load _
+file /app/tests/e2e/test_page_navigation.py, line 177
+      def test_pet_filter_bar_has_all_button_after_load(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:177
+__ ERROR at setup of TestOrganizePage.test_add_product_toggle_button_present ___
+file /app/tests/e2e/test_page_navigation.py, line 184
+      def test_add_product_toggle_button_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:184
+__________ ERROR at setup of TestProductAnalyzePage.test_returns_200 ___________
+file /app/tests/e2e/test_page_navigation.py, line 196
+      def test_returns_200(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:196
+_ ERROR at setup of TestProductAnalyzePage.test_title_mentions_product_or_analyze _
+file /app/tests/e2e/test_page_navigation.py, line 200
+      def test_title_mentions_product_or_analyze(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:200
+________ ERROR at setup of TestProductAnalyzePage.test_nav_bar_present _________
+file /app/tests/e2e/test_page_navigation.py, line 205
+      def test_nav_bar_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:205
+_______________ ERROR at setup of TestDiaryPage.test_returns_200 _______________
+file /app/tests/e2e/test_page_navigation.py, line 217
+      def test_returns_200(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:217
+__________ ERROR at setup of TestDiaryPage.test_title_mentions_diary ___________
+file /app/tests/e2e/test_page_navigation.py, line 221
+      def test_title_mentions_diary(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:221
+_____________ ERROR at setup of TestDiaryPage.test_nav_bar_present _____________
+file /app/tests/e2e/test_page_navigation.py, line 226
+      def test_nav_bar_present(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:226
+_____ ERROR at setup of TestOrganizeEditPage.test_returns_200_for_valid_id _____
+file /app/tests/e2e/test_page_navigation.py, line 238
+      def test_returns_200_for_valid_id(self, page, base_url):
+E       fixture 'page' not found
+>       available fixtures: api, authed_client, base_url, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, doctest_namespace, mock_db, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, require_live_server, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, transient_pet
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/app/tests/e2e/test_page_navigation.py:238
+=================================== FAILURES ===================================
+_________ TestProductAnalyzeValidation.test_no_image_field_returns_400 _________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca6590>
+base_url = 'http://localhost:5001'
+
+    def test_no_image_field_returns_400(self, base_url):
+        resp = _post_no_files(base_url, self.PATH)
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:70: AssertionError
+_________ TestProductAnalyzeValidation.test_empty_filename_returns_400 _________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca7750>
+base_url = 'http://localhost:5001'
+
+    def test_empty_filename_returns_400(self, base_url):
+        resp = _post_empty_filename(base_url, self.PATH)
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:84: AssertionError
+______________ TestProductAnalyzeValidation.test_pdf_returns_400 _______________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca4650>
+base_url = 'http://localhost:5001'
+
+    def test_pdf_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "document.pdf")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:94: AssertionError
+______________ TestProductAnalyzeValidation.test_txt_returns_400 _______________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca6310>
+base_url = 'http://localhost:5001'
+
+    def test_txt_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "notes.txt")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:98: AssertionError
+______________ TestProductAnalyzeValidation.test_docx_returns_400 ______________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca5110>
+base_url = 'http://localhost:5001'
+
+    def test_docx_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "report.docx")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:102: AssertionError
+______________ TestProductAnalyzeValidation.test_exe_returns_400 _______________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca5490>
+base_url = 'http://localhost:5001'
+
+    def test_exe_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "malware.exe")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:106: AssertionError
+______________ TestProductAnalyzeValidation.test_mp4_returns_400 _______________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca5b90>
+base_url = 'http://localhost:5001'
+
+    def test_mp4_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "video.mp4")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:110: AssertionError
+______________ TestProductAnalyzeValidation.test_zip_returns_400 _______________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91ca5e90>
+base_url = 'http://localhost:5001'
+
+    def test_zip_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "archive.zip")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:114: AssertionError
+_ TestProductAnalyzeValidation.test_unsupported_format_error_mentions_supported_types _
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91c935d0>
+base_url = 'http://localhost:5001'
+
+    def test_unsupported_format_error_mentions_supported_types(self, base_url):
+        resp = _post_file(base_url, self.PATH, "file.pdf")
+        body = resp.json()
+        assert "error" in body
+        # The app message says "不支援的格式，請使用: ..."
+>       assert "不支援" in body["error"] or any(
+            ext in body["error"] for ext in _ALLOWED_EXTENSIONS
+        )
+E       AssertionError: assert ('不支援' in '請先登入' or False)
+E        +  where False = any(<generator object TestProductAnalyzeValidation.test_unsupported_format_error_mentions_supported_types.<locals>.<genexpr> at 0xffff91c73bc0>)
+
+tests/e2e/test_api_analyze_validation.py:121: AssertionError
+__________ TestProductAnalyzeValidation.test_no_extension_returns_400 __________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91c92950>
+base_url = 'http://localhost:5001'
+
+    def test_no_extension_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "noextension")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:127: AssertionError
+________ TestProductAnalyzeValidation.test_wrong_field_name_returns_400 ________
+
+self = <tests.e2e.test_api_analyze_validation.TestProductAnalyzeValidation object at 0xffff91c93690>
+base_url = 'http://localhost:5001'
+
+    def test_wrong_field_name_returns_400(self, base_url):
+        """Posting under 'file' instead of 'image' should be rejected."""
+        resp = _post_file(base_url, self.PATH, "photo.jpg", field="file")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:134: AssertionError
+__________ TestDiaryAnalyzeValidation.test_no_image_field_returns_400 __________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c91750>
+base_url = 'http://localhost:5001'
+
+    def test_no_image_field_returns_400(self, base_url):
+        resp = _post_no_files(base_url, self.PATH)
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:161: AssertionError
+__________ TestDiaryAnalyzeValidation.test_empty_filename_returns_400 __________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c8bc90>
+base_url = 'http://localhost:5001'
+
+    def test_empty_filename_returns_400(self, base_url):
+        resp = _post_empty_filename(base_url, self.PATH)
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:175: AssertionError
+_______________ TestDiaryAnalyzeValidation.test_pdf_returns_400 ________________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c8bf90>
+base_url = 'http://localhost:5001'
+
+    def test_pdf_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "document.pdf")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:185: AssertionError
+_______________ TestDiaryAnalyzeValidation.test_txt_returns_400 ________________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c92c90>
+base_url = 'http://localhost:5001'
+
+    def test_txt_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "notes.txt")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:189: AssertionError
+_______________ TestDiaryAnalyzeValidation.test_docx_returns_400 _______________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c8b410>
+base_url = 'http://localhost:5001'
+
+    def test_docx_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "report.docx")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:193: AssertionError
+_______________ TestDiaryAnalyzeValidation.test_exe_returns_400 ________________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c8ad10>
+base_url = 'http://localhost:5001'
+
+    def test_exe_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "malware.exe")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:197: AssertionError
+_______________ TestDiaryAnalyzeValidation.test_mp4_returns_400 ________________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c89790>
+base_url = 'http://localhost:5001'
+
+    def test_mp4_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "video.mp4")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:201: AssertionError
+_______________ TestDiaryAnalyzeValidation.test_zip_returns_400 ________________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c89f10>
+base_url = 'http://localhost:5001'
+
+    def test_zip_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "archive.zip")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:205: AssertionError
+_ TestDiaryAnalyzeValidation.test_unsupported_format_error_mentions_supported_types _
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c88c90>
+base_url = 'http://localhost:5001'
+
+    def test_unsupported_format_error_mentions_supported_types(self, base_url):
+        resp = _post_file(base_url, self.PATH, "file.pdf")
+        body = resp.json()
+        assert "error" in body
+>       assert "不支援" in body["error"] or any(
+            ext in body["error"] for ext in _ALLOWED_EXTENSIONS
+        )
+E       AssertionError: assert ('不支援' in '請先登入' or False)
+E        +  where False = any(<generator object TestDiaryAnalyzeValidation.test_unsupported_format_error_mentions_supported_types.<locals>.<genexpr> at 0xffff91c6d380>)
+
+tests/e2e/test_api_analyze_validation.py:211: AssertionError
+___________ TestDiaryAnalyzeValidation.test_no_extension_returns_400 ___________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c89e50>
+base_url = 'http://localhost:5001'
+
+    def test_no_extension_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "noextension")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:217: AssertionError
+_________ TestDiaryAnalyzeValidation.test_wrong_field_name_returns_400 _________
+
+self = <tests.e2e.test_api_analyze_validation.TestDiaryAnalyzeValidation object at 0xffff91c8a290>
+base_url = 'http://localhost:5001'
+
+    def test_wrong_field_name_returns_400(self, base_url):
+        resp = _post_file(base_url, self.PATH, "photo.jpg", field="file")
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:223: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.pdf] _______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.pdf'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.pdf' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.txt] _______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.txt'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.txt' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.docx] ______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.docx'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.docx' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.exe] _______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.exe'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.exe' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.svg] _______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.svg'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.svg' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.mp4] _______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.mp4'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.mp4' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+______ test_disallowed_extension_rejected[/api/product/analyze-file.zip] _______
+
+base_url = 'http://localhost:5001', path = '/api/product/analyze'
+filename = 'file.zip'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.zip' on /api/product/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.pdf] ________
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.pdf'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.pdf' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.txt] ________
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.txt'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.txt' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.docx] _______
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.docx'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.docx' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.exe] ________
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.exe'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.exe' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.svg] ________
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.svg'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.svg' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.mp4] ________
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.mp4'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.mp4' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______ test_disallowed_extension_rejected[/api/diary/analyze-file.zip] ________
+
+base_url = 'http://localhost:5001', path = '/api/diary/analyze'
+filename = 'file.zip'
+
+    @pytest.mark.parametrize("filename", [f"file.{ext}" for ext in _DISALLOWED_EXTENSIONS])
+    @pytest.mark.parametrize("path", ["/api/product/analyze", "/api/diary/analyze"])
+    def test_disallowed_extension_rejected(base_url, path, filename):
+        """All disallowed extensions must return 400 on both analyze endpoints."""
+        resp = _post_file(base_url, path, filename)
+>       assert resp.status_code == 400, (
+            f"Expected 400 for '{filename}' on {path}, got {resp.status_code}"
+        )
+E       AssertionError: Expected 400 for 'file.zip' on /api/diary/analyze, got 401
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_analyze_validation.py:245: AssertionError
+_______________________ TestGetPetsList.test_returns_200 _______________________
+
+self = <tests.e2e.test_api_pets_e2e.TestGetPetsList object at 0xffff91ce2fd0>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_returns_200(self, api):
+        resp = api.get("/api/pets")
+>       assert resp.status_code == 200
+E       assert 401 == 200
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:22: AssertionError
+__________________ TestGetPetsList.test_response_has_pets_key __________________
+
+self = <tests.e2e.test_api_pets_e2e.TestGetPetsList object at 0xffff91ce34d0>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_response_has_pets_key(self, api):
+        resp = api.get("/api/pets")
+        body = resp.json()
+>       assert "pets" in body
+E       AssertionError: assert 'pets' in {'error': '請先登入'}
+
+tests/e2e/test_api_pets_e2e.py:27: AssertionError
+___________________ TestGetPetsList.test_pets_value_is_list ____________________
+
+self = <tests.e2e.test_api_pets_e2e.TestGetPetsList object at 0xffff91ce3b10>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_pets_value_is_list(self, api):
+        resp = api.get("/api/pets")
+>       assert isinstance(resp.json()["pets"], list)
+                          ^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'pets'
+
+tests/e2e/test_api_pets_e2e.py:31: KeyError
+__________________ TestCreatePet.test_creates_pet_returns_201 __________________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91ce1110>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_creates_pet_returns_201(self, api):
+        resp = api.post("/api/pets", json={"name": "E2E小花"})
+>       assert resp.status_code == 201
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:45: AssertionError
+________________ TestCreatePet.test_response_contains_pet_data _________________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91ce1990>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_response_contains_pet_data(self, api):
+        resp = api.post("/api/pets", json={"name": "E2E小白", "breed": "柴犬"})
+>       assert resp.status_code == 201
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:51: AssertionError
+___________________ TestCreatePet.test_response_contains_id ____________________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91ce1c10>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_response_contains_id(self, api):
+        resp = api.post("/api/pets", json={"name": "E2E有ID"})
+>       assert "id" in resp.json()
+E       AssertionError: assert 'id' in {'error': '請先登入'}
+E        +  where {'error': '請先登入'} = json()
+E        +    where json = <Response [401]>.json
+
+tests/e2e/test_api_pets_e2e.py:59: AssertionError
+__________________ TestCreatePet.test_empty_name_returns_400 ___________________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91ce0350>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_empty_name_returns_400(self, api):
+        resp = api.post("/api/pets", json={"name": ""})
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:64: AssertionError
+_______________ TestCreatePet.test_missing_name_key_returns_400 ________________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91ce0750>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_missing_name_key_returns_400(self, api):
+        resp = api.post("/api/pets", json={"breed": "只有品種"})
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:68: AssertionError
+_____________ TestCreatePet.test_whitespace_only_name_returns_400 ______________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91c35690>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_whitespace_only_name_returns_400(self, api):
+        resp = api.post("/api/pets", json={"name": "   "})
+>       assert resp.status_code == 400
+E       assert 401 == 400
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:72: AssertionError
+____________ TestCreatePet.test_pet_appears_in_list_after_creation _____________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91c34e90>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_pet_appears_in_list_after_creation(self, api):
+        resp = api.post("/api/pets", json={"name": "E2E出現在列表"})
+>       pet_id = resp.json()["id"]
+                 ^^^^^^^^^^^^^^^^^
+E       KeyError: 'id'
+
+tests/e2e/test_api_pets_e2e.py:80: KeyError
+_____________________ TestCreatePet.test_pet_with_birthday _____________________
+
+self = <tests.e2e.test_api_pets_e2e.TestCreatePet object at 0xffff91c35390>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_pet_with_birthday(self, api):
+        resp = api.post("/api/pets", json={"name": "E2E生日寵物", "birthday": "2022-03-15"})
+>       assert resp.status_code == 201
+E       assert 401 == 201
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:88: AssertionError
+____________ TestGetSinglePet.test_returns_404_for_nonexistent_pet _____________
+
+self = <tests.e2e.test_api_pets_e2e.TestGetSinglePet object at 0xffff91ce3590>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_returns_404_for_nonexistent_pet(self, api):
+        resp = api.get("/api/pets/999999999")
+>       assert resp.status_code == 404
+E       assert 401 == 404
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:110: AssertionError
+______________ TestUpdatePet.test_returns_404_for_nonexistent_pet ______________
+
+self = <tests.e2e.test_api_pets_e2e.TestUpdatePet object at 0xffff91c37a10>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_returns_404_for_nonexistent_pet(self, api):
+        resp = api.put("/api/pets/999999999", json={"name": "幽靈"})
+>       assert resp.status_code == 404
+E       assert 401 == 404
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:154: AssertionError
+________________________ TestDeletePet.test_returns_204 ________________________
+
+self = <tests.e2e.test_api_pets_e2e.TestDeletePet object at 0xffff91cce950>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_returns_204(self, api):
+        create_resp = api.post("/api/pets", json={"name": "E2E待刪除"})
+>       pet_id = create_resp.json()["id"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'id'
+
+tests/e2e/test_api_pets_e2e.py:176: KeyError
+_______________ TestDeletePet.test_delete_response_body_is_empty _______________
+
+self = <tests.e2e.test_api_pets_e2e.TestDeletePet object at 0xffff91cced10>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_delete_response_body_is_empty(self, api):
+        create_resp = api.post("/api/pets", json={"name": "E2E待刪除2"})
+>       pet_id = create_resp.json()["id"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'id'
+
+tests/e2e/test_api_pets_e2e.py:182: KeyError
+__________ TestDeletePet.test_pet_no_longer_retrievable_after_delete ___________
+
+self = <tests.e2e.test_api_pets_e2e.TestDeletePet object at 0xffff91ccd010>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_pet_no_longer_retrievable_after_delete(self, api):
+        create_resp = api.post("/api/pets", json={"name": "E2E刪後消失"})
+>       pet_id = create_resp.json()["id"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'id'
+
+tests/e2e/test_api_pets_e2e.py:188: KeyError
+_____________ TestDeletePet.test_pet_absent_from_list_after_delete _____________
+
+self = <tests.e2e.test_api_pets_e2e.TestDeletePet object at 0xffff91ccc690>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_pet_absent_from_list_after_delete(self, api):
+        create_resp = api.post("/api/pets", json={"name": "E2E不在列表"})
+>       pet_id = create_resp.json()["id"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'id'
+
+tests/e2e/test_api_pets_e2e.py:195: KeyError
+______________ TestDeletePet.test_returns_404_for_nonexistent_pet ______________
+
+self = <tests.e2e.test_api_pets_e2e.TestDeletePet object at 0xffff91ccd490>
+api = <tests.e2e.conftest.ApiClient object at 0xffff91e0f3d0>
+
+    def test_returns_404_for_nonexistent_pet(self, api):
+        resp = api.delete("/api/pets/999999999")
+>       assert resp.status_code == 404
+E       assert 401 == 404
+E        +  where 401 = <Response [401]>.status_code
+
+tests/e2e/test_api_pets_e2e.py:202: AssertionError
+=========================== short test summary info ============================
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_no_image_field_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_empty_filename_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_pdf_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_txt_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_docx_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_exe_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_mp4_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_zip_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_unsupported_format_error_mentions_supported_types
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_no_extension_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestProductAnalyzeValidation::test_wrong_field_name_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_no_image_field_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_empty_filename_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_pdf_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_txt_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_docx_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_exe_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_mp4_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_zip_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_unsupported_format_error_mentions_supported_types
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_no_extension_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::TestDiaryAnalyzeValidation::test_wrong_field_name_returns_400
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.pdf]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.txt]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.docx]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.exe]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.svg]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.mp4]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/product/analyze-file.zip]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.pdf]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.txt]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.docx]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.exe]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.svg]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.mp4]
+FAILED tests/e2e/test_api_analyze_validation.py::test_disallowed_extension_rejected[/api/diary/analyze-file.zip]
+FAILED tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_returns_200 - as...
+FAILED tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_response_has_pets_key
+FAILED tests/e2e/test_api_pets_e2e.py::TestGetPetsList::test_pets_value_is_list
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_creates_pet_returns_201
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_response_contains_pet_data
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_response_contains_id
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_empty_name_returns_400
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_missing_name_key_returns_400
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_whitespace_only_name_returns_400
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_pet_appears_in_list_after_creation
+FAILED tests/e2e/test_api_pets_e2e.py::TestCreatePet::test_pet_with_birthday
+FAILED tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_returns_404_for_nonexistent_pet
+FAILED tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_returns_404_for_nonexistent_pet
+FAILED tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_returns_204 - KeyE...
+FAILED tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_delete_response_body_is_empty
+FAILED tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_pet_no_longer_retrievable_after_delete
+FAILED tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_pet_absent_from_list_after_delete
+FAILED tests/e2e/test_api_pets_e2e.py::TestDeletePet::test_returns_404_for_nonexistent_pet
+ERROR tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_returns_200_for_existing_pet
+ERROR tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_response_matches_created_pet
+ERROR tests/e2e/test_api_pets_e2e.py::TestGetSinglePet::test_response_has_expected_fields
+ERROR tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_returns_200 - Asser...
+ERROR tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_updated_fields_reflected_in_response
+ERROR tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_updated_fields_persisted_on_subsequent_get
+ERROR tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_empty_name_returns_400
+ERROR tests/e2e/test_api_pets_e2e.py::TestUpdatePet::test_birthday_can_be_updated
+ERROR tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_page_title_set
+ERROR tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_nav_bar_visible
+ERROR tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_organize_nav_link_is_active
+ERROR tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_hero_section_visible
+ERROR tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_tabs_container_present
+ERROR tests/e2e/test_organize_behaviour.py::TestOrganisePageStructure::test_tabs_header_present
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_products_tab_active_on_load
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_products_tab_content_visible_on_load
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_diaries_tab_content_hidden_on_load
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_clicking_diaries_tab_makes_content_visible
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_clicking_diaries_tab_hides_products_content
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_clicking_products_tab_restores_products_content
+ERROR tests/e2e/test_organize_behaviour.py::TestTabSwitching::test_active_class_moves_to_clicked_tab
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_filter_bar_container_present
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_all_button_rendered_after_js_loads
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_all_button_text_is_quanbu
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_unassigned_button_rendered
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_all_button_active_by_default
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_filter_bar_with_existing_pet
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_clicking_filter_button_updates_active_state
+ERROR tests/e2e/test_organize_behaviour.py::TestPetFilterBar::test_clicking_all_button_resets_filter
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_product_button_present
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_product_section_hidden_by_default
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_clicking_toggle_shows_add_section
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_clicking_toggle_twice_hides_section
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_title_input
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_summary_textarea
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_pet_select
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_add_form_has_submit_button
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_button_label_changes_when_open
+ERROR tests/e2e/test_organize_behaviour.py::TestAddProductFormToggle::test_button_label_resets_when_closed
+ERROR tests/e2e/test_organize_behaviour.py::TestProductListRendering::test_product_list_section_present
+ERROR tests/e2e/test_organize_behaviour.py::TestProductListRendering::test_products_loading_spinner_disappears
+ERROR tests/e2e/test_organize_behaviour.py::TestProductListRendering::test_add_product_flow
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_returns_200
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_title_contains_pet_adorable_life
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_nav_bar_present
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_nav_links_include_all_sections
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_hero_heading_visible
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_feature_cards_present
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_product_analyze_card_links_correctly
+ERROR tests/e2e/test_page_navigation.py::TestHomePage::test_diary_card_links_correctly
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_returns_200
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_page_heading_visible
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_add_pet_toggle_button_present
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_add_form_hidden_by_default
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_add_form_toggles_open
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_add_form_has_name_input
+ERROR tests/e2e/test_page_navigation.py::TestPetsPage::test_pets_list_section_present
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_returns_200
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_page_heading_visible
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_tab_switcher_present
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_products_tab_button_present
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_diaries_tab_button_present
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_products_tab_active_by_default
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_tab_switch_to_diaries
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_pet_filter_bar_present
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_pet_filter_bar_has_all_button_after_load
+ERROR tests/e2e/test_page_navigation.py::TestOrganizePage::test_add_product_toggle_button_present
+ERROR tests/e2e/test_page_navigation.py::TestProductAnalyzePage::test_returns_200
+ERROR tests/e2e/test_page_navigation.py::TestProductAnalyzePage::test_title_mentions_product_or_analyze
+ERROR tests/e2e/test_page_navigation.py::TestProductAnalyzePage::test_nav_bar_present
+ERROR tests/e2e/test_page_navigation.py::TestDiaryPage::test_returns_200
+ERROR tests/e2e/test_page_navigation.py::TestDiaryPage::test_title_mentions_diary
+ERROR tests/e2e/test_page_navigation.py::TestDiaryPage::test_nav_bar_present
+ERROR tests/e2e/test_page_navigation.py::TestOrganizeEditPage::test_returns_200_for_valid_id
+================== 54 failed, 146 passed, 74 errors in 1.05s ===================
+=== BASELINE E2E TESTS (host-side) ===
+zsh:1: command not found: pytest
+
+BASELINE TEST SUMMARY (Unit Tests in Docker Container):
+- Total: 274 tests
+- Passed: 146
+- Failed: 54  
+- Errors: 74
+
+PRE-EXISTING FAILURES DOCUMENTED:
+1. E2E tests (74 errors) - Missing 'page' fixture (Playwright not set up correctly in container)
+2. E2E API tests (54 failures) - Authentication issues or missing fixtures
+
+NOTE: These failures exist BEFORE any refactoring work. They will not be fixed as part of this refactoring.
+E2E tests on host not run because pytest/playwright need to be installed according to requirements-e2e.txt
+
+Task 1 Complete: Baseline recorded in .sisyphus/evidence/task-1-baseline.txt
+
