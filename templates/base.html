@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
+    <a href="#main-content" class="skip-to-content">跳到主要內容</a>
     {% if session.get('user_id') %}
     <nav class="nav-bar">
         <a href="/" class="logo">Pet Adorable Life</a>
@@ -27,6 +28,8 @@
         </ul>
     </nav>
     {% endif %}
+    {% if session.get('user_id') %}<main id="main-content">{% else %}<div id="main-content">{% endif %}
     {% block content %}{% endblock %}
+    {% if session.get('user_id') %}</main>{% else %}</div>{% endif %}
 </body>
 </html>

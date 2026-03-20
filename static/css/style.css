@@ -16,6 +16,30 @@
     box-sizing: border-box;
 }
 
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* Skip-to-content link */
+.skip-to-content {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    z-index: 999;
+    padding: 0.75rem 1rem;
+    background: var(--forest);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.skip-to-content:focus {
+    top: 1rem;
+    left: 1rem;
+}
+
 body {
     font-family: "Noto Sans TC", "Outfit", sans-serif;
     background: var(--cream);
