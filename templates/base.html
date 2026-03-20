@@ -14,6 +14,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
+    {% if session.get('user_id') %}
+    <nav class="nav-bar">
+        <a href="/" class="logo">Pet Adorable Life</a>
+        <ul class="nav-links">
+            <li><a href="/" {% if request.endpoint == 'index' %}class="active"{% endif %}>首頁</a></li>
+            <li><a href="/product/analyze" {% if request.endpoint == 'product_analyze_page' %}class="active"{% endif %}>商品分析</a></li>
+            <li><a href="/organize" {% if request.endpoint in ['organize', 'organize_edit'] %}class="active"{% endif %}>Pet Life</a></li>
+            <li><a href="/diary" {% if request.endpoint == 'diary' %}class="active"{% endif %}>寵物日記</a></li>
+            <li><a href="/pets" {% if request.endpoint == 'pets_page' %}class="active"{% endif %}>寵物</a></li>
+            <li><a href="/logout">登出</a></li>
+        </ul>
+    </nav>
+    {% endif %}
     {% block content %}{% endblock %}
 </body>
 </html>
