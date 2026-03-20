@@ -1,0 +1,39 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.2, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14
+cachedir: .pytest_cache
+baseurl: http://localhost:5001
+rootdir: /Users/sianwu/Documents/pet-adorable-life
+configfile: pyproject.toml
+plugins: playwright-0.7.2, base-url-2.1.0
+collecting ... collected 22 items
+
+tests/e2e/test_page_behaviour.py::TestPetsPageAuth::test_redirects_to_login_when_not_authenticated[chromium] PASSED [  4%]
+tests/e2e/test_page_behaviour.py::TestDiaryPageAuth::test_redirects_to_login_when_not_authenticated[chromium] PASSED [  9%]
+tests/e2e/test_page_behaviour.py::TestProductAnalyzePageAuth::test_redirects_to_login_when_not_authenticated[chromium] PASSED [ 13%]
+tests/e2e/test_page_behaviour.py::TestLoginPageStructure::test_page_title_set[chromium] PASSED [ 18%]
+tests/e2e/test_page_behaviour.py::TestLoginPageStructure::test_auth_card_visible[chromium] PASSED [ 22%]
+tests/e2e/test_page_behaviour.py::TestLoginPageStructure::test_page_subtitle_is_dengru[chromium] PASSED [ 27%]
+tests/e2e/test_page_behaviour.py::TestLoginForm::test_username_input_present[chromium] PASSED [ 31%]
+tests/e2e/test_page_behaviour.py::TestLoginForm::test_password_input_present[chromium] PASSED [ 36%]
+tests/e2e/test_page_behaviour.py::TestLoginForm::test_submit_button_present[chromium] PASSED [ 40%]
+tests/e2e/test_page_behaviour.py::TestLoginForm::test_register_link_present[chromium] PASSED [ 45%]
+tests/e2e/test_page_behaviour.py::TestLoginForm::test_forgot_password_link_present[chromium] PASSED [ 50%]
+tests/e2e/test_page_behaviour.py::TestRegisterPageStructure::test_page_title_set[chromium] PASSED [ 54%]
+tests/e2e/test_page_behaviour.py::TestRegisterPageStructure::test_auth_card_visible[chromium] PASSED [ 59%]
+tests/e2e/test_page_behaviour.py::TestRegisterPageStructure::test_page_subtitle_is_jianlizhanghao[chromium] PASSED [ 63%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_username_input_present[chromium] PASSED [ 68%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_email_input_present[chromium] PASSED [ 72%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_password_input_present[chromium] PASSED [ 77%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_confirm_password_input_present[chromium] PASSED [ 81%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_submit_button_present[chromium] PASSED [ 86%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_login_link_present[chromium] PASSED [ 90%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_username_label_has_validation_hint[chromium] PASSED [ 95%]
+tests/e2e/test_page_behaviour.py::TestRegisterForm::test_password_label_has_length_hint[chromium] PASSED [100%]
+
+=============================== warnings summary ===============================
+app.py:36
+  /Users/sianwu/Documents/pet-adorable-life/app.py:36: UserWarning: SECRET_KEY is not set — using insecure default. Set SECRET_KEY in production.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 22 passed, 1 warning in 2.23s =========================
