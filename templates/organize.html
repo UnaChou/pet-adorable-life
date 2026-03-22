@@ -9,8 +9,27 @@
         <p>結構化整理商品資訊與寵物日記，一目了然</p>
     </section>
 
-    <!-- Pet filter tabs -->
-    <div class="pet-filter-bar" id="petFilterBar" style="margin-bottom:12px;"></div>
+    <!-- Pet picker chips -->
+    <div class="pet-picker-strip" id="petPickerStrip"></div>
+
+    <!-- Pet hero banner (shown when a specific pet is selected) -->
+    <div class="pet-hero hidden" id="petHero">
+        <div class="pet-hero-avatar" id="petHeroAvatar">🐾</div>
+        <div class="pet-hero-info">
+            <div class="pet-hero-name" id="petHeroName"></div>
+            <div class="pet-hero-meta" id="petHeroMeta"></div>
+            <div class="pet-hero-stats">
+                <div class="pet-hero-stat">
+                    <span class="stat-num" id="petHeroProductCount">0</span>
+                    <span class="stat-label">商品</span>
+                </div>
+                <div class="pet-hero-stat">
+                    <span class="stat-num" id="petHeroDiaryCount">0</span>
+                    <span class="stat-label">日記</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="tabs-container">
         <div class="tabs-header">
