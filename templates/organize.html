@@ -115,10 +115,10 @@
 
     function renderPetFilter() {
         const strip = document.getElementById('petPickerStrip');
-        const chips = [{ id: null, label: '全部', emoji: '🐾', isAll: true }, ...allPets.map(p => ({ id: p.id, label: p.name, emoji: p.emoji || '🐾', isAll: false }))];
+        const chips = [{ id: null, label: '全部', photo: null, isAll: true }, ...allPets.map(p => ({ id: p.id, label: p.name, photo: p.photo_base64 || null, isAll: false }))];
         strip.innerHTML = chips.map(c =>
             `<button class="pet-chip ${c.isAll ? 'pet-chip-all' : ''} ${c.id === currentPetFilter ? 'active' : ''}" data-pet="${c.id === null ? 'null' : c.id}">
-                <div class="pet-chip-avatar">${c.emoji}</div>
+                <div class="pet-chip-avatar">${c.photo ? `<img src="${c.photo}" alt="${c.label}">` : (c.isAll ? '🐾' : '🐾')}</div>
                 <span class="pet-chip-name">${c.label}</span>
             </button>`
         ).join('');
@@ -143,7 +143,12 @@
         const pet = allPets.find(p => p.id === currentPetFilter);
         if (!pet) { hero.classList.add('hidden'); return; }
 
-        document.getElementById('petHeroAvatar').textContent = pet.emoji || '🐾';
+        const avatarEl = document.getElementById('petHeroAvatar');
+        if (pet.photo_base64) {
+            avatarEl.innerHTML = `<img src="${pet.photo_base64}" alt="${pet.name}">`;
+        } else {
+            avatarEl.textContent = '🐾';
+        }
         document.getElementById('petHeroName').textContent = pet.name;
 
         let meta = pet.breed || '';
