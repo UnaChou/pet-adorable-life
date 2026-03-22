@@ -114,20 +114,60 @@
     }
 
     function renderPetFilter() {
-        const bar = document.getElementById('petFilterBar');
-        const tabs = [{ id: null, label: '全部' }, ...allPets.map(p => ({ id: p.id, label: p.name })), { id: 0, label: '未指定' }];
-        bar.innerHTML = tabs.map(t =>
-            `<button class="tab-btn pet-filter-btn ${t.id === currentPetFilter ? 'active' : ''}" data-pet="${t.id === null ? 'null' : t.id}">${t.label}</button>`
+        const strip = document.getElementById('petPickerStrip');
+        const chips = [{ id: null, label: '全部', emoji: '🐾', isAll: true }, ...allPets.map(p => ({ id: p.id, label: p.name, emoji: p.emoji || '🐾', isAll: false }))];
+        strip.innerHTML = chips.map(c =>
+            `<button class="pet-chip ${c.isAll ? 'pet-chip-all' : ''} ${c.id === currentPetFilter ? 'active' : ''}" data-pet="${c.id === null ? 'null' : c.id}">
+                <div class="pet-chip-avatar">${c.emoji}</div>
+                <span class="pet-chip-name">${c.label}</span>
+            </button>`
         ).join('');
-        bar.querySelectorAll('.pet-filter-btn').forEach(btn => {
+        strip.querySelectorAll('.pet-chip').forEach(btn => {
             btn.addEventListener('click', () => {
                 const val = btn.dataset.pet;
                 currentPetFilter = val === 'null' ? null : parseInt(val);
                 renderPetFilter();
+                renderPetHero();
                 loadProducts();
                 loadDiaries();
             });
         });
+    }
+
+    function renderPetHero() {
+        const hero = document.getElementById('petHero');
+        if (currentPetFilter === null || currentPetFilter === 0) {
+            hero.classList.add('hidden');
+            return;
+        }
+        const pet = allPets.find(p => p.id === currentPetFilter);
+        if (!pet) { hero.classList.add('hidden'); return; }
+
+        document.getElementById('petHeroAvatar').textContent = pet.emoji || '🐾';
+        document.getElementById('petHeroName').textContent = pet.name;
+
+        let meta = pet.breed || '';
+        if (pet.birthday) {
+            const born = new Date(pet.birthday);
+            const now = new Date();
+            const months = (now.getFullYear() - born.getFullYear()) * 12 + (now.getMonth() - born.getMonth());
+            const years = Math.floor(months / 12);
+            const remMonths = months % 12;
+            const ageParts = [];
+            if (years > 0) ageParts.push(`${years} 歲`);
+            if (remMonths > 0) ageParts.push(`${remMonths} 個月`);
+            if (ageParts.length) meta += (meta ? '・' : '') + ageParts.join(' ');
+        }
+        document.getElementById('petHeroMeta').textContent = meta;
+
+        hero.classList.remove('hidden');
+    }
+
+    function updateHeroStats(productCount, diaryCount) {
+        const pc = document.getElementById('petHeroProductCount');
+        const dc = document.getElementById('petHeroDiaryCount');
+        if (pc) pc.textContent = productCount;
+        if (dc) dc.textContent = diaryCount;
     }
 
     function populatePetSelects() {
@@ -170,6 +210,7 @@
         const el = document.getElementById('productList');
         if (!products.length) {
             el.innerHTML = '<div class="empty-state"><span class="empty-icon">📦</span><p>尚無商品，點擊「➕ 新增商品」或從 <a href="/product/analyze">商品分析</a> 加入</p></div>';
+            updateHeroStats(0, parseInt(document.getElementById('petHeroDiaryCount')?.textContent || '0'));
             return;
         }
         el.innerHTML = `<div class="list-header"><h2>商品列表 <span class="count">共 ${products.length} 項</span></h2></div>
@@ -192,6 +233,7 @@
                 </div>
             </article>`).join('') +
         '</div>';
+        updateHeroStats(products.length, parseInt(document.getElementById('petHeroDiaryCount')?.textContent || '0'));
 
         el.querySelectorAll('.btn-remove').forEach(btn => {
             btn.addEventListener('click', async () => {
@@ -251,6 +293,7 @@
         const el = document.getElementById('diaryList');
         if (!diaries.length) {
             el.innerHTML = '<div class="list-header"><h2>日記列表 <span class="count">共 0 則</span></h2></div><div class="empty-state"><span class="empty-icon">📔</span><p>尚無日記，請前往 <a href="/diary">寵物日記</a> 新增</p></div>';
+            updateHeroStats(parseInt(document.getElementById('petHeroProductCount')?.textContent || '0'), 0);
             return;
         }
         el.innerHTML = `<div class="list-header"><h2>日記列表 <span class="count">共 ${diaries.length} 則</span></h2></div>
@@ -275,6 +318,7 @@
                 </div>
             </article>`).join('') +
         '</div>';
+        updateHeroStats(parseInt(document.getElementById('petHeroProductCount')?.textContent || '0'), diaries.length);
 
         el.querySelectorAll('.btn-remove').forEach(btn => {
             btn.addEventListener('click', async () => {
@@ -291,6 +335,7 @@
 
     async function init() {
         await loadPets();
+        renderPetHero();
         loadProducts();
         loadDiaries();
     }
