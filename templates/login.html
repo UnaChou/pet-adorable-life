@@ -3,7 +3,7 @@
 {% block title %}登入 - Pet Adorable Life{% endblock %}
 
 {% block content %}
-<main class="auth-page">
+<div class="auth-page">
     <div class="auth-card">
         <h1 class="auth-title">Pet Adorable Life</h1>
         <h2 class="auth-subtitle">登入帳號</h2>
@@ -25,11 +25,11 @@
             <label for="password">密碼</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required>
 
-            <button type="submit" class="btn-primary">登入</button>
+            <button type="submit" class="btn btn-primary">登入</button>
         </form>
 
         <p class="auth-link"><a href="/forgot-password">忘記密碼？</a></p>
         <p class="auth-link">還沒有帳號？<a href="/register">立即註冊</a></p>
     </div>
-</main>
+</div>
 {% endblock %}

@@ -3,7 +3,7 @@
 {% block title %}註冊 - Pet Adorable Life{% endblock %}
 
 {% block content %}
-<main class="auth-page">
+<div class="auth-page">
     <div class="auth-card">
         <h1 class="auth-title">Pet Adorable Life</h1>
         <h2 class="auth-subtitle">建立帳號</h2>
@@ -31,10 +31,10 @@
             <label for="confirm_password">確認密碼</label>
             <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required>
 
-            <button type="submit" class="btn-primary">註冊</button>
+            <button type="submit" class="btn btn-primary">註冊</button>
         </form>
 
         <p class="auth-link">已有帳號？<a href="/login">前往登入</a></p>
     </div>
-</main>
+</div>
 {% endblock %}

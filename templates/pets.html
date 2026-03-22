@@ -3,14 +3,14 @@
 {% block title %}寵物管理 - Pet Adorable Life{% endblock %}
 
 {% block content %}
-<main class="organize-page">
+<div class="organize-page">
     <section class="organize-hero">
         <h1>🐾 寵物管理</h1>
         <p>管理你的毛孩檔案</p>
     </section>
 
     <section class="pets-add-section">
-        <button class="btn-toggle-add" id="btnToggleAdd">➕ 新增寵物</button>
+        <button class="btn btn-secondary" id="btnToggleAdd">➕ 新增寵物</button>
         <div id="addFormWrap" class="hidden organize-add">
             <h2>新增寵物</h2>
             <form id="addPetForm" class="add-form">
@@ -30,7 +30,7 @@
                     <label for="addPhoto">照片</label>
                     <input type="file" id="addPhoto" accept="image/*">
                 </div>
-                <button type="submit" class="btn-add">新增</button>
+                <button type="submit" class="btn btn-primary">新增</button>
             </form>
         </div>
     </section>
@@ -38,11 +38,11 @@
     <section class="pets-list" id="petsList">
         <div class="loading" id="petsLoading"><div class="spinner"></div><p>載入中...</p></div>
     </section>
-</main>
+</div>
 
 <!-- Edit dialog -->
-<div id="editDialog" class="hidden modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:12px;padding:2rem;width:min(480px,90vw);max-height:90vh;overflow-y:auto;" class="organize-add">
+<div id="editDialog" class="hidden modal-overlay">
+    <div class="modal-content">
         <h2>✎ 編輯寵物</h2>
         <form id="editPetForm" class="add-form">
             <input type="hidden" id="editId">
@@ -63,8 +63,8 @@
                 <input type="file" id="editPhoto" accept="image/*">
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn-add">儲存</button>
-                <button type="button" class="btn-cancel" id="btnCloseEdit">取消</button>
+                <button type="submit" class="btn btn-primary">儲存</button>
+                <button type="button" class="btn btn-secondary" id="btnCloseEdit">取消</button>
             </div>
         </form>
     </div>
@@ -147,8 +147,8 @@
                     </div>
                 </div>
                 <div class="product-card-actions">
-                    <button class="btn-edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
-                    <button class="btn-remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>
+                    <button class="btn-icon edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
+                    <button class="btn-icon remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>
                 </div>
             </article>`).join('') +
         '</div>';

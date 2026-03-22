@@ -30,6 +30,11 @@
     z-index: 1;
 }
 
+.analyze-upload #btnAnalyze {
+    width: 100%;
+    margin-top: 1.25rem;
+}
+
 .upload-zone {
     border: 2px dashed rgba(125, 155, 118, 0.4);
     border-radius: 16px;
@@ -80,62 +85,6 @@
     margin-bottom: 0.5rem;
 }
 
-.btn-camera {
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    font-family: inherit;
-    color: var(--charcoal);
-    background: #FFEA98;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-    box-shadow: 0 4px 12px rgba(255, 234, 152, 0.5);
-}
-
-.btn-camera:hover {
-    background: #FFDD55;
-    transform: translateY(-2px);
-}
-
-.btn-capture {
-    padding: 0.6rem 2rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    font-family: inherit;
-    color: var(--charcoal);
-    background: #FFEA98;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-    box-shadow: 0 4px 12px rgba(255, 234, 152, 0.6);
-}
-
-.btn-capture:hover {
-    background: #FFDD55;
-    transform: translateY(-2px);
-}
-
-.btn-cancel-camera {
-    padding: 0.6rem 1.2rem;
-    font-size: 1rem;
-    font-weight: 500;
-    font-family: inherit;
-    color: var(--charcoal);
-    background: var(--sand);
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-}
-
-.btn-cancel-camera:hover {
-    background: #dfd3c6;
-    transform: translateY(-2px);
-}
-
 .upload-container {
     position: relative;
     width: 100%;
@@ -152,41 +101,6 @@
     max-height: 280px;
     border-radius: 12px;
     object-fit: contain;
-}
-
-.btn-analyze {
-    display: block;
-    width: 100%;
-    margin-top: 1.25rem;
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: inherit;
-    color: white;
-    background: var(--sage);
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s, opacity 0.2s;
-    position: relative;
-    z-index: 100;
-    pointer-events: auto;
-}
-
-.btn-analyze:hover:not(:disabled) {
-    background: var(--forest);
-}
-
-.btn-analyze:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.btn-analyze:not(:disabled) {
-    opacity: 1;
-    cursor: pointer;
-    pointer-events: auto;
 }
 
 .analyze-result h2 {
@@ -230,10 +144,17 @@
     transition: border-color 0.2s;
 }
 
+.result-edit-form input,
+.result-edit-form select {
+    background: var(--cream);
+}
+
 .result-edit-form input:focus,
-.result-edit-form textarea:focus {
+.result-edit-form textarea:focus,
+.result-edit-form select:focus {
     outline: none;
     border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(125, 155, 118, 0.1);
 }
 
 .result-edit-form textarea {
@@ -270,23 +191,10 @@
     border-top: 1px solid rgba(125, 155, 118, 0.2);
 }
 
-.btn-add-to-organize {
-    padding: 0.6rem 1.25rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    font-family: inherit;
-    color: white;
-    background: var(--terracotta);
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.2s;
+.btn-save-product {
     display: block;
-    margin: 1.5rem auto 0;
-}
-
-.btn-add-to-organize:hover {
-    background: #b86a4d;
+    width: 100%;
+    margin-top: 1.5rem;
 }
 
 .analyze-error {

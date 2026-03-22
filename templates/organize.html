@@ -3,7 +3,7 @@
 {% block title %}Pet Life - Pet Adorable Life{% endblock %}
 
 {% block content %}
-<main class="organize-page">
+<div class="organize-page">
     <section class="organize-hero">
         <h1>📋 Pet Life</h1>
         <p>結構化整理商品資訊與寵物日記，一目了然</p>
@@ -20,7 +20,7 @@
 
         <div class="tab-content active" id="products-tab">
             <div class="tab-actions">
-                <button type="button" class="btn-toggle-add" id="btnToggleAddProduct">➕ 新增商品</button>
+                <button type="button" class="btn btn-secondary" id="btnToggleAddProduct">➕ 新增商品</button>
             </div>
             <section class="organize-add hidden" id="addProductSection">
                 <h2>新增商品</h2>
@@ -37,7 +37,7 @@
                         <label for="addPetId">適用寵物</label>
                         <select id="addPetId"><option value="">未指定</option></select>
                     </div>
-                    <button type="button" class="btn-add" id="btnAddProduct">加入列表</button>
+                    <button type="button" class="btn btn-primary" id="btnAddProduct">加入列表</button>
                 </div>
             </section>
             <section class="organize-list" id="productList">
@@ -51,7 +51,7 @@
             </section>
         </div>
     </div>
-</main>
+</div>
 
 <script>
 (function () {
@@ -168,8 +168,8 @@
                     <div class="product-summary">${(p.summary || '').replace(/\n/g, '<br>')}</div>
                 </div>
                 <div class="product-card-actions">
-                    <a href="/organize/edit/${p.id}" class="btn-edit" title="編輯">✎</a>
-                    <button class="btn-remove" data-id="${p.id}" title="移除">✕</button>
+                    <a href="/organize/edit/${p.id}" class="btn-icon edit" title="編輯">✎</a>
+                    <button class="btn-icon remove btn-remove" data-id="${p.id}" title="移除">✕</button>
                 </div>
             </article>`).join('') +
         '</div>';
@@ -252,7 +252,7 @@
                     ${d.memo ? `<div class="diary-memo"><strong>備註：</strong>${d.memo.replace(/\n/g, '<br>')}</div>` : ''}
                 </div>
                 <div class="diary-card-actions">
-                    <button class="btn-remove" data-id="${d.id}" title="移除">✕</button>
+                    <button class="btn-icon remove btn-remove" data-id="${d.id}" title="移除">✕</button>
                 </div>
             </article>`).join('') +
         '</div>';

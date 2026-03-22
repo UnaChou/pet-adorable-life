@@ -3,7 +3,7 @@
 {% block title %}編輯商品 - Pet Adorable Life{% endblock %}
 
 {% block content %}
-<main class="organize-page">
+<div class="organize-page">
     <section class="organize-hero">
         <h1>✎ 編輯商品</h1>
         <p>修改後將更新至資料庫</p>
@@ -23,12 +23,12 @@
                 <select id="editPetId"><option value="">未指定</option></select>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn-add" id="btnSave">儲存更新</button>
-                <a href="/organize" class="btn-cancel">取消</a>
+                <button type="button" class="btn btn-primary" id="btnSave">儲存更新</button>
+                <a href="/organize" class="btn btn-secondary">取消</a>
             </div>
         </div>
     </section>
-</main>
+</div>
 
 <script>
 (function () {

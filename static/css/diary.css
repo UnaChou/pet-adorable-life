@@ -46,8 +46,9 @@
     z-index: 1;
 }
 
-.diary-upload .btn-analyze {
-    margin-top: 1.5rem;
+.diary-upload #btnAnalyze {
+    width: 100%;
+    margin-top: 1.25rem;
     position: relative;
     z-index: 100;
 }
@@ -56,6 +57,12 @@
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid rgba(125, 155, 118, 0.2);
+}
+
+.btn-save-diary {
+    display: block;
+    width: 100%;
+    margin-top: 1.5rem;
 }
 
 .diary-result h3 {
@@ -89,46 +96,30 @@
 }
 
 .diary-edit-form input,
-.diary-edit-form textarea {
+.diary-edit-form textarea,
+.diary-edit-form select {
     width: 100%;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     font-family: inherit;
     border: 1px solid rgba(125, 155, 118, 0.3);
     border-radius: 10px;
-    background: white;
+    background: var(--cream);
     color: var(--charcoal);
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .diary-edit-form input:focus,
-.diary-edit-form textarea:focus {
+.diary-edit-form textarea:focus,
+.diary-edit-form select:focus {
     outline: none;
     border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(125, 155, 118, 0.1);
 }
 
 .diary-edit-form textarea {
     resize: vertical;
     min-height: 80px;
-}
-
-.btn-save {
-    padding: 0.7rem 1.5rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    font-family: inherit;
-    color: white;
-    background: var(--terracotta);
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: block;
-    margin: 1.5rem auto 0;
-}
-
-.btn-save:hover {
-    background: #b86a4d;
 }
 
 .diary-list {
@@ -303,23 +294,6 @@
     display: flex;
     justify-content: flex-end;
     margin-bottom: 1.5rem;
-}
-
-.btn-toggle-add {
-    background: white;
-    color: var(--forest);
-    border: 1px solid var(--forest);
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: var(--soft-shadow);
-}
-
-.btn-toggle-add:hover {
-    background: rgba(125, 155, 118, 0.1);
 }
 
 @keyframes fadeIn {

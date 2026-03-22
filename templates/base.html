@@ -28,8 +28,8 @@
         </ul>
     </nav>
     {% endif %}
-    {% if session.get('user_id') %}<main id="main-content">{% else %}<div id="main-content">{% endif %}
+    <main id="main-content">
     {% block content %}{% endblock %}
-    {% if session.get('user_id') %}</main>{% else %}</div>{% endif %}
+    </main>
 </body>
 </html>
