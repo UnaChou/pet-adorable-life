@@ -317,7 +317,9 @@
     margin-bottom: 1.25rem;
     scrollbar-width: none;
 }
-.pet-picker-strip::-webkit-scrollbar { display: none; }
+.pet-picker-strip::-webkit-scrollbar {
+    display: none;
+}
 
 .pet-chip {
     display: flex;
@@ -325,18 +327,20 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.6rem 0.85rem;
-    border-radius: var(--radius-md, 12px);
+    border-radius: var(--radius-md);
     cursor: pointer;
     border: 2px solid transparent;
     background: white;
-    box-shadow: 0 2px 8px rgba(61, 90, 74, 0.08);
+    box-shadow: var(--soft-shadow);
     transition: all 0.18s;
     flex-shrink: 0;
     min-width: 60px;
     font-family: inherit;
     color: var(--charcoal);
 }
-.pet-chip:hover { border-color: rgba(125, 155, 118, 0.35); }
+.pet-chip:hover {
+    border-color: rgba(125, 155, 118, 0.35);
+}
 .pet-chip.active {
     border-color: var(--sage);
     background: rgba(125, 155, 118, 0.08);
