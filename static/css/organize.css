@@ -375,3 +375,89 @@
     font-weight: 600;
 }
 
+/* ========== Pet Hero Banner ========== */
+.pet-hero {
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg,
+        rgba(61, 90, 74, 0.06) 0%,
+        rgba(125, 155, 118, 0.12) 50%,
+        rgba(201, 123, 92, 0.06) 100%);
+    border: 1.5px solid rgba(125, 155, 118, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.pet-hero::before {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: -20px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(125, 155, 118, 0.12), transparent 70%);
+    pointer-events: none;
+}
+
+.pet-hero-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 4px 16px rgba(61, 90, 74, 0.15);
+    background: var(--sand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.pet-hero-info {
+    flex: 1;
+}
+
+.pet-hero-name {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--forest);
+}
+
+.pet-hero-meta {
+    font-size: 0.85rem;
+    color: var(--charcoal);
+    opacity: 0.75;
+    margin-top: 0.2rem;
+}
+
+.pet-hero-stats {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+}
+
+.pet-hero-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pet-hero-stat .stat-num {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--forest);
+}
+
+.pet-hero-stat .stat-label {
+    font-size: 0.72rem;
+    color: var(--charcoal);
+    opacity: 0.65;
+}
+
