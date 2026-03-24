@@ -9,14 +9,12 @@
         <h2 class="auth-subtitle">登入帳號</h2>
 
         {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <ul class="auth-errors">
+        <ul class="auth-errors" id="loginErrors"{% if not messages %} hidden{% endif %}>
             {% for msg in messages %}<li>{{ msg }}</li>{% endfor %}
         </ul>
-        {% endif %}
         {% endwith %}
 
-        <form method="post" action="/login" class="auth-form">
+        <form class="auth-form" id="loginForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
             <label for="username">帳號</label>
@@ -32,4 +30,67 @@
         <p class="auth-link">還沒有帳號？<a href="/register">立即註冊</a></p>
     </div>
 </div>
+
+<script>
+const loginForm = document.getElementById('loginForm');
+const loginErrors = document.getElementById('loginErrors');
+const csrfInput = loginForm.querySelector('input[name="csrf_token"]');
+
+function setLoginErrors(messages) {
+    if (!messages.length) {
+        loginErrors.hidden = true;
+        loginErrors.innerHTML = '';
+        return;
+    }
+
+    loginErrors.hidden = false;
+    loginErrors.innerHTML = '';
+    messages.forEach((message) => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        loginErrors.appendChild(item);
+    });
+}
+
+loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setLoginErrors([]);
+
+    const submitButton = loginForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                username: loginForm.username.value.trim(),
+                password: loginForm.password.value,
+                csrf_token: csrfInput.value,
+            }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (data.csrf_token) {
+            csrfInput.value = data.csrf_token;
+        }
+
+        if (!response.ok) {
+            setLoginErrors([data.error || '登入失敗，請稍後再試。']);
+            return;
+        }
+
+        window.location.href = data.redirect_to || '/';
+    } catch (error) {
+        setLoginErrors(['登入失敗，請稍後再試。']);
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+</script>
 {% endblock %}

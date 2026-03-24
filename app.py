@@ -10,7 +10,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from threading import Lock
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash, make_response
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -80,8 +80,19 @@ def _issue_csrf_token(form_name: str) -> str:
 
 def _validate_csrf_token(form_name: str) -> bool:
     submitted = (request.form.get("csrf_token") or "").strip()
+    if not submitted and request.is_json:
+        payload = request.get_json(silent=True) or {}
+        submitted = (payload.get("csrf_token") or "").strip()
     expected = session.pop(_form_csrf_key(form_name), None)
     return bool(submitted and expected and secrets.compare_digest(submitted, expected))
+
+
+def _no_cache_response(html, status_code=200):
+    resp = make_response(html, status_code)
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 def _is_forgot_password_rate_limited(remote_addr: str) -> bool:
@@ -139,21 +150,29 @@ def _require_login():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """登入頁面"""
     if request.method == "POST":
         if not _validate_csrf_token("login"):
+            fresh_csrf_token = _issue_csrf_token("login")
+            if request.is_json:
+                return jsonify({"error": "表單已失效，請再試一次", "csrf_token": fresh_csrf_token}), 400
             flash("表單已失效，請再試一次")
-            return render_template("login.html", csrf_token=_issue_csrf_token("login")), 400
+            return _no_cache_response(render_template("login.html", csrf_token=fresh_csrf_token), 400)
 
-        username = (request.form.get("username") or "").strip()
-        password = request.form.get("password") or ""
+        payload = request.get_json(silent=True) if request.is_json else None
+        username = ((payload or {}).get("username") or request.form.get("username") or "").strip()
+        password = (payload or {}).get("password") or request.form.get("password") or ""
         user = db.get_user_by_username(username)
         if not user or not check_password_hash(user["password_hash"], password):
+            fresh_csrf_token = _issue_csrf_token("login")
+            if request.is_json:
+                return jsonify({"error": "帳號或密碼錯誤", "csrf_token": fresh_csrf_token}), 401
             flash("帳號或密碼錯誤")
-            return render_template("login.html", csrf_token=_issue_csrf_token("login")), 401
+            return _no_cache_response(render_template("login.html", csrf_token=fresh_csrf_token), 401)
         session["user_id"] = user["id"]
+        if request.is_json:
+            return jsonify({"ok": True, "redirect_to": url_for("index")})
         return redirect(url_for("index"))
-    return render_template("login.html", csrf_token=_issue_csrf_token("login"))
+    return _no_cache_response(render_template("login.html", csrf_token=_issue_csrf_token("login")))
 
 
 _EMAIL_RE = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$")
@@ -188,11 +207,10 @@ def _validate_register_uniqueness(username: str, email: str):
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    """註冊頁面"""
     if request.method == "POST":
         if not _validate_csrf_token("register"):
             flash("表單已失效，請再試一次")
-            return render_template("register.html", csrf_token=_issue_csrf_token("register")), 400
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
 
         username = (request.form.get("username") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
@@ -202,17 +220,17 @@ def register():
         input_error = _validate_register_inputs(username, email, password, confirm)
         if input_error:
             flash(input_error)
-            return render_template("register.html", csrf_token=_issue_csrf_token("register")), 400
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
 
         uniqueness_error = _validate_register_uniqueness(username, email)
         if uniqueness_error:
             flash(uniqueness_error)
-            return render_template("register.html", csrf_token=_issue_csrf_token("register")), 400
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
 
         user_id = db.create_user(username, email, generate_password_hash(password))
         session["user_id"] = user_id
         return redirect(url_for("index"))
-    return render_template("register.html", csrf_token=_issue_csrf_token("register"))
+    return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")))
 
 
 @app.route("/logout")
@@ -281,8 +299,8 @@ def _render_reset_password(token: str, error=None, status_code=None):
         csrf_token=_issue_csrf_token("reset_password"),
     )
     if status_code is None:
-        return response
-    return response, status_code
+        return _no_cache_response(response)
+    return _no_cache_response(response, status_code)
 
 
 def _validate_reset_form_passwords(new_password: str, confirm: str):
@@ -295,14 +313,13 @@ def _validate_reset_form_passwords(new_password: str, confirm: str):
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
-    """忘記密碼頁面：輸入 email 申請重設連結"""
     if request.method == "POST":
         if not _validate_csrf_token("forgot_password"):
             flash("表單已失效，請再試一次")
-            return render_template(
+            return _no_cache_response(render_template(
                 "forgot_password.html",
                 csrf_token=_issue_csrf_token("forgot_password"),
-            ), 400
+            ), 400)
 
         remote_addr = (request.remote_addr or "unknown").strip() or "unknown"
         if _is_forgot_password_rate_limited(remote_addr):
@@ -314,10 +331,10 @@ def forgot_password():
             _request_password_reset(email)
         flash("若此信箱已註冊，您將收到重設連結，請檢查您的信箱。")
         return redirect(url_for("forgot_password"))
-    return render_template(
+    return _no_cache_response(render_template(
         "forgot_password.html",
         csrf_token=_issue_csrf_token("forgot_password"),
-    )
+    ))
 
 
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
@@ -347,7 +364,7 @@ def reset_password(token):
         db.invalidate_user_reset_tokens(record["user_id"])
         db.mark_reset_token_used(record["id"])
         db.update_user_password(record["user_id"], generate_password_hash(new_password))
-        session.clear()
+        session.pop("user_id", None)
         flash("密碼已重設，請用新密碼登入。")
         return redirect(url_for("login"))
     return _render_reset_password(token=token, error=error)

@@ -79,6 +79,52 @@ def test_login_unknown_user_returns_401(client, mock_db):
     assert res.status_code == 401
 
 
+def test_login_json_requires_csrf_token(client, mock_db):
+    res = client.post(
+        "/login",
+        json={"username": "testuser", "password": "password1"},
+    )
+    assert res.status_code == 400
+    assert res.get_json()["error"] == "表單已失效，請再試一次"
+    assert res.get_json()["csrf_token"]
+    mock_db.get_user_by_username.assert_not_called()
+
+
+def test_login_json_success_sets_session_and_returns_redirect(client, mock_db):
+    mock_db.get_user_by_username.return_value = {
+        "id": 1,
+        "username": "testuser",
+        "password_hash": generate_password_hash("password1"),
+    }
+    page = client.get("/login")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+    res = client.post(
+        "/login",
+        json={"username": "testuser", "password": "password1", "csrf_token": csrf_token},
+    )
+    assert res.status_code == 200
+    assert res.get_json() == {"ok": True, "redirect_to": "/"}
+    with client.session_transaction() as sess:
+        assert sess.get("user_id") == 1
+
+
+def test_login_json_wrong_password_returns_401_and_fresh_csrf(client, mock_db):
+    mock_db.get_user_by_username.return_value = {
+        "id": 1,
+        "username": "testuser",
+        "password_hash": generate_password_hash("correctpass"),
+    }
+    page = client.get("/login")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+    res = client.post(
+        "/login",
+        json={"username": "testuser", "password": "wrongpass", "csrf_token": csrf_token},
+    )
+    assert res.status_code == 401
+    assert res.get_json()["error"] == "帳號或密碼錯誤"
+    assert res.get_json()["csrf_token"]
+
+
 # ===== Register =====
 
 def test_register_requires_csrf_token(client, mock_db):
