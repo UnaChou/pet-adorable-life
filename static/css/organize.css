@@ -248,6 +248,18 @@
     font-size: 0.78rem;
 }
 
+.pet-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    background: rgba(125, 155, 118, 0.12);
+    color: var(--sage);
+    font-weight: 500;
+}
+
 .product-card .product-title {
     font-size: 1.05rem;
     font-weight: 600;

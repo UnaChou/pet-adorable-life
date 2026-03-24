@@ -219,15 +219,14 @@
             return;
         }
         el.innerHTML = `<div class="list-header"><h2>商品列表 <span class="count">共 ${products.length} 項</span></h2></div>
-            <div class="product-cards timeline-list">` +
+            <div class="product-cards">` +
             products.map(p => `
-            <article class="product-card timeline-item">
-                <div class="timeline-dot"></div>
+            <article class="product-card">
                 <div class="product-card-body">
                     <div class="product-meta">
                         <span class="product-id">#${p.id}</span>
-                        ${p.pet_id ? `<span class="product-id">🐾 ${petName(p.pet_id)}</span>` : ''}
-                        <span class="product-dates">建立：${p.created_at ? new Date(p.created_at).toLocaleString('zh-TW') : '-'}</span>
+                        <span class="product-dates">${p.created_at ? new Date(p.created_at).toLocaleString('zh-TW') : '-'}</span>
+                        ${p.pet_id ? `<span class="pet-tag">🐾 ${petName(p.pet_id)}</span>` : ''}
                     </div>
                     <h3 class="product-title">${p.title}</h3>
                     <div class="product-summary">${(p.summary || '').replace(/\n/g, '<br>')}</div>
@@ -302,16 +301,15 @@
             return;
         }
         el.innerHTML = `<div class="list-header"><h2>日記列表 <span class="count">共 ${diaries.length} 則</span></h2></div>
-            <div class="diary-cards timeline-list">` +
+            <div class="diary-cards">` +
             diaries.map(d => `
-            <article class="diary-card timeline-item">
-                <div class="timeline-dot"></div>
+            <article class="diary-card">
                 <div class="diary-card-body">
                     ${d.image_base64 ? `<div class="diary-image-wrapper"><img src="${d.image_base64}" alt="Diary Image" class="diary-thumbnail"></div>` : ''}
                     <div class="diary-meta">
                         <span class="diary-id">#${d.id}</span>
-                        ${d.pet_id ? `<span class="diary-id">🐾 ${petName(d.pet_id)}</span>` : ''}
                         <span class="diary-dates">${d.created_at ? new Date(d.created_at).toLocaleString('zh-TW') : '-'}</span>
+                        ${d.pet_id ? `<span class="pet-tag">🐾 ${petName(d.pet_id)}</span>` : ''}
                     </div>
                     ${d.title ? `<h4 class="diary-title">${d.title}</h4>` : ''}
                     <div class="diary-emotion">${d.main_emotion}</div>
