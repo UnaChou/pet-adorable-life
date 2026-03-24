@@ -3,9 +3,9 @@
 {% block title %}寵物管理 - Pet Adorable Life{% endblock %}
 
 {% block content %}
-<div class="organize-page">
+<div class="pets-page">
     <section class="organize-hero">
-        <h1>🐾 寵物管理</h1>
+        <h1>🐾 我的寵物</h1>
         <p>管理你的毛孩檔案</p>
     </section>
 
@@ -132,23 +132,22 @@
             petsList.innerHTML = '<div class="empty-state"><span class="empty-icon">🐾</span><p>尚無寵物，點擊「➕ 新增寵物」建立第一個寵物檔案</p></div>';
             return;
         }
-        petsList.innerHTML = '<div class="product-cards timeline-list">' +
+        petsList.innerHTML = '<div class="pets-grid">' +
             pets.map(p => `
-            <article class="product-card timeline-item" data-id="${escapeHtml(p.id)}">
-                <div class="timeline-dot"></div>
-                <div class="product-card-body" style="display:flex;align-items:flex-start;gap:1rem;">
-                    ${p.photo_base64
-                        ? `<img src="${escapeHtml(p.photo_base64)}" alt="${escapeHtml(p.name)}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;flex-shrink:0;">`
-                        : '<div style="width:72px;height:72px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;">🐾</div>'}
-                    <div>
-                        <h3 class="product-title">${escapeHtml(p.name)}</h3>
-                        ${p.breed ? `<div class="product-summary">${escapeHtml(p.breed)}</div>` : ''}
-                        ${p.birthday ? `<div class="product-summary">${escapeHtml(p.birthday)}　${calcAge(p.birthday)}</div>` : ''}
-                    </div>
-                </div>
-                <div class="product-card-actions">
+            <article class="pet-card" data-id="${escapeHtml(p.id)}">
+                <div class="pet-card-actions">
                     <button class="btn-icon edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
                     <button class="btn-icon remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>
+                </div>
+                <div class="pet-card-avatar">
+                    ${p.photo_base64
+                        ? `<img src="${escapeHtml(p.photo_base64)}" alt="${escapeHtml(p.name)}">`
+                        : '🐾'}
+                </div>
+                <div class="pet-card-info">
+                    <div class="pet-card-name">${escapeHtml(p.name)}</div>
+                    ${p.breed ? `<div class="pet-card-meta">${escapeHtml(p.breed)}</div>` : ''}
+                    ${p.birthday ? `<div class="pet-card-meta">${calcAge(p.birthday)}</div>` : ''}
                 </div>
             </article>`).join('') +
         '</div>';
