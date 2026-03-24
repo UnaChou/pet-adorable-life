@@ -126,6 +126,8 @@ def _require_login():
     """所有路由都需要登入，例外：login、register、logout、static。"""
     if request.endpoint in _EXEMPT_ENDPOINTS:
         return
+    if request.path == "/favicon.ico":
+        return
     if not current_user_id():
         if request.path.startswith("/api/"):
             return jsonify({"error": "請先登入"}), 401
