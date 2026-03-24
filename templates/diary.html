@@ -19,6 +19,7 @@
                 <div class="upload-zone" id="uploadZone">
                     <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
                         hidden>
+                    <input type="file" id="cameraFileInput" accept="image/*" capture="environment" hidden>
                     <div class="upload-placeholder" id="uploadPlaceholder">
                         <span class="upload-icon">📷</span>
                         <p>點擊或拖曳圖片到此處</p>
@@ -113,6 +114,12 @@
         btnCamera.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
+            const canUseGetUserMedia = window.isSecureContext &&
+                !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            if (!canUseGetUserMedia) {
+                document.getElementById('cameraFileInput').click();
+                return;
+            }
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment' },
@@ -203,6 +210,10 @@
             if (file && file.type.startsWith('image/')) handleFile(file);
         });
         fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+        document.getElementById('cameraFileInput').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) handleFile(file);
         });
