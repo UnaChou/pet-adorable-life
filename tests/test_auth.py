@@ -297,6 +297,114 @@ def test_reset_password_success_clears_session_and_updates_password(authed_clien
         assert "user_id" not in sess
 
 
+# ===== Forgot Password edge cases =====
+
+def test_forgot_password_unknown_email_still_redirects(client, mock_db):
+    """Unknown email must redirect without error — prevents email enumeration."""
+    mock_db.get_user_by_email.return_value = None
+    page = client.get("/forgot-password")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+
+    res = client.post("/forgot-password", data={
+        "email": "nobody@example.com",
+        "csrf_token": csrf_token,
+    })
+
+    assert res.status_code == 302
+    mock_db.create_reset_token.assert_not_called()
+
+
+def test_forgot_password_invalid_email_format_still_redirects(client, mock_db):
+    page = client.get("/forgot-password")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+
+    res = client.post("/forgot-password", data={
+        "email": "not-an-email",
+        "csrf_token": csrf_token,
+    })
+
+    assert res.status_code == 302
+    mock_db.get_user_by_email.assert_not_called()
+
+
+# ===== Reset Password edge cases =====
+
+def test_reset_password_expired_token_shows_error(client, mock_db):
+    token = "C" * 43
+    mock_db.get_reset_token.return_value = {
+        "id": 5,
+        "user_id": 3,
+        "used_at": None,
+        "expires_at": datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=2),
+    }
+
+    res = client.get(f"/reset-password/{token}")
+
+    assert res.status_code == 200
+    assert "過期" in res.get_data(as_text=True)
+    mock_db.update_user_password.assert_not_called()
+
+
+def test_reset_password_already_used_token_shows_error(client, mock_db):
+    token = "D" * 43
+    mock_db.get_reset_token.return_value = {
+        "id": 6,
+        "user_id": 3,
+        "used_at": datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=5),
+        "expires_at": datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1),
+    }
+
+    res = client.get(f"/reset-password/{token}")
+
+    assert res.status_code == 200
+    assert "已使用" in res.get_data(as_text=True)
+    mock_db.update_user_password.assert_not_called()
+
+
+def test_reset_password_mismatched_passwords_returns_400(client, mock_db):
+    token = "E" * 43
+    mock_db.get_reset_token.return_value = {
+        "id": 7,
+        "user_id": 3,
+        "used_at": None,
+        "expires_at": datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1),
+    }
+
+    page = client.get(f"/reset-password/{token}")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+
+    res = client.post(f"/reset-password/{token}", data={
+        "new_password": "password123",
+        "confirm_password": "different123",
+        "csrf_token": csrf_token,
+    })
+
+    assert res.status_code == 400
+    mock_db.update_user_password.assert_not_called()
+
+
+def test_reset_password_short_password_returns_400(client, mock_db):
+    token = "F" * 43
+    mock_db.get_reset_token.return_value = {
+        "id": 8,
+        "user_id": 3,
+        "used_at": None,
+        "expires_at": datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1),
+    }
+
+    page = client.get(f"/reset-password/{token}")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+
+    res = client.post(f"/reset-password/{token}", data={
+        "new_password": "short",
+        "confirm_password": "short",
+        "csrf_token": csrf_token,
+    })
+
+    assert res.status_code == 400
+    mock_db.update_user_password.assert_not_called()
+
+
 # ===== Logout =====
 
 def test_logout_clears_session_and_redirects_to_login(authed_client, mock_db):
