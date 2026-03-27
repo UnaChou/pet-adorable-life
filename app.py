@@ -277,6 +277,31 @@ def _send_password_reset_email(email: str, user_id: int, reset_url: str) -> None
         )
 
 
+_ROLE_DISPLAY = {"read_only": "僅能檢視", "editor": "可編輯"}
+
+
+def _send_pet_invite_email(invitee_email: str, inviter_username: str, pet_name: str,
+                           role: str, join_url: str, inviter_user_id: int) -> None:
+    role_display = _ROLE_DISPLAY.get(role, role)
+    msg = Message(
+        f"{inviter_username} 邀請您加入共同飼養 {pet_name}！- Pet Adorable Life",
+        recipients=[invitee_email],
+    )
+    msg.body = (
+        f"您好，\n\n{inviter_username} 邀請您以「{role_display}」身份共同飼養 {pet_name}。\n\n"
+        f"點擊以下連結加入（連結在 7 天後失效）：\n\n{join_url}\n\n"
+        "若非您本人操作，請忽略此信。"
+    )
+    try:
+        mail.send(msg)
+    except Exception:
+        logger.warning(
+            "Failed to send pet invite email (inviter_user_id=%s).",
+            inviter_user_id,
+            exc_info=True,
+        )
+
+
 def _request_password_reset(email: str) -> None:
     user = db.get_user_by_email(email)
     if not user:
@@ -482,8 +507,8 @@ def api_add_pet():
 
 @app.route("/api/pets/<int:pet_id>", methods=["GET"])
 def api_get_pet(pet_id):
-    """取得單一寵物"""
-    pet = db.get_pet(pet_id, user_id=current_user_id())
+    """取得單一寵物（擁有者或共同飼養人均可讀取）"""
+    pet = db.get_pet_accessible(pet_id, user_id=current_user_id())
     if not pet:
         return jsonify({"error": "找不到寵物"}), 404
     return jsonify(pet)
@@ -491,9 +516,9 @@ def api_get_pet(pet_id):
 
 @app.route("/api/pets/<int:pet_id>", methods=["PUT"])
 def api_update_pet(pet_id):
-    """更新寵物資料"""
+    """更新寵物資料（擁有者或 editor 共同飼養人均可）"""
     uid = current_user_id()
-    if not db.get_pet(pet_id, user_id=uid):
+    if not db.get_pet_if_editable(pet_id, user_id=uid):
         return jsonify({"error": "找不到寵物"}), 404
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()
@@ -505,9 +530,9 @@ def api_update_pet(pet_id):
         breed=(data.get("breed") or "").strip(),
         birthday=data.get("birthday") or None,
         photo_base64=data.get("photo_base64"),
-        user_id=uid,
+        user_id=None,  # access already verified by get_pet_if_editable
     )
-    return jsonify(db.get_pet(pet_id, user_id=uid))
+    return jsonify(db.get_pet_accessible(pet_id, user_id=uid))
 
 
 @app.route("/api/pets/<int:pet_id>", methods=["DELETE"])
@@ -524,6 +549,132 @@ def api_delete_pet(pet_id):
 def pets_page():
     """寵物管理頁面"""
     return render_template("pets.html")
+
+
+# ========== Pet Shares API ==========
+
+@app.route("/api/pets/<int:pet_id>/shares", methods=["GET"])
+def api_get_pet_shares(pet_id):
+    """列出寵物的共同飼養人（僅擁有者可查詢）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    shares = db.get_pet_shares(pet_id, owner_user_id=uid)
+    return jsonify({"shares": shares})
+
+
+@app.route("/api/pets/<int:pet_id>/shares/<int:share_id>", methods=["DELETE"])
+def api_remove_pet_share(pet_id, share_id):
+    """移除共同飼養人（僅擁有者可操作）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    removed = db.remove_pet_share(share_id, owner_user_id=uid)
+    if not removed:
+        return jsonify({"error": "找不到共享紀錄"}), 404
+    return "", 204
+
+
+# ========== Pet Invitations API ==========
+
+_VALID_ROLES = {"read_only", "editor"}
+
+
+@app.route("/api/pets/<int:pet_id>/invitations", methods=["GET"])
+def api_get_pet_invitations(pet_id):
+    """列出寵物的待處理邀請（僅擁有者可查詢）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    invitations = db.get_pet_invitations_for_pet(pet_id, inviter_user_id=uid)
+    return jsonify({"invitations": invitations})
+
+
+@app.route("/api/pets/<int:pet_id>/invitations", methods=["POST"])
+def api_send_pet_invitation(pet_id):
+    """發送共同飼養邀請（僅擁有者可操作）"""
+    uid = current_user_id()
+    pet = db.get_pet(pet_id, user_id=uid)
+    if not pet:
+        return jsonify({"error": "找不到寵物"}), 404
+    data = request.get_json() or {}
+    username = (data.get("username") or "").strip()
+    role = (data.get("role") or "").strip()
+    if role not in _VALID_ROLES:
+        return jsonify({"error": "無效的角色"}), 400
+    invitee = db.get_user_by_username(username)
+    if not invitee:
+        return jsonify({"error": "找不到使用者"}), 404
+    if invitee["id"] == uid:
+        return jsonify({"error": "不能邀請自己"}), 400
+    if not invitee.get("email"):
+        return jsonify({"error": "該使用者未設定電子郵件"}), 400
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    inv_id = db.create_pet_share_invitation(
+        pet_id=pet_id,
+        inviter_user_id=uid,
+        invitee_user_id=invitee["id"],
+        role=role,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    inviter = db.get_user_by_id(uid)
+    join_url = url_for("pet_join_page", token=raw_token, _external=True)
+    _send_pet_invite_email(
+        invitee_email=invitee["email"],
+        inviter_username=inviter["username"],
+        pet_name=pet["name"],
+        role=role,
+        join_url=join_url,
+        inviter_user_id=uid,
+    )
+    return jsonify({"id": inv_id, "invitee_username": username, "role": role}), 201
+
+
+@app.route("/api/pets/<int:pet_id>/invitations/<int:inv_id>", methods=["DELETE"])
+def api_cancel_pet_invitation(pet_id, inv_id):
+    """取消邀請（僅擁有者可操作）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    cancelled = db.cancel_pet_share_invitation(inv_id, inviter_user_id=uid)
+    if not cancelled:
+        return jsonify({"error": "找不到邀請"}), 404
+    return "", 204
+
+
+# ========== Pet Join (accept/decline invitation) ==========
+
+@app.route("/pets/join/<token>")
+def pet_join_page(token):
+    """顯示接受/拒絕共同飼養邀請的頁面（Task 5 實作）"""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    inv = db.get_pet_share_invitation_by_token(token_hash)
+    if not inv:
+        return render_template("error.html", message="邀請連結無效或已過期"), 404
+    return render_template("pet_join.html", inv=inv, token=token)
+
+
+@app.route("/pets/join/<token>", methods=["POST"])
+def pet_join_action(token):
+    """處理接受/拒絕共同飼養邀請（Task 5 實作）"""
+    uid = current_user_id()
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    inv = db.get_pet_share_invitation_by_token(token_hash)
+    if not inv or inv.get("status") != "pending":
+        return jsonify({"error": "邀請連結無效或已過期"}), 404
+    if inv["invitee_user_id"] != uid:
+        return jsonify({"error": "此邀請不屬於您的帳號"}), 403
+    action = (request.get_json() or {}).get("action", "")
+    if action == "accept":
+        db.accept_pet_share_invitation(inv["id"], invitee_user_id=uid)
+        return jsonify({"status": "accepted"})
+    elif action == "decline":
+        db.decline_pet_share_invitation(inv["id"], invitee_user_id=uid)
+        return jsonify({"status": "declined"})
+    return jsonify({"error": "無效的操作"}), 400
 
 
 # ========== Products API ==========

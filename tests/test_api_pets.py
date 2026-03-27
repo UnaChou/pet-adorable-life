@@ -22,14 +22,15 @@ def test_add_pet_missing_name_returns_400(authed_client, mock_db):
 
 
 def test_get_pet_not_found_returns_404(authed_client, mock_db):
-    mock_db.get_pet.return_value = None
+    mock_db.get_pet_accessible.return_value = None
     res = authed_client.get("/api/pets/999")
     assert res.status_code == 404
 
 
 def test_update_pet_returns_200(authed_client, mock_db):
-    pet = {"id": 1, "name": "大黑", "breed": "柴犬", "birthday": "", "photo_base64": "", "created_at": None, "updated_at": None}
-    mock_db.get_pet.return_value = pet
+    pet = {"id": 1, "name": "大黑", "breed": "柴犬", "birthday": "", "photo_base64": "", "created_at": None, "updated_at": None, "user_id": 1, "is_shared": False}
+    mock_db.get_pet_if_editable.return_value = pet
+    mock_db.get_pet_accessible.return_value = pet
     res = authed_client.put("/api/pets/1", json={"name": "大黑", "breed": "柴犬"})
     assert res.status_code == 200
 
@@ -42,6 +43,6 @@ def test_delete_pet_returns_204(authed_client, mock_db):
 
 
 def test_update_pet_missing_name_returns_400(authed_client, mock_db):
-    mock_db.get_pet.return_value = {"id": 1, "name": "小黑"}
+    mock_db.get_pet_if_editable.return_value = {"id": 1, "name": "小黑", "user_id": 1, "is_shared": False}
     res = authed_client.put("/api/pets/1", json={"name": ""})
     assert res.status_code == 400

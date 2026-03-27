@@ -153,14 +153,14 @@ def test_add_pet_null_return_returns_500(authed_client, mock_db):
 
 
 def test_get_pet_found_returns_200(authed_client, mock_db):
-    mock_db.get_pet.return_value = {"id": 1, "name": "小黑", "breed": "", "birthday": "", "photo_base64": "", "created_at": None, "updated_at": None}
+    mock_db.get_pet_accessible.return_value = {"id": 1, "name": "小黑", "breed": "", "birthday": "", "photo_base64": "", "created_at": None, "updated_at": None, "user_id": 1, "is_shared": False}
     res = authed_client.get("/api/pets/1")
     assert res.status_code == 200
     assert res.get_json()["name"] == "小黑"
 
 
 def test_update_pet_not_found_returns_404(authed_client, mock_db):
-    mock_db.get_pet.return_value = None
+    mock_db.get_pet_if_editable.return_value = None
     res = authed_client.put("/api/pets/999", json={"name": "X"})
     assert res.status_code == 404
 
