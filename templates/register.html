@@ -18,6 +18,7 @@
 
         <form method="post" action="/register" class="auth-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
             <label for="username">帳號（英文字母、數字、底線）</label>
             <input id="username" name="username" type="text" autocomplete="username" required maxlength="100">
@@ -34,7 +35,7 @@
             <button type="submit" class="btn btn-primary">註冊</button>
         </form>
 
-        <p class="auth-link">已有帳號？<a href="/login">前往登入</a></p>
+        <p class="auth-link">已有帳號？<a href="/login{% if next %}?next={{ next | urlencode }}{% endif %}">前往登入</a></p>
     </div>
 </div>
 {% endblock %}

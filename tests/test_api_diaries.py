@@ -7,8 +7,10 @@ def test_get_diaries(authed_client, mock_db):
 
 def test_get_diaries_with_pet_filter(authed_client, mock_db):
     mock_db.get_all_diaries.return_value = []
+    mock_db.get_pet_accessible.return_value = {"id": 2, "name": "test"}
     authed_client.get("/api/diaries?pet_id=2")
-    mock_db.get_all_diaries.assert_called_with(pet_id=2, user_id=1)
+    # co-owner content: user_id=None so all users' items for this pet are returned
+    mock_db.get_all_diaries.assert_called_with(pet_id=2, user_id=None)
 
 
 def test_add_diary_returns_201(authed_client, mock_db):

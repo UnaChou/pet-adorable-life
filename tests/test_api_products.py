@@ -7,9 +7,11 @@ def test_get_products(authed_client, mock_db):
 
 def test_get_products_with_pet_filter(authed_client, mock_db):
     mock_db.get_all_products.return_value = []
+    mock_db.get_pet_accessible.return_value = {"id": 1, "name": "test"}
     res = authed_client.get("/api/products?pet_id=1")
     assert res.status_code == 200
-    mock_db.get_all_products.assert_called_with(pet_id=1, user_id=1)
+    # co-owner content: user_id=None so all users' items for this pet are returned
+    mock_db.get_all_products.assert_called_with(pet_id=1, user_id=None)
 
 
 def test_add_product_returns_201(authed_client, mock_db):

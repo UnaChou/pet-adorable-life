@@ -214,9 +214,13 @@ def _validate_register_uniqueness(username: str, email: str):
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+        next_url = (request.form.get("next") or "").strip()
+        if not (next_url.startswith("/") and not next_url.startswith("//")):
+            next_url = ""
+
         if not _validate_csrf_token("register"):
             flash("表單已失效，請再試一次")
-            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url), 400)
 
         username = (request.form.get("username") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
@@ -226,17 +230,20 @@ def register():
         input_error = _validate_register_inputs(username, email, password, confirm)
         if input_error:
             flash(input_error)
-            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url), 400)
 
         uniqueness_error = _validate_register_uniqueness(username, email)
         if uniqueness_error:
             flash(uniqueness_error)
-            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url), 400)
 
         user_id = db.create_user(username, email, generate_password_hash(password))
         session["user_id"] = user_id
-        return redirect(url_for("index"))
-    return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")))
+        return redirect(next_url or url_for("index"))
+    next_url = request.args.get("next", "").strip()
+    if not (next_url.startswith("/") and not next_url.startswith("//")):
+        next_url = ""
+    return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url))
 
 
 @app.route("/logout")
@@ -287,7 +294,7 @@ _ROLE_DISPLAY = {"read_only": "僅能檢視", "editor": "可編輯"}
 
 
 def _send_pet_invite_email(invitee_email: str, inviter_username: str, pet_name: str,
-                           role: str, join_url: str, inviter_user_id: int) -> None:
+                           role: str, join_url: str, inviter_user_id: int) -> bool:
     role_display = _ROLE_DISPLAY.get(role, role)
     msg = Message(
         f"{inviter_username} 邀請您加入共同飼養 {pet_name}！- Pet Adorable Life",
@@ -300,12 +307,14 @@ def _send_pet_invite_email(invitee_email: str, inviter_username: str, pet_name: 
     )
     try:
         mail.send(msg)
+        return True
     except Exception:
         logger.warning(
             "Failed to send pet invite email (inviter_user_id=%s).",
             inviter_user_id,
             exc_info=True,
         )
+        return False
 
 
 def _request_password_reset(email: str) -> None:
@@ -615,9 +624,11 @@ def api_send_pet_invitation(pet_id):
         return jsonify({"error": "不能邀請自己"}), 400
     if not invitee.get("email"):
         return jsonify({"error": "該使用者未設定電子郵件"}), 400
+    if db.is_pet_co_owner(pet_id, invitee["id"]):
+        return jsonify({"error": "該使用者已是共同飼養人"}), 400
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    expires_at = _utcnow_naive() + timedelta(days=7)
     inv_id = db.create_pet_share_invitation(
         pet_id=pet_id,
         inviter_user_id=uid,
@@ -628,7 +639,7 @@ def api_send_pet_invitation(pet_id):
     )
     inviter = db.get_user_by_id(uid)
     join_url = url_for("pet_join_page", token=raw_token, _external=True)
-    _send_pet_invite_email(
+    email_sent = _send_pet_invite_email(
         invitee_email=invitee["email"],
         inviter_username=inviter["username"],
         pet_name=pet["name"],
@@ -636,7 +647,7 @@ def api_send_pet_invitation(pet_id):
         join_url=join_url,
         inviter_user_id=uid,
     )
-    return jsonify({"id": inv_id, "invitee_username": username, "role": role}), 201
+    return jsonify({"id": inv_id, "invitee_username": username, "role": role, "email_sent": email_sent}), 201
 
 
 @app.route("/api/pets/<int:pet_id>/invitations/<int:inv_id>", methods=["DELETE"])
@@ -673,7 +684,7 @@ def pet_join_page(token):
                                csrf_token=_issue_csrf_token("pet_join"))
     uid = current_user_id()
     if inv["invitee_user_id"] != uid:
-        return render_template("pet_join.html", error="此邀請不屬於您的帳號",
+        return render_template("pet_join.html", error="邀請連結無效或已過期",
                                csrf_token=_issue_csrf_token("pet_join"))
     if inv["status"] != "pending":
         msg = "此邀請已接受" if inv["status"] == "accepted" else "此邀請已使用或已取消"
@@ -700,8 +711,11 @@ def pet_join_action(token):
         return redirect(url_for("index"))
     action = (request.form.get("action") or "").strip()
     if action == "accept":
-        db.accept_pet_share_invitation(inv["id"], invitee_user_id=uid)
-        flash(f"已加入「{inv['pet_name']}」的共同飼養人！")
+        joined = db.accept_pet_share_invitation(inv["id"], invitee_user_id=uid)
+        if joined:
+            flash(f"已加入「{inv['pet_name']}」的共同飼養人！")
+        else:
+            flash(f"您已是「{inv['pet_name']}」的共同飼養人")
         return redirect(url_for("pets_page"))
     elif action == "decline":
         db.decline_pet_share_invitation(inv["id"], invitee_user_id=uid)
@@ -716,8 +730,15 @@ def pet_join_action(token):
 @app.route("/api/products", methods=["GET"])
 def api_get_products():
     """取得所有商品"""
+    uid = current_user_id()
     pet_id = request.args.get("pet_id", type=int)
-    return jsonify({"products": db.get_all_products(pet_id=pet_id, user_id=current_user_id())})
+    if pet_id and pet_id > 0:
+        if not db.get_pet_accessible(pet_id, uid):
+            return jsonify({"products": []})
+        user_id_filter = None  # show all users' content for shared pets
+    else:
+        user_id_filter = uid
+    return jsonify({"products": db.get_all_products(pet_id=pet_id, user_id=user_id_filter)})
 
 
 @app.route("/api/products", methods=["POST"])
@@ -728,6 +749,8 @@ def api_add_product():
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
     product_id = db.add_product(title, summary, pet_id=pet_id, user_id=uid)
     product = db.get_product(product_id, user_id=uid)
     if not product:
@@ -784,8 +807,15 @@ def api_delete_products():
 @app.route("/api/diaries", methods=["GET"])
 def api_get_diaries():
     """取得所有日記"""
+    uid = current_user_id()
     pet_id = request.args.get("pet_id", type=int)
-    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id, user_id=current_user_id())})
+    if pet_id and pet_id > 0:
+        if not db.get_pet_accessible(pet_id, uid):
+            return jsonify({"diaries": []})
+        user_id_filter = None  # show all users' content for shared pets
+    else:
+        user_id_filter = uid
+    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id, user_id=user_id_filter)})
 
 
 @app.route("/api/diaries", methods=["POST"])
@@ -793,13 +823,16 @@ def api_add_diary():
     """新增日記"""
     uid = current_user_id()
     data = request.get_json() or {}
+    pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
     diary_id = db.add_diary(
         title=(data.get("title") or "").strip(),
         describe_text=(data.get("describe_text") or "").strip(),
         main_emotion=(data.get("main_emotion") or "").strip(),
         memo=(data.get("memo") or "").strip(),
         image_base64=(data.get("image_base64") or ""),
-        pet_id=data.get("pet_id") or None,
+        pet_id=pet_id,
         user_id=uid,
     )
     diary = db.get_diary(diary_id, user_id=uid)

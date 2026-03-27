@@ -38,7 +38,7 @@ def test_join_page_wrong_user_shows_error(authed_client, mock_db):
     mock_db.get_pet_share_invitation_by_token.return_value = _make_inv(invitee_id=99)
     res = authed_client.get("/pets/join/sometoken123456789012345678901234")
     assert res.status_code == 200
-    assert "不屬於您" in res.get_data(as_text=True)
+    assert "邀請連結無效或已過期" in res.get_data(as_text=True)
 
 
 def test_accept_invitation(authed_client, mock_db):

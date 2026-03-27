@@ -579,12 +579,12 @@ def remove_pet(pet_id, user_id=None):
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
-                    "UPDATE products SET pet_id = NULL WHERE pet_id = %s AND user_id = %s",
-                    (pet_id, user_id),
+                    "UPDATE products SET pet_id = NULL WHERE pet_id = %s",
+                    (pet_id,),
                 )
                 cur.execute(
-                    "UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s AND user_id = %s",
-                    (pet_id, user_id),
+                    "UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s",
+                    (pet_id,),
                 )
                 cur.execute("DELETE FROM pet_share_invitations WHERE pet_id = %s", (pet_id,))
                 cur.execute("DELETE FROM pet_shares WHERE pet_id = %s", (pet_id,))
@@ -627,6 +627,17 @@ def get_pet_shares(pet_id, owner_user_id):
                 (pet_id, owner_user_id),
             )
             return cur.fetchall()
+
+
+def is_pet_co_owner(pet_id, user_id):
+    """回傳 True 如果 user_id 是該寵物的共同飼養人。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM pet_shares WHERE pet_id = %s AND shared_with_user_id = %s LIMIT 1",
+                (pet_id, user_id),
+            )
+            return cur.fetchone() is not None
 
 
 def remove_pet_share(share_id, owner_user_id):
@@ -697,11 +708,12 @@ def accept_pet_share_invitation(invitation_id, invitee_user_id):
                 " VALUES (%s, %s, %s, %s)",
                 (inv["pet_id"], inv["inviter_user_id"], invitee_user_id, inv["role"]),
             )
+            inserted = cur.rowcount > 0
             cur.execute(
                 "UPDATE pet_share_invitations SET status = 'accepted' WHERE id = %s",
                 (invitation_id,),
             )
-            return True
+            return inserted
 
 
 def decline_pet_share_invitation(invitation_id, invitee_user_id):
