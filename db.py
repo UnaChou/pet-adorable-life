@@ -722,7 +722,7 @@ def get_pet_invitations_for_pet(pet_id, inviter_user_id):
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT i.id, i.invitee_user_id, u.username AS invitee_username,"
-                " i.role, i.expires_at, i.created_at"
+                " i.role, i.status, i.expires_at, i.created_at"
                 " FROM pet_share_invitations i"
                 " JOIN users u ON u.id = i.invitee_user_id"
                 " WHERE i.pet_id = %s AND i.inviter_user_id = %s AND i.status = 'pending'"
