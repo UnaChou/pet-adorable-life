@@ -137,6 +137,42 @@ def _apply_relationship_columns(cur):
     _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN user_id INT AFTER pet_id")
 
 
+def _init_pet_shares_table(cur):
+    """建立 pet_shares 表（已接受的共同飼養人）。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pet_shares (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pet_id INT NOT NULL,
+            owner_user_id INT NOT NULL,
+            shared_with_user_id INT NOT NULL,
+            role ENUM('read_only', 'editor') NOT NULL DEFAULT 'read_only',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_pet_shared (pet_id, shared_with_user_id),
+            INDEX idx_shared_with (shared_with_user_id)
+        )
+    """)
+    _guard_alter(cur, "ALTER TABLE pet_shares ADD COLUMN role ENUM('read_only', 'editor') NOT NULL DEFAULT 'read_only' AFTER shared_with_user_id", ignore_codes=(1060,))
+
+
+def _init_pet_share_invitations_table(cur):
+    """建立 pet_share_invitations 表（待回應的邀請）。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pet_share_invitations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pet_id INT NOT NULL,
+            inviter_user_id INT NOT NULL,
+            invitee_user_id INT NOT NULL,
+            role ENUM('read_only', 'editor') NOT NULL DEFAULT 'read_only',
+            token_hash VARCHAR(255) NOT NULL UNIQUE,
+            status ENUM('pending', 'accepted', 'declined', 'cancelled') NOT NULL DEFAULT 'pending',
+            expires_at DATETIME NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_token_hash (token_hash),
+            INDEX idx_invitee_pending (invitee_user_id, status)
+        )
+    """)
+
+
 def init_db():
     """建立所有必要的資料表並補齊缺漏欄位。"""
     with get_connection() as conn:
@@ -147,6 +183,8 @@ def init_db():
             _init_users_table(cur)
             _init_password_reset_tokens_table(cur)
             _apply_relationship_columns(cur)
+            _init_pet_shares_table(cur)
+            _init_pet_share_invitations_table(cur)
 
 
 # ========== Users ==========
