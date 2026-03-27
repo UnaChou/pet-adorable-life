@@ -142,7 +142,7 @@ def _require_login():
     if not current_user_id():
         if request.path.startswith("/api/"):
             return jsonify({"error": "請先登入"}), 401
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next=request.path))
 
 
 # ========== Auth routes ==========
@@ -169,9 +169,15 @@ def login():
             flash("帳號或密碼錯誤")
             return _no_cache_response(render_template("login.html", csrf_token=fresh_csrf_token), 401)
         session["user_id"] = user["id"]
+        next_url = (
+            (payload or {}).get("next") or request.form.get("next") or request.args.get("next") or ""
+        ).strip()
+        # Only allow local paths to prevent open redirect
+        if not (next_url.startswith("/") and not next_url.startswith("//")):
+            next_url = url_for("index")
         if request.is_json:
-            return jsonify({"ok": True, "redirect_to": url_for("index")})
-        return redirect(url_for("index"))
+            return jsonify({"ok": True, "redirect_to": next_url or url_for("index")})
+        return redirect(next_url or url_for("index"))
     return _no_cache_response(render_template("login.html", csrf_token=_issue_csrf_token("login")))
 
 
@@ -647,34 +653,61 @@ def api_cancel_pet_invitation(pet_id, inv_id):
 
 # ========== Pet Join (accept/decline invitation) ==========
 
+_INVITE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{32,128}$")
+
+
+def _get_valid_invitation(token):
+    """Validate raw token format, return invitation record or None."""
+    if not _INVITE_TOKEN_RE.fullmatch(token or ""):
+        return None
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    return db.get_pet_share_invitation_by_token(token_hash)
+
+
 @app.route("/pets/join/<token>")
 def pet_join_page(token):
-    """顯示接受/拒絕共同飼養邀請的頁面（Task 5 實作）"""
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-    inv = db.get_pet_share_invitation_by_token(token_hash)
+    """顯示邀請詳情，讓受邀者選擇接受或婉拒。"""
+    inv = _get_valid_invitation(token)
     if not inv:
-        return render_template("error.html", message="邀請連結無效或已過期"), 404
-    return render_template("pet_join.html", inv=inv, token=token)
+        return render_template("pet_join.html", error="邀請連結無效或已過期",
+                               csrf_token=_issue_csrf_token("pet_join"))
+    uid = current_user_id()
+    if inv["invitee_user_id"] != uid:
+        return render_template("pet_join.html", error="此邀請不屬於您的帳號",
+                               csrf_token=_issue_csrf_token("pet_join"))
+    if inv["status"] != "pending":
+        msg = "此邀請已接受" if inv["status"] == "accepted" else "此邀請已使用或已取消"
+        return render_template("pet_join.html", error=msg,
+                               csrf_token=_issue_csrf_token("pet_join"))
+    if inv["expires_at"] < _utcnow_naive():
+        return render_template("pet_join.html", error="邀請已過期，請請求重新發送",
+                               csrf_token=_issue_csrf_token("pet_join"))
+    role_display = _ROLE_DISPLAY.get(inv["role"], inv["role"])
+    return render_template("pet_join.html", invitation=inv, role_display=role_display,
+                           token=token, csrf_token=_issue_csrf_token("pet_join"))
 
 
 @app.route("/pets/join/<token>", methods=["POST"])
 def pet_join_action(token):
-    """處理接受/拒絕共同飼養邀請（Task 5 實作）"""
+    """處理接受或婉拒邀請的表單提交。"""
+    if not _validate_csrf_token("pet_join"):
+        flash("表單已失效，請再試一次")
+        return redirect(url_for("pet_join_page", token=token))
     uid = current_user_id()
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-    inv = db.get_pet_share_invitation_by_token(token_hash)
-    if not inv or inv.get("status") != "pending":
-        return jsonify({"error": "邀請連結無效或已過期"}), 404
-    if inv["invitee_user_id"] != uid:
-        return jsonify({"error": "此邀請不屬於您的帳號"}), 403
-    action = (request.get_json() or {}).get("action", "")
+    inv = _get_valid_invitation(token)
+    if not inv or inv["invitee_user_id"] != uid or inv["status"] != "pending":
+        flash("邀請連結無效或已過期")
+        return redirect(url_for("index"))
+    action = (request.form.get("action") or "").strip()
     if action == "accept":
         db.accept_pet_share_invitation(inv["id"], invitee_user_id=uid)
-        return jsonify({"status": "accepted"})
+        flash(f"已加入「{inv['pet_name']}」的共同飼養人！")
+        return redirect(url_for("pets_page"))
     elif action == "decline":
         db.decline_pet_share_invitation(inv["id"], invitee_user_id=uid)
-        return jsonify({"status": "declined"})
-    return jsonify({"error": "無效的操作"}), 400
+        flash("已婉拒邀請")
+        return redirect(url_for("index"))
+    return redirect(url_for("pet_join_page", token=token))
 
 
 # ========== Products API ==========
