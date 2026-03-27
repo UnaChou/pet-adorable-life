@@ -206,7 +206,7 @@ def get_user_by_username(username):
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, username, password_hash, created_at FROM users WHERE username = %s",
+                "SELECT id, username, email, password_hash, created_at FROM users WHERE username = %s",
                 (username,),
             )
             return cur.fetchone()
@@ -444,23 +444,33 @@ def _format_pet(r):
         "birthday": str(r["birthday"]) if r.get("birthday") else "",
         "photo_base64": r.get("photo_base64") or "",
         "user_id": r.get("user_id"),
+        "is_shared": bool(r.get("is_shared", 0)),
         "created_at": r["created_at"],
         "updated_at": r.get("updated_at"),
     }
 
 
 def get_all_pets(user_id=None):
-    """取得所有寵物，依建立時間升序。"""
+    """取得所有寵物，依建立時間升序；user_id 時包含共享寵物。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute("""
-                    SELECT id, name, breed, birthday, photo_base64, user_id, created_at, updated_at
-                    FROM pets WHERE user_id = %s ORDER BY created_at ASC
-                """, (user_id,))
+                    SELECT id, name, breed, birthday, photo_base64, user_id,
+                           created_at, updated_at, 0 AS is_shared
+                    FROM pets WHERE user_id = %s
+                    UNION ALL
+                    SELECT p.id, p.name, p.breed, p.birthday, p.photo_base64, p.user_id,
+                           p.created_at, p.updated_at, 1 AS is_shared
+                    FROM pets p
+                    INNER JOIN pet_shares s ON s.pet_id = p.id
+                    WHERE s.shared_with_user_id = %s
+                    ORDER BY created_at ASC
+                """, (user_id, user_id))
             else:
                 cur.execute("""
-                    SELECT id, name, breed, birthday, photo_base64, user_id, created_at, updated_at
+                    SELECT id, name, breed, birthday, photo_base64, user_id,
+                           created_at, updated_at, 0 AS is_shared
                     FROM pets ORDER BY created_at ASC
                 """)
             rows = cur.fetchall()
@@ -499,6 +509,50 @@ def get_pet(pet_id, user_id=None):
     return _format_pet(row) if row else None
 
 
+def get_pet_accessible(pet_id, user_id):
+    """取得寵物（擁有者或任何共同飼養人均可讀取）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT p.id, p.name, p.breed, p.birthday, p.photo_base64, p.user_id,"
+                " p.created_at, p.updated_at,"
+                " CASE WHEN p.user_id != %s THEN 1 ELSE 0 END AS is_shared"
+                " FROM pets p"
+                " WHERE p.id = %s AND ("
+                "   p.user_id = %s"
+                "   OR EXISTS ("
+                "     SELECT 1 FROM pet_shares"
+                "     WHERE pet_id = p.id AND shared_with_user_id = %s"
+                "   )"
+                " )",
+                (user_id, pet_id, user_id, user_id),
+            )
+            row = cur.fetchone()
+    return _format_pet(row) if row else None
+
+
+def get_pet_if_editable(pet_id, user_id):
+    """取得寵物（擁有者或 editor 共同飼養人可修改）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT p.id, p.name, p.breed, p.birthday, p.photo_base64, p.user_id,"
+                " p.created_at, p.updated_at,"
+                " CASE WHEN p.user_id != %s THEN 1 ELSE 0 END AS is_shared"
+                " FROM pets p"
+                " WHERE p.id = %s AND ("
+                "   p.user_id = %s"
+                "   OR EXISTS ("
+                "     SELECT 1 FROM pet_shares"
+                "     WHERE pet_id = p.id AND shared_with_user_id = %s AND role = 'editor'"
+                "   )"
+                " )",
+                (user_id, pet_id, user_id, user_id),
+            )
+            row = cur.fetchone()
+    return _format_pet(row) if row else None
+
+
 def update_pet(pet_id, name, breed="", birthday=None, photo_base64=None, user_id=None):
     """更新寵物。photo_base64=None 表示不更新照片。"""
     with get_connection() as conn:
@@ -520,7 +574,7 @@ def update_pet(pet_id, name, breed="", birthday=None, photo_base64=None, user_id
 
 
 def remove_pet(pet_id, user_id=None):
-    """刪除寵物，並將相關商品與日記的 pet_id 設為 NULL。"""
+    """刪除寵物，並清除相關商品/日記歸屬及共同飼養記錄。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
@@ -532,6 +586,8 @@ def remove_pet(pet_id, user_id=None):
                     "UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s AND user_id = %s",
                     (pet_id, user_id),
                 )
+                cur.execute("DELETE FROM pet_share_invitations WHERE pet_id = %s", (pet_id,))
+                cur.execute("DELETE FROM pet_shares WHERE pet_id = %s", (pet_id,))
                 cur.execute(
                     "DELETE FROM pets WHERE id = %s AND user_id = %s",
                     (pet_id, user_id),
@@ -539,7 +595,153 @@ def remove_pet(pet_id, user_id=None):
             else:
                 cur.execute("UPDATE products SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
                 cur.execute("UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
+                cur.execute("DELETE FROM pet_share_invitations WHERE pet_id = %s", (pet_id,))
+                cur.execute("DELETE FROM pet_shares WHERE pet_id = %s", (pet_id,))
                 cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
+
+
+# ========== Pet Shares ==========
+
+
+def add_pet_share(pet_id, owner_user_id, shared_with_user_id, role="read_only"):
+    """新增共同飼養人記錄，回傳 share id。重複時拋出 IntegrityError。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO pet_shares (pet_id, owner_user_id, shared_with_user_id, role)"
+                " VALUES (%s, %s, %s, %s)",
+                (pet_id, owner_user_id, shared_with_user_id, role),
+            )
+            return cur.lastrowid
+
+
+def get_pet_shares(pet_id, owner_user_id):
+    """列出某寵物的共同飼養人（含 role）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT s.id, s.shared_with_user_id, u.username, s.role"
+                " FROM pet_shares s JOIN users u ON u.id = s.shared_with_user_id"
+                " WHERE s.pet_id = %s AND s.owner_user_id = %s"
+                " ORDER BY s.created_at ASC",
+                (pet_id, owner_user_id),
+            )
+            return cur.fetchall()
+
+
+def remove_pet_share(share_id, owner_user_id):
+    """移除共同飼養人，回傳刪除筆數。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM pet_shares WHERE id = %s AND owner_user_id = %s",
+                (share_id, owner_user_id),
+            )
+            return cur.rowcount
+
+
+# ========== Pet Share Invitations ==========
+
+
+def create_pet_share_invitation(pet_id, inviter_user_id, invitee_user_id, role, token_hash, expires_at):
+    """新增邀請記錄。若同一 pet+invitee 已有 pending 邀請，先取消舊的再建新的。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pet_share_invitations SET status = 'cancelled'"
+                " WHERE pet_id = %s AND invitee_user_id = %s AND status = 'pending'",
+                (pet_id, invitee_user_id),
+            )
+            cur.execute(
+                "INSERT INTO pet_share_invitations"
+                " (pet_id, inviter_user_id, invitee_user_id, role, token_hash, expires_at)"
+                " VALUES (%s, %s, %s, %s, %s, %s)",
+                (pet_id, inviter_user_id, invitee_user_id, role, token_hash, expires_at),
+            )
+            return cur.lastrowid
+
+
+def get_pet_share_invitation_by_token(token_hash):
+    """依 token_hash 查詢邀請，JOIN 邀請人名稱和寵物名稱。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT i.id, i.pet_id, i.inviter_user_id, i.invitee_user_id, i.role,"
+                " i.status, i.expires_at,"
+                " u.username AS inviter_username, p.name AS pet_name"
+                " FROM pet_share_invitations i"
+                " JOIN users u ON u.id = i.inviter_user_id"
+                " JOIN pets p ON p.id = i.pet_id"
+                " WHERE i.token_hash = %s",
+                (token_hash,),
+            )
+            return cur.fetchone()
+
+
+def accept_pet_share_invitation(invitation_id, invitee_user_id):
+    """接受邀請：建立 pet_shares 記錄並標記邀請為 accepted（原子操作）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, pet_id, inviter_user_id, role"
+                " FROM pet_share_invitations"
+                " WHERE id = %s AND invitee_user_id = %s AND status = 'pending'"
+                " AND expires_at > NOW()",
+                (invitation_id, invitee_user_id),
+            )
+            inv = cur.fetchone()
+            if not inv:
+                return False
+            cur.execute(
+                "INSERT IGNORE INTO pet_shares (pet_id, owner_user_id, shared_with_user_id, role)"
+                " VALUES (%s, %s, %s, %s)",
+                (inv["pet_id"], inv["inviter_user_id"], invitee_user_id, inv["role"]),
+            )
+            cur.execute(
+                "UPDATE pet_share_invitations SET status = 'accepted' WHERE id = %s",
+                (invitation_id,),
+            )
+            return True
+
+
+def decline_pet_share_invitation(invitation_id, invitee_user_id):
+    """婉拒邀請，回傳更新筆數。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pet_share_invitations SET status = 'declined'"
+                " WHERE id = %s AND invitee_user_id = %s AND status = 'pending'",
+                (invitation_id, invitee_user_id),
+            )
+            return cur.rowcount
+
+
+def get_pet_invitations_for_pet(pet_id, inviter_user_id):
+    """列出某寵物的待確認邀請（擁有者視角）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT i.id, i.invitee_user_id, u.username AS invitee_username,"
+                " i.role, i.expires_at, i.created_at"
+                " FROM pet_share_invitations i"
+                " JOIN users u ON u.id = i.invitee_user_id"
+                " WHERE i.pet_id = %s AND i.inviter_user_id = %s AND i.status = 'pending'"
+                " ORDER BY i.created_at ASC",
+                (pet_id, inviter_user_id),
+            )
+            return cur.fetchall()
+
+
+def cancel_pet_share_invitation(invitation_id, inviter_user_id):
+    """取消邀請，回傳更新筆數。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pet_share_invitations SET status = 'cancelled'"
+                " WHERE id = %s AND inviter_user_id = %s AND status = 'pending'",
+                (invitation_id, inviter_user_id),
+            )
+            return cur.rowcount
 
 
 # ========== Pet diary ==========
