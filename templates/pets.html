@@ -40,6 +40,38 @@
     </section>
 </div>
 
+<!-- Share dialog -->
+<div id="shareDialog" class="hidden modal-overlay">
+    <div class="modal-content">
+        <h2>👥 共同飼養管理</h2>
+        <input type="hidden" id="sharePetId">
+
+        <h3 style="font-size:.9rem;margin:.75rem 0 .25rem">共同飼養人</h3>
+        <div id="sharesList"><div class="spinner"></div></div>
+
+        <h3 style="font-size:.9rem;margin:1rem 0 .25rem">待確認邀請</h3>
+        <div id="invitesList"><div class="spinner"></div></div>
+
+        <h3 style="font-size:.9rem;margin:1rem 0 .25rem">新增共同飼養人</h3>
+        <div class="form-group">
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+                <input type="text" id="shareUsername" placeholder="帳號名稱" maxlength="100" style="flex:1;min-width:120px">
+                <select id="shareRole" style="flex:0 0 auto">
+                    <option value="read_only">僅能檢視</option>
+                    <option value="editor">可編輯</option>
+                </select>
+                <button type="button" class="btn btn-primary" id="btnSendInvite">發送邀請</button>
+            </div>
+            <p id="shareError" class="hidden" style="color:var(--danger,#e74c3c);margin:.25rem 0 0;font-size:.85rem"></p>
+            <p id="shareSuccess" class="hidden" style="color:var(--success,#27ae60);margin:.25rem 0 0;font-size:.85rem"></p>
+        </div>
+
+        <div class="form-actions" style="margin-top:1rem">
+            <button type="button" class="btn btn-secondary" id="btnCloseShare">關閉</button>
+        </div>
+    </div>
+</div>
+
 <!-- Edit dialog -->
 <div id="editDialog" class="hidden modal-overlay">
     <div class="modal-content">
@@ -80,6 +112,8 @@
     const editDialog = document.getElementById('editDialog');
     const editPetForm = document.getElementById('editPetForm');
     const btnCloseEdit = document.getElementById('btnCloseEdit');
+    const shareDialog = document.getElementById('shareDialog');
+    const btnCloseShare = document.getElementById('btnCloseShare');
 
     btnToggleAdd.addEventListener('click', () => {
         const open = !addFormWrap.classList.contains('hidden');
@@ -136,8 +170,12 @@
             pets.map(p => `
             <article class="pet-card" data-id="${escapeHtml(p.id)}">
                 <div class="pet-card-actions">
-                    <button class="btn-icon edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
-                    <button class="btn-icon remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>
+                    ${p.is_shared
+                        ? `<span class="pet-shared-badge" title="由他人共享">👥 共享</span>`
+                        : `<button class="btn-icon btn-share-pet" data-id="${escapeHtml(p.id)}" title="共同飼養管理">👥</button>
+                           <button class="btn-icon edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
+                           <button class="btn-icon remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>`
+                    }
                 </div>
                 <div class="pet-card-avatar">
                     ${p.photo_base64
@@ -152,6 +190,9 @@
             </article>`).join('') +
         '</div>';
 
+        petsList.querySelectorAll('.btn-share-pet').forEach(btn => {
+            btn.addEventListener('click', () => openShare(parseInt(btn.dataset.id)));
+        });
         petsList.querySelectorAll('.btn-edit-pet').forEach(btn => {
             btn.addEventListener('click', () => openEdit(pets.find(p => p.id == btn.dataset.id)));
         });
@@ -245,6 +286,117 @@
             alert('刪除失敗，請稍後再試');
         }
     }
+
+    // ── Share dialog ──────────────────────────────────────────────────────────
+
+    function openShare(petId) {
+        document.getElementById('sharePetId').value = petId;
+        document.getElementById('shareUsername').value = '';
+        document.getElementById('shareError').classList.add('hidden');
+        document.getElementById('shareSuccess').classList.add('hidden');
+        shareDialog.classList.remove('hidden');
+        loadShareData(petId);
+    }
+
+    async function loadShareData(petId) {
+        document.getElementById('sharesList').innerHTML = '<div class="spinner"></div>';
+        document.getElementById('invitesList').innerHTML = '<div class="spinner"></div>';
+        try {
+            const [sharesRes, invRes] = await Promise.all([
+                fetch(`/api/pets/${petId}/shares`),
+                fetch(`/api/pets/${petId}/invitations`),
+            ]);
+            const sharesData = sharesRes.ok ? await sharesRes.json() : { shares: [] };
+            const invData = invRes.ok ? await invRes.json() : { invitations: [] };
+
+            const roleLabel = { read_only: '僅能檢視', editor: '可編輯' };
+
+            const sharesHtml = sharesData.shares.length
+                ? sharesData.shares.map(s => `
+                    <div style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0">
+                        <span style="flex:1">${escapeHtml(s.username)}</span>
+                        <span class="badge">${escapeHtml(roleLabel[s.role] || s.role)}</span>
+                        <button class="btn-icon remove" data-share-id="${s.id}" title="移除">✕</button>
+                    </div>`).join('')
+                : '<p style="color:var(--muted,#888);font-size:.85rem;margin:0">尚無共同飼養人</p>';
+            document.getElementById('sharesList').innerHTML = sharesHtml;
+            document.getElementById('sharesList').querySelectorAll('[data-share-id]').forEach(btn => {
+                btn.addEventListener('click', () => removeShare(petId, parseInt(btn.dataset.shareId)));
+            });
+
+            const pending = invData.invitations.filter(i => i.status === 'pending');
+            const invHtml = pending.length
+                ? pending.map(i => `
+                    <div style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0">
+                        <span style="flex:1">${escapeHtml(i.invitee_username)}</span>
+                        <span class="badge">${escapeHtml(roleLabel[i.role] || i.role)}</span>
+                        <button class="btn-icon remove" data-inv-id="${i.id}" title="取消邀請">✕</button>
+                    </div>`).join('')
+                : '<p style="color:var(--muted,#888);font-size:.85rem;margin:0">無待確認邀請</p>';
+            document.getElementById('invitesList').innerHTML = invHtml;
+            document.getElementById('invitesList').querySelectorAll('[data-inv-id]').forEach(btn => {
+                btn.addEventListener('click', () => cancelInvitation(petId, parseInt(btn.dataset.invId)));
+            });
+        } catch (e) {
+            document.getElementById('sharesList').innerHTML = '<p>載入失敗</p>';
+        }
+    }
+
+    async function removeShare(petId, shareId) {
+        if (!confirm('確定要移除此共同飼養人？')) return;
+        const res = await fetch(`/api/pets/${petId}/shares/${shareId}`, { method: 'DELETE' });
+        if (res.ok || res.status === 204) {
+            loadShareData(petId);
+        } else {
+            alert('移除失敗');
+        }
+    }
+
+    async function cancelInvitation(petId, invId) {
+        if (!confirm('確定要取消此邀請？')) return;
+        const res = await fetch(`/api/pets/${petId}/invitations/${invId}`, { method: 'DELETE' });
+        if (res.ok || res.status === 204) {
+            loadShareData(petId);
+        } else {
+            alert('取消失敗');
+        }
+    }
+
+    document.getElementById('btnSendInvite').addEventListener('click', async () => {
+        const petId = document.getElementById('sharePetId').value;
+        const username = document.getElementById('shareUsername').value.trim();
+        const role = document.getElementById('shareRole').value;
+        const errEl = document.getElementById('shareError');
+        const okEl = document.getElementById('shareSuccess');
+        errEl.classList.add('hidden');
+        okEl.classList.add('hidden');
+        if (!username) { errEl.textContent = '請輸入帳號名稱'; errEl.classList.remove('hidden'); return; }
+        try {
+            const res = await fetch(`/api/pets/${petId}/invitations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, role }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                okEl.textContent = `已發送邀請給 ${escapeHtml(data.invitee_username)}`;
+                okEl.classList.remove('hidden');
+                document.getElementById('shareUsername').value = '';
+                loadShareData(parseInt(petId));
+            } else {
+                errEl.textContent = data.error || '發送失敗';
+                errEl.classList.remove('hidden');
+            }
+        } catch (e) {
+            errEl.textContent = '操作失敗，請稍後再試';
+            errEl.classList.remove('hidden');
+        }
+    });
+
+    btnCloseShare.addEventListener('click', () => { shareDialog.classList.add('hidden'); });
+    shareDialog.addEventListener('click', (e) => {
+        if (e.target === shareDialog) shareDialog.classList.add('hidden');
+    });
 
     loadPets();
 })();
