@@ -233,8 +233,10 @@
                     <div class="product-summary">${(p.summary || '').replace(/\n/g, '<br>')}</div>
                 </div>
                 <div class="product-card-actions">
-                    <a href="/organize/edit/${p.id}" class="btn-icon edit" title="編輯">✎</a>
-                    <button class="btn-icon remove btn-remove" data-id="${p.id}" title="移除">✕</button>
+                    ${!allPets.find(pet => pet.id === p.pet_id)?.is_shared
+                        ? `<a href="/organize/edit/${p.id}" class="btn-icon edit" title="編輯">✎</a>
+                           <button class="btn-icon remove btn-remove" data-id="${p.id}" title="移除">✕</button>`
+                        : ''}
                 </div>
             </article>`).join('') +
         '</div>';
@@ -319,7 +321,9 @@
                     ${d.memo ? `<div class="diary-memo"><strong>備註：</strong>${d.memo.replace(/\n/g, '<br>')}</div>` : ''}
                 </div>
                 <div class="diary-card-actions">
-                    <button class="btn-icon remove btn-remove" data-id="${d.id}" title="移除">✕</button>
+                    ${!allPets.find(pet => pet.id === d.pet_id)?.is_shared
+                        ? `<button class="btn-icon remove btn-remove" data-id="${d.id}" title="移除">✕</button>`
+                        : ''}
                 </div>
             </article>`).join('') +
         '</div>';

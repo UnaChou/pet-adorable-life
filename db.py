@@ -302,11 +302,18 @@ def count_recent_reset_requests(user_id, since_minutes=60):
 
 
 def get_all_products(pet_id=None, user_id=None):
-    """取得商品清單。pet_id=0 表示未指定寵物；user_id 限定擁有者。"""
+    """取得商品清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物）。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
-            user_clause = " AND user_id = %s" if user_id is not None else ""
-            user_params = (user_id,) if user_id is not None else ()
+            if user_id is not None:
+                user_clause = (
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))"
+                )
+                user_params = (user_id, user_id)
+            else:
+                user_clause = ""
+                user_params = ()
             if pet_id == 0:
                 cur.execute(
                     f"SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
@@ -760,11 +767,18 @@ def cancel_pet_share_invitation(invitation_id, inviter_user_id):
 
 
 def get_all_diaries(pet_id=None, user_id=None):
-    """取得日記清單。pet_id=0 表示未指定寵物；user_id 限定擁有者。"""
+    """取得日記清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物）。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
-            user_clause = " AND user_id = %s" if user_id is not None else ""
-            user_params = (user_id,) if user_id is not None else ()
+            if user_id is not None:
+                user_clause = (
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))"
+                )
+                user_params = (user_id, user_id)
+            else:
+                user_clause = ""
+                user_params = ()
             if pet_id == 0:
                 cur.execute(
                     f"SELECT id, title, describe_text, main_emotion, memo, image_base64,"
