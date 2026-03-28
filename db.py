@@ -362,14 +362,18 @@ def add_product(title, summary, pet_id=None, user_id=None):
 
 
 def get_product(product_id, user_id=None):
-    """依 id 取得單一商品，不存在或不屬於 user 則回傳 None。"""
+    """依 id 取得單一商品，不存在或無權限則回傳 None。
+    有權限的條件：自己建立 (user_id 相符) 或是商品所屬寵物的擁有者。
+    """
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
                     "SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
-                    " FROM products WHERE id = %s AND user_id = %s",
-                    (product_id, user_id),
+                    " FROM products WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
+                    (product_id, user_id, user_id),
                 )
             else:
                 cur.execute(
@@ -392,14 +396,16 @@ def get_product(product_id, user_id=None):
 
 
 def update_product(product_id, title, summary, pet_id=None, user_id=None):
-    """更新商品。"""
+    """更新商品。有權限的條件：自己建立或是商品所屬寵物的擁有者。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
                     "UPDATE products SET title = %s, summary = %s, pet_id = %s"
-                    " WHERE id = %s AND user_id = %s",
-                    (title, summary, pet_id or None, product_id, user_id),
+                    " WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
+                    (title, summary, pet_id or None, product_id, user_id, user_id),
                 )
             else:
                 cur.execute(
@@ -409,20 +415,22 @@ def update_product(product_id, title, summary, pet_id=None, user_id=None):
 
 
 def remove_product(product_id, user_id=None):
-    """依 id 刪除商品。"""
+    """依 id 刪除商品。有權限的條件：自己建立或是商品所屬寵物的擁有者。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
-                    "DELETE FROM products WHERE id = %s AND user_id = %s",
-                    (product_id, user_id),
+                    "DELETE FROM products WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
+                    (product_id, user_id, user_id),
                 )
             else:
                 cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
 
 
 def remove_products(product_ids, user_id=None):
-    """批次刪除多個商品。"""
+    """批次刪除多個商品。有權限的條件：自己建立或是商品所屬寵物的擁有者。"""
     if not product_ids:
         return
     placeholders = ", ".join(["%s"] * len(product_ids))
@@ -430,8 +438,10 @@ def remove_products(product_ids, user_id=None):
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
-                    f"DELETE FROM products WHERE id IN ({placeholders}) AND user_id = %s",
-                    list(product_ids) + [user_id],
+                    f"DELETE FROM products WHERE id IN ({placeholders})"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
+                    list(product_ids) + [user_id, user_id],
                 )
             else:
                 cur.execute(
@@ -843,15 +853,19 @@ def add_diary(title, describe_text, main_emotion, memo, image_base64="", pet_id=
 
 
 def get_diary(diary_id, user_id=None):
-    """依 id 取得單一日記，不存在或不屬於 user 則回傳 None。"""
+    """依 id 取得單一日記，不存在或無權限則回傳 None。
+    有權限的條件：自己建立或是日記所屬寵物的擁有者。
+    """
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
                     "SELECT id, title, describe_text, main_emotion, memo, image_base64,"
                     " pet_id, user_id, created_at, updated_at"
-                    " FROM pet_diaries WHERE id = %s AND user_id = %s",
-                    (diary_id, user_id),
+                    " FROM pet_diaries WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
+                    (diary_id, user_id, user_id),
                 )
             else:
                 cur.execute(
@@ -878,7 +892,7 @@ def get_diary(diary_id, user_id=None):
 
 
 def remove_diaries(diary_ids, user_id=None):
-    """批次刪除日記。"""
+    """批次刪除日記。有權限的條件：自己建立或是日記所屬寵物的擁有者。"""
     if not diary_ids:
         return
     placeholders = ", ".join(["%s"] * len(diary_ids))
@@ -886,8 +900,10 @@ def remove_diaries(diary_ids, user_id=None):
         with conn.cursor() as cur:
             if user_id is not None:
                 cur.execute(
-                    f"DELETE FROM pet_diaries WHERE id IN ({placeholders}) AND user_id = %s",
-                    list(diary_ids) + [user_id],
+                    f"DELETE FROM pet_diaries WHERE id IN ({placeholders})"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
+                    list(diary_ids) + [user_id, user_id],
                 )
             else:
                 cur.execute(
