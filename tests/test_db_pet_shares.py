@@ -212,3 +212,57 @@ def test_get_all_diaries_includes_shared_pet_content(two_users):
         with conn.cursor() as cur:
             cur.execute("DELETE FROM pet_diaries WHERE id = %s", (diary_id,))
             cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
+
+
+# Regression: ISSUE-A — co-owner cannot delete/edit items they created
+# Found by /qa on 2026-03-28
+def test_co_owner_can_remove_own_product(two_users):
+    uid_a, uid_b = two_users
+    pet_id = db.add_pet("共享測試毛孩A", user_id=uid_a)
+    db.add_pet_share(pet_id, owner_user_id=uid_a, shared_with_user_id=uid_b, role="editor")
+    prod_id = db.add_product("共享者建立商品", "by co-owner", pet_id=pet_id, user_id=uid_b)
+
+    # Co-owner should be able to remove their own product
+    db.remove_product(prod_id, user_id=uid_b)
+
+    with db.get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS cnt FROM products WHERE id = %s", (prod_id,))
+            assert cur.fetchone()["cnt"] == 0, "co-owner should be able to delete own product"
+            cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
+
+
+# Regression: ISSUE-B — owner cannot delete/edit items created by co-owner
+# Found by /qa on 2026-03-28
+def test_owner_can_remove_coowner_product(two_users):
+    uid_a, uid_b = two_users
+    pet_id = db.add_pet("共享測試毛孩B", user_id=uid_a)
+    db.add_pet_share(pet_id, owner_user_id=uid_a, shared_with_user_id=uid_b, role="editor")
+    prod_id = db.add_product("共享者建立商品2", "by co-owner", pet_id=pet_id, user_id=uid_b)
+
+    # Owner should be able to remove co-owner's product for their own pet
+    db.remove_product(prod_id, user_id=uid_a)
+
+    with db.get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS cnt FROM products WHERE id = %s", (prod_id,))
+            assert cur.fetchone()["cnt"] == 0, "owner should be able to delete co-owner's product"
+            cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
+
+
+# Regression: ISSUE-B — owner cannot see co-owner's items in all-tab
+# Found by /qa on 2026-03-28
+def test_get_all_products_owner_sees_coowner_items(two_users):
+    uid_a, uid_b = two_users
+    pet_id = db.add_pet("共享測試毛孩C", user_id=uid_a)
+    db.add_pet_share(pet_id, owner_user_id=uid_a, shared_with_user_id=uid_b, role="editor")
+    prod_id = db.add_product("共享者建立商品3", "by co-owner", pet_id=pet_id, user_id=uid_b)
+
+    products = db.get_all_products(user_id=uid_a)
+    ids = [p["id"] for p in products]
+    assert prod_id in ids, "owner should see co-owner's products in all-tab"
+
+    with db.get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM products WHERE id = %s", (prod_id,))
+            cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
