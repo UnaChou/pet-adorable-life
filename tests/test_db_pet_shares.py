@@ -172,3 +172,43 @@ def test_get_user_by_username_returns_email(two_users):
     assert user is not None
     assert "email" in user
     assert user["email"] == "share_ta@test.com"
+
+
+# Regression: ISSUE-B2 — co-owner cannot see shared pet's products in all-tab
+# Found by /qa on 2026-03-28
+def test_get_all_products_includes_shared_pet_content(two_users):
+    uid_a, uid_b = two_users
+    pet_id = db.add_pet("回歸測試毛孩", user_id=uid_a)
+    db.add_pet_share(pet_id, owner_user_id=uid_a, shared_with_user_id=uid_b, role="read_only")
+    prod_id = db.add_product("共享寵物商品", "測試摘要", pet_id=pet_id, user_id=uid_a)
+
+    products = db.get_all_products(user_id=uid_b)
+    ids = [p["id"] for p in products]
+    assert prod_id in ids, "co-owner should see shared pet's products"
+
+    with db.get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM products WHERE id = %s", (prod_id,))
+            cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
+
+
+# Regression: ISSUE-B2 — co-owner cannot see shared pet's diaries in all-tab
+# Found by /qa on 2026-03-28
+def test_get_all_diaries_includes_shared_pet_content(two_users):
+    uid_a, uid_b = two_users
+    pet_id = db.add_pet("回歸測試毛孩2", user_id=uid_a)
+    db.add_pet_share(pet_id, owner_user_id=uid_a, shared_with_user_id=uid_b, role="read_only")
+    diary_id = db.add_diary(
+        pet_id=pet_id, user_id=uid_a,
+        title="共享日記", describe_text="測試", main_emotion="開心",
+        image_base64=None, memo=None,
+    )
+
+    diaries = db.get_all_diaries(user_id=uid_b)
+    ids = [d["id"] for d in diaries]
+    assert diary_id in ids, "co-owner should see shared pet's diaries"
+
+    with db.get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM pet_diaries WHERE id = %s", (diary_id,))
+            cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
