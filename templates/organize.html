@@ -181,7 +181,7 @@
         if (!sel) return;
         const current = sel.value;
         sel.innerHTML = '<option value="">未指定</option>' +
-            allPets.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            allPets.map(p => `<option value="${p.id}" ${(p.is_shared && p.role === 'read_only') ? 'disabled' : ''}>${p.name}${(p.is_shared && p.role === 'read_only') ? ' (僅檢視)' : ''}</option>`).join('');
         sel.value = current;
     }
 
@@ -190,7 +190,8 @@
         return `?pet_id=${currentPetFilter}`;
     }
 
-    function petName(pet_id) {
+    function petName(pet_id, pet_name) {
+        if (pet_name) return pet_name;
         const p = allPets.find(p => p.id === pet_id);
         return p ? p.name : '';
     }
@@ -228,13 +229,13 @@
                     <div class="product-meta">
                         <span class="product-id">#${p.id}</span>
                         <span class="product-dates">${p.created_at ? new Date(p.created_at).toLocaleString('zh-TW') : '-'}</span>
-                        ${p.pet_id ? `<span class="pet-tag">🐾 ${petName(p.pet_id)}</span>` : ''}
+                        ${p.pet_id ? `<span class="pet-tag">🐾 ${petName(p.pet_id, p.pet_name)}</span>` : ''}
                     </div>
                     <h3 class="product-title">${p.title}</h3>
                     <div class="product-summary">${(p.summary || '').replace(/\n/g, '<br>')}</div>
                 </div>
                 <div class="product-card-actions">
-                    ${(!allPets.find(pet => pet.id === p.pet_id)?.is_shared || p.user_id === currentUserId)
+                    ${(!allPets.find(pet => pet.id === p.pet_id)?.is_shared || allPets.find(pet => pet.id === p.pet_id)?.role === 'editor' || p.user_id === currentUserId)
                         ? `<a href="/organize/edit/${p.id}" class="btn-icon edit" title="編輯">✎</a>
                            <button class="btn-icon remove btn-remove" data-id="${p.id}" title="移除">✕</button>`
                         : ''}
@@ -314,7 +315,7 @@
                     <div class="diary-meta">
                         <span class="diary-id">#${d.id}</span>
                         <span class="diary-dates">${d.created_at ? new Date(d.created_at).toLocaleString('zh-TW') : '-'}</span>
-                        ${d.pet_id ? `<span class="pet-tag">🐾 ${petName(d.pet_id)}</span>` : ''}
+                        ${d.pet_id ? `<span class="pet-tag">🐾 ${petName(d.pet_id, d.pet_name)}</span>` : ''}
                     </div>
                     ${d.title ? `<h4 class="diary-title">${d.title}</h4>` : ''}
                     <div class="diary-emotion">${d.main_emotion}</div>
@@ -322,7 +323,7 @@
                     ${d.memo ? `<div class="diary-memo"><strong>備註：</strong>${d.memo.replace(/\n/g, '<br>')}</div>` : ''}
                 </div>
                 <div class="diary-card-actions">
-                    ${(!allPets.find(pet => pet.id === d.pet_id)?.is_shared || d.user_id === currentUserId)
+                    ${(!allPets.find(pet => pet.id === d.pet_id)?.is_shared || allPets.find(pet => pet.id === d.pet_id)?.role === 'editor' || d.user_id === currentUserId)
                         ? `<button class="btn-icon remove btn-remove" data-id="${d.id}" title="移除">✕</button>`
                         : ''}
                 </div>
