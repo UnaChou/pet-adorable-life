@@ -771,12 +771,14 @@ def api_get_product(product_id):
 def api_update_product(product_id):
     """更新商品"""
     uid = current_user_id()
-    if not db.get_product(product_id, user_id=uid):
-        return jsonify({"error": "找不到商品"}), 404
+    if not db.get_product_if_editable(product_id, user_id=uid):
+        return jsonify({"error": "找不到商品或無編輯權限"}), 404
     data = request.get_json() or {}
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
     db.update_product(product_id, title, summary, pet_id=pet_id, user_id=uid)
     return jsonify(db.get_product(product_id, user_id=uid))
 
@@ -785,8 +787,8 @@ def api_update_product(product_id):
 def api_delete_product(product_id):
     """刪除商品"""
     uid = current_user_id()
-    if not db.get_product(product_id, user_id=uid):
-        return jsonify({"error": "找不到商品"}), 404
+    if not db.get_product_if_editable(product_id, user_id=uid):
+        return jsonify({"error": "找不到商品或無編輯權限"}), 404
     db.remove_product(product_id, user_id=uid)
     return "", 204
 
@@ -845,8 +847,8 @@ def api_add_diary():
 def api_delete_diary(diary_id):
     """刪除單筆日記"""
     uid = current_user_id()
-    if not db.get_diary(diary_id, user_id=uid):
-        return jsonify({"error": "找不到日記"}), 404
+    if not db.get_diary_if_editable(diary_id, user_id=uid):
+        return jsonify({"error": "找不到日記或無編輯權限"}), 404
     db.remove_diaries([diary_id], user_id=uid)
     return "", 204
 

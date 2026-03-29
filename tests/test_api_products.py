@@ -23,13 +23,13 @@ def test_add_product_returns_201(authed_client, mock_db):
 
 
 def test_update_product_not_found_returns_404(authed_client, mock_db):
-    mock_db.get_product.return_value = None
+    mock_db.get_product_if_editable.return_value = None
     res = authed_client.put("/api/products/999", json={"title": "x"})
     assert res.status_code == 404
 
 
 def test_delete_product_returns_204(authed_client, mock_db):
-    mock_db.get_product.return_value = {"id": 1}
+    mock_db.get_product_if_editable.return_value = {"id": 1}
     res = authed_client.delete("/api/products/1")
     assert res.status_code == 204
     mock_db.remove_product.assert_called_once_with(1, user_id=1)
@@ -56,6 +56,7 @@ def test_get_product_not_found_returns_404(authed_client, mock_db):
 
 def test_update_product_success(authed_client, mock_db):
     product = {"id": 1, "title": "新名稱", "summary": "摘要", "pet_id": None, "created_at": None, "updated_at": None}
+    mock_db.get_product_if_editable.return_value = product
     mock_db.get_product.return_value = product
     res = authed_client.put("/api/products/1", json={"title": "新名稱", "summary": "摘要"})
     assert res.status_code == 200
@@ -64,6 +65,6 @@ def test_update_product_success(authed_client, mock_db):
 
 
 def test_delete_product_not_found_returns_404(authed_client, mock_db):
-    mock_db.get_product.return_value = None
+    mock_db.get_product_if_editable.return_value = None
     res = authed_client.delete("/api/products/999")
     assert res.status_code == 404

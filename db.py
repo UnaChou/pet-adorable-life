@@ -302,14 +302,16 @@ def count_recent_reset_requests(user_id, since_minutes=60):
 
 
 def get_all_products(pet_id=None, user_id=None):
-    """取得商品清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物與自有寵物）。"""
+    """取得商品清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物與自有寵物）。
+    回傳包含 pet_name，即使寵物已被刪除也會保留當時的寵物名稱。
+    """
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 user_clause = (
-                    " AND (user_id = %s"
-                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s)"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))"
+                    " AND (p.user_id = %s"
+                    " OR p.pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s)"
+                    " OR p.pet_id IN (SELECT id FROM pets WHERE user_id = %s))"
                 )
                 user_params = (user_id, user_id, user_id)
             else:
@@ -317,23 +319,32 @@ def get_all_products(pet_id=None, user_id=None):
                 user_params = ()
             if pet_id == 0:
                 cur.execute(
-                    f"SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
-                    f" FROM products WHERE pet_id IS NULL{user_clause}"
-                    f" ORDER BY created_at DESC, id DESC",
+                    f"SELECT p.id, p.title, p.summary, p.pet_id, p.user_id, p.created_at, p.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM products p"
+                    f" LEFT JOIN pets pet ON p.pet_id = pet.id"
+                    f" WHERE p.pet_id IS NULL{user_clause}"
+                    f" ORDER BY p.created_at DESC, p.id DESC",
                     user_params,
                 )
             elif pet_id:
                 cur.execute(
-                    f"SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
-                    f" FROM products WHERE pet_id = %s{user_clause}"
-                    f" ORDER BY created_at DESC, id DESC",
+                    f"SELECT p.id, p.title, p.summary, p.pet_id, p.user_id, p.created_at, p.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM products p"
+                    f" LEFT JOIN pets pet ON p.pet_id = pet.id"
+                    f" WHERE p.pet_id = %s{user_clause}"
+                    f" ORDER BY p.created_at DESC, p.id DESC",
                     (pet_id,) + user_params,
                 )
             else:
                 cur.execute(
-                    f"SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
-                    f" FROM products WHERE 1=1{user_clause}"
-                    f" ORDER BY created_at DESC, id DESC",
+                    f"SELECT p.id, p.title, p.summary, p.pet_id, p.user_id, p.created_at, p.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM products p"
+                    f" LEFT JOIN pets pet ON p.pet_id = pet.id"
+                    f" WHERE 1=1{user_clause}"
+                    f" ORDER BY p.created_at DESC, p.id DESC",
                     user_params,
                 )
             rows = cur.fetchall()
@@ -343,6 +354,7 @@ def get_all_products(pet_id=None, user_id=None):
             "title": r["title"],
             "summary": r["summary"] or "",
             "pet_id": r.get("pet_id"),
+            "pet_name": r.get("pet_name") or "",
             "user_id": r.get("user_id"),
             "created_at": r["created_at"],
             "updated_at": r.get("updated_at"),
@@ -373,8 +385,42 @@ def get_product(product_id, user_id=None):
                     "SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
                     " FROM products WHERE id = %s"
                     " AND (user_id = %s"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
-                    (product_id, user_id, user_id),
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))",
+                    (product_id, user_id, user_id, user_id),
+                )
+            else:
+                cur.execute(
+                    "SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
+                    " FROM products WHERE id = %s",
+                    (product_id,),
+                )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "summary": row["summary"] or "",
+        "pet_id": row.get("pet_id"),
+        "user_id": row.get("user_id"),
+        "created_at": row["created_at"],
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def get_product_if_editable(product_id, user_id=None):
+    """依 id 取得單一商品，只有擁有編輯權限時才回傳。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                cur.execute(
+                    "SELECT id, title, summary, pet_id, user_id, created_at, updated_at"
+                    " FROM products WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    (product_id, user_id, user_id, user_id),
                 )
             else:
                 cur.execute(
@@ -405,8 +451,9 @@ def update_product(product_id, title, summary, pet_id=None, user_id=None):
                     "UPDATE products SET title = %s, summary = %s, pet_id = %s"
                     " WHERE id = %s"
                     " AND (user_id = %s"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
-                    (title, summary, pet_id or None, product_id, user_id, user_id),
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    (title, summary, pet_id or None, product_id, user_id, user_id, user_id),
                 )
             else:
                 cur.execute(
@@ -423,8 +470,9 @@ def remove_product(product_id, user_id=None):
                 cur.execute(
                     "DELETE FROM products WHERE id = %s"
                     " AND (user_id = %s"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
-                    (product_id, user_id, user_id),
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    (product_id, user_id, user_id, user_id),
                 )
             else:
                 cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
@@ -441,8 +489,9 @@ def remove_products(product_ids, user_id=None):
                 cur.execute(
                     f"DELETE FROM products WHERE id IN ({placeholders})"
                     " AND (user_id = %s"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
-                    list(product_ids) + [user_id, user_id],
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    list(product_ids) + [user_id, user_id, user_id],
                 )
             else:
                 cur.execute(
@@ -463,6 +512,7 @@ def _format_pet(r):
         "photo_base64": r.get("photo_base64") or "",
         "user_id": r.get("user_id"),
         "is_shared": bool(r.get("is_shared", 0)),
+        "role": r.get("role", "owner"),
         "created_at": r["created_at"],
         "updated_at": r.get("updated_at"),
     }
@@ -475,11 +525,11 @@ def get_all_pets(user_id=None):
             if user_id is not None:
                 cur.execute("""
                     SELECT id, name, breed, birthday, photo_base64, user_id,
-                           created_at, updated_at, 0 AS is_shared
+                           created_at, updated_at, 0 AS is_shared, 'owner' AS role
                     FROM pets WHERE user_id = %s
                     UNION ALL
                     SELECT p.id, p.name, p.breed, p.birthday, p.photo_base64, p.user_id,
-                           p.created_at, p.updated_at, 1 AS is_shared
+                           p.created_at, p.updated_at, 1 AS is_shared, s.role AS role
                     FROM pets p
                     INNER JOIN pet_shares s ON s.pet_id = p.id
                     WHERE s.shared_with_user_id = %s
@@ -488,7 +538,7 @@ def get_all_pets(user_id=None):
             else:
                 cur.execute("""
                     SELECT id, name, breed, birthday, photo_base64, user_id,
-                           created_at, updated_at, 0 AS is_shared
+                           created_at, updated_at, 0 AS is_shared, 'owner' AS role
                     FROM pets ORDER BY created_at ASC
                 """)
             rows = cur.fetchall()
@@ -534,16 +584,15 @@ def get_pet_accessible(pet_id, user_id):
             cur.execute(
                 "SELECT p.id, p.name, p.breed, p.birthday, p.photo_base64, p.user_id,"
                 " p.created_at, p.updated_at,"
-                " CASE WHEN p.user_id != %s THEN 1 ELSE 0 END AS is_shared"
+                " CASE WHEN p.user_id != %s THEN 1 ELSE 0 END AS is_shared,"
+                " COALESCE(s.role, 'owner') AS role"
                 " FROM pets p"
+                " LEFT JOIN pet_shares s ON s.pet_id = p.id AND s.shared_with_user_id = %s"
                 " WHERE p.id = %s AND ("
                 "   p.user_id = %s"
-                "   OR EXISTS ("
-                "     SELECT 1 FROM pet_shares"
-                "     WHERE pet_id = p.id AND shared_with_user_id = %s"
-                "   )"
+                "   OR s.id IS NOT NULL"
                 " )",
-                (user_id, pet_id, user_id, user_id),
+                (user_id, user_id, pet_id, user_id),
             )
             row = cur.fetchone()
     return _format_pet(row) if row else None
@@ -556,16 +605,15 @@ def get_pet_if_editable(pet_id, user_id):
             cur.execute(
                 "SELECT p.id, p.name, p.breed, p.birthday, p.photo_base64, p.user_id,"
                 " p.created_at, p.updated_at,"
-                " CASE WHEN p.user_id != %s THEN 1 ELSE 0 END AS is_shared"
+                " CASE WHEN p.user_id != %s THEN 1 ELSE 0 END AS is_shared,"
+                " COALESCE(s.role, 'owner') AS role"
                 " FROM pets p"
+                " LEFT JOIN pet_shares s ON s.pet_id = p.id AND s.shared_with_user_id = %s"
                 " WHERE p.id = %s AND ("
                 "   p.user_id = %s"
-                "   OR EXISTS ("
-                "     SELECT 1 FROM pet_shares"
-                "     WHERE pet_id = p.id AND shared_with_user_id = %s AND role = 'editor'"
-                "   )"
+                "   OR s.role = 'editor'"
                 " )",
-                (user_id, pet_id, user_id, user_id),
+                (user_id, user_id, pet_id, user_id),
             )
             row = cur.fetchone()
     return _format_pet(row) if row else None
@@ -778,14 +826,16 @@ def cancel_pet_share_invitation(invitation_id, inviter_user_id):
 
 
 def get_all_diaries(pet_id=None, user_id=None):
-    """取得日記清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物與自有寵物）。"""
+    """取得日記清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物與自有寵物）。
+    回傳包含 pet_name，即使寵物已被刪除也會保留當時的寵物名稱。
+    """
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
                 user_clause = (
-                    " AND (user_id = %s"
-                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s)"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))"
+                    " AND (d.user_id = %s"
+                    " OR d.pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s)"
+                    " OR d.pet_id IN (SELECT id FROM pets WHERE user_id = %s))"
                 )
                 user_params = (user_id, user_id, user_id)
             else:
@@ -793,26 +843,35 @@ def get_all_diaries(pet_id=None, user_id=None):
                 user_params = ()
             if pet_id == 0:
                 cur.execute(
-                    f"SELECT id, title, describe_text, main_emotion, memo, image_base64,"
-                    f" pet_id, user_id, created_at, updated_at"
-                    f" FROM pet_diaries WHERE pet_id IS NULL{user_clause}"
-                    f" ORDER BY created_at DESC, id DESC",
+                    f"SELECT d.id, d.title, d.describe_text, d.main_emotion, d.memo, d.image_base64,"
+                    f" d.pet_id, d.user_id, d.created_at, d.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM pet_diaries d"
+                    f" LEFT JOIN pets pet ON d.pet_id = pet.id"
+                    f" WHERE d.pet_id IS NULL{user_clause}"
+                    f" ORDER BY d.created_at DESC, d.id DESC",
                     user_params,
                 )
             elif pet_id:
                 cur.execute(
-                    f"SELECT id, title, describe_text, main_emotion, memo, image_base64,"
-                    f" pet_id, user_id, created_at, updated_at"
-                    f" FROM pet_diaries WHERE pet_id = %s{user_clause}"
-                    f" ORDER BY created_at DESC, id DESC",
+                    f"SELECT d.id, d.title, d.describe_text, d.main_emotion, d.memo, d.image_base64,"
+                    f" d.pet_id, d.user_id, d.created_at, d.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM pet_diaries d"
+                    f" LEFT JOIN pets pet ON d.pet_id = pet.id"
+                    f" WHERE d.pet_id = %s{user_clause}"
+                    f" ORDER BY d.created_at DESC, d.id DESC",
                     (pet_id,) + user_params,
                 )
             else:
                 cur.execute(
-                    f"SELECT id, title, describe_text, main_emotion, memo, image_base64,"
-                    f" pet_id, user_id, created_at, updated_at"
-                    f" FROM pet_diaries WHERE 1=1{user_clause}"
-                    f" ORDER BY created_at DESC, id DESC",
+                    f"SELECT d.id, d.title, d.describe_text, d.main_emotion, d.memo, d.image_base64,"
+                    f" d.pet_id, d.user_id, d.created_at, d.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM pet_diaries d"
+                    f" LEFT JOIN pets pet ON d.pet_id = pet.id"
+                    f" WHERE 1=1{user_clause}"
+                    f" ORDER BY d.created_at DESC, d.id DESC",
                     user_params,
                 )
             rows = cur.fetchall()
@@ -825,6 +884,7 @@ def get_all_diaries(pet_id=None, user_id=None):
             "memo": r["memo"] or "",
             "image_base64": r.get("image_base64") or "",
             "pet_id": r.get("pet_id"),
+            "pet_name": r.get("pet_name") or "",
             "user_id": r.get("user_id"),
             "created_at": r["created_at"],
             "updated_at": r.get("updated_at"),
@@ -866,8 +926,47 @@ def get_diary(diary_id, user_id=None):
                     " pet_id, user_id, created_at, updated_at"
                     " FROM pet_diaries WHERE id = %s"
                     " AND (user_id = %s"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
-                    (diary_id, user_id, user_id),
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))",
+                    (diary_id, user_id, user_id, user_id),
+                )
+            else:
+                cur.execute(
+                    "SELECT id, title, describe_text, main_emotion, memo, image_base64,"
+                    " pet_id, user_id, created_at, updated_at"
+                    " FROM pet_diaries WHERE id = %s",
+                    (diary_id,),
+                )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "title": row.get("title") or "",
+        "describe_text": row["describe_text"] or "",
+        "main_emotion": row["main_emotion"] or "",
+        "memo": row["memo"] or "",
+        "image_base64": row.get("image_base64") or "",
+        "pet_id": row.get("pet_id"),
+        "user_id": row.get("user_id"),
+        "created_at": row["created_at"],
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def get_diary_if_editable(diary_id, user_id=None):
+    """依 id 取得單一日記，只有擁有編輯權限時才回傳。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                cur.execute(
+                    "SELECT id, title, describe_text, main_emotion, memo, image_base64,"
+                    " pet_id, user_id, created_at, updated_at"
+                    " FROM pet_diaries WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    (diary_id, user_id, user_id, user_id),
                 )
             else:
                 cur.execute(
@@ -904,8 +1003,9 @@ def remove_diaries(diary_ids, user_id=None):
                 cur.execute(
                     f"DELETE FROM pet_diaries WHERE id IN ({placeholders})"
                     " AND (user_id = %s"
-                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s))",
-                    list(diary_ids) + [user_id, user_id],
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    list(diary_ids) + [user_id, user_id, user_id],
                 )
             else:
                 cur.execute(

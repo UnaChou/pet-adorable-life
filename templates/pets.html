@@ -171,7 +171,8 @@
             <article class="pet-card" data-id="${escapeHtml(p.id)}">
                 <div class="pet-card-actions">
                     ${p.is_shared
-                        ? `<span class="pet-shared-badge" title="由他人共享">👥 共享</span>`
+                        ? `<span class="pet-shared-badge" title="由他人共享">👥 共享</span>
+                           ${p.role === 'editor' ? `<button class="btn-icon edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>` : ''}`
                         : `<button class="btn-icon btn-share-pet" data-id="${escapeHtml(p.id)}" title="共同飼養管理">👥</button>
                            <button class="btn-icon edit btn-edit-pet" data-id="${escapeHtml(p.id)}" title="編輯">✎</button>
                            <button class="btn-icon remove btn-remove-pet" data-id="${escapeHtml(p.id)}" title="刪除">✕</button>`
