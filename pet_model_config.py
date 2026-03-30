@@ -1,4 +1,4 @@
-pet_model_name = "qwen3-vl:8b"
+pet_model_name = "qwen3.5:9b"
 # pet_model_name = "gemma3:27b"
 
 product_prompt = """
@@ -27,18 +27,18 @@ Return JSON format:
 """
 
 image_context_prompt = """
-Please describe  mind and emotions from the image
-Animal  include dog, cat or others
+You are a famous novelist,your task is write description which is like a diary, describe animal's mind and emotions from the image.
+animal include dog, cat or others.
 
-Describe requirements 
+description requirements 
 MUST Text count limit is 300 words
 
-**the output value language is Traditional	Chinese**
+**the output value language is Traditional Chinese**
 Return JSON format:
 ```
 {
 "title": "str",
-"describe": "str",
+"description": "str",
 "main_emotion": "str"
 }
 ```

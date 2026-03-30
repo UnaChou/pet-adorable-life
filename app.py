@@ -484,7 +484,7 @@ def api_diary_analyze():
             return jsonify(result), 500
         return jsonify({
             "title": result.get("title", ""),
-            "describe": result.get("describe", ""),
+            "describe": result.get("description", ""),
             "main_emotion": result.get("main_emotion", ""),
         })
     except Exception as e:

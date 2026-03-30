@@ -127,7 +127,7 @@ def test_diary_analyze_model_returns_error_returns_500(authed_client, mock_db):
 
 def test_diary_analyze_success(authed_client, mock_db):
     with patch("app.model_connector.get_diary_response_by_image",
-               return_value={"title": "快樂", "describe": "很開心", "main_emotion": "開心"}):
+               return_value={"title": "快樂", "description": "很開心", "main_emotion": "開心"}):
         res = _post_image(authed_client, "/api/diary/analyze")
     assert res.status_code == 200
     data = res.get_json()

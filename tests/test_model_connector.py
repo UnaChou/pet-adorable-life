@@ -69,7 +69,7 @@ def test_get_model_response_by_image_returns_dict_on_success():
 
 def test_get_diary_response_by_image_delegates():
     import model_connector
-    expected = {"title": "X", "describe": "Y", "main_emotion": "Z"}
+    expected = {"title": "X", "description": "Y", "main_emotion": "Z"}
     with patch("model_connector._call_model_with_retry", return_value=expected):
         result = model_connector.get_diary_response_by_image("model", b"img")
     assert result["main_emotion"] == "Z"
@@ -84,7 +84,7 @@ def test_get_diary_response_uses_fallback_prompt_when_missing():
     if hasattr(pet_model_config, "image_context_prompt"):
         delattr(pet_model_config, "image_context_prompt")
     try:
-        with patch("model_connector._call_model_with_retry", return_value={"title": "T", "describe": "D", "main_emotion": "M"}):
+        with patch("model_connector._call_model_with_retry", return_value={"title": "T", "description": "D", "main_emotion": "M"}):
             result = model_connector.get_diary_response_by_image("model", b"img")
         assert result is not None
     finally:

@@ -185,7 +185,7 @@ def get_model_response_by_image(model: str, image_source: Union[str, bytes, Any]
     if isinstance(result, dict):
         return result
     
-    return {"title": "解析失敗", "describe": str(result)}
+    return {"title": "解析失敗", "description": str(result)}
 
 
 def get_diary_response_by_image(model: str, image_source: Union[str, bytes, Any]) -> Optional[Dict[str, Any]]:
@@ -200,7 +200,7 @@ Please describe mind and emotions from the image.
 Animal include dog, cat or others.
 MUST Text count limit is 300 words.
 **the output value language is Traditional Chinese**
-Return JSON format: {"title": "str", "describe": "str", "main_emotion": "str"}
+Return JSON format: {"title": "str", "description": "str", "main_emotion": "str"}
 """
     return get_model_response_by_image(model, image_source, prompt)
 
