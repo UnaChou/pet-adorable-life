@@ -78,3 +78,24 @@ def test_init_db_creates_pets_table():
     # Verify ALTER TABLE pet_diaries ADD COLUMN pet_id was called
     assert any("ALTER TABLE pet_diaries ADD COLUMN pet_id" in sql for sql in all_sql), \
         "Expected ALTER TABLE pet_diaries ADD COLUMN pet_id in SQL calls"
+
+
+def test_init_db_creates_pet_shares_and_invitations_tables():
+    from unittest.mock import patch, MagicMock
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+    mock_conn.__exit__ = MagicMock(return_value=False)
+    mock_cur.__enter__ = MagicMock(return_value=mock_cur)
+    mock_cur.__exit__ = MagicMock(return_value=False)
+    mock_conn.cursor.return_value = mock_cur
+
+    with patch("db.get_connection", return_value=mock_conn):
+        import db
+        db.init_db()
+
+    all_sql = [str(c.args[0]) if c.args else "" for c in mock_cur.execute.call_args_list]
+    assert any("CREATE TABLE IF NOT EXISTS pet_shares" in s for s in all_sql)
+    assert any("shared_with_user_id" in s for s in all_sql)
+    assert any("CREATE TABLE IF NOT EXISTS pet_share_invitations" in s for s in all_sql)
+    assert any("token_hash" in s for s in all_sql)

@@ -10,9 +10,11 @@ def test_get_all_products_no_filter():
         import db
         result = db.get_all_products()
     sql = cur.execute.call_args[0][0]
-    # no pet_id filter applied (pet_id may appear in the SELECT column list)
+    # no pet_id filter applied (pet_id may appear in SELECT and JOIN)
     assert "pet_id is null" not in sql.lower()
-    assert "pet_id = " not in sql.lower()
+    # check WHERE clause doesn't have pet_id = filter (not JOIN or SELECT)
+    where_clause = sql.lower().split("where")[1] if "where" in sql.lower() else sql.lower()
+    assert "pet_id = " not in where_clause
 
 
 def test_get_all_products_pet_id_zero_uses_is_null():

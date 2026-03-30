@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}接受共同飼養邀請 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1 class="auth-title">🐾 共同飼養邀請</h1>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul class="auth-errors">{% for msg in messages %}<li>{{ msg }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% endwith %}
+
+        {% if error %}
+        <p style="color:var(--danger,#e74c3c);text-align:center">{{ error }}</p>
+        <p style="text-align:center"><a href="/" class="btn btn-secondary">回首頁</a></p>
+        {% elif invitation %}
+        <p style="text-align:center;margin:.5rem 0">
+            <strong>{{ invitation.inviter_username }}</strong> 邀請您以
+            「<strong>{{ role_display }}</strong>」身份共同飼養
+            <strong>{{ invitation.pet_name }}</strong>。
+        </p>
+        <form method="POST" action="/pets/join/{{ token }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-actions" style="justify-content:center;gap:1rem;margin-top:1.5rem">
+                <button type="submit" name="action" value="accept" class="btn btn-primary">接受邀請</button>
+                <button type="submit" name="action" value="decline" class="btn btn-secondary">婉拒</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

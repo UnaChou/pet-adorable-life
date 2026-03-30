@@ -71,6 +71,7 @@ loginForm.addEventListener('submit', async (event) => {
                 username: loginForm.username.value.trim(),
                 password: loginForm.password.value,
                 csrf_token: csrfInput.value,
+                next: new URLSearchParams(window.location.search).get('next') || '',
             }),
         });
 

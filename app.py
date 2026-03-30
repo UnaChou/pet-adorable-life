@@ -142,7 +142,7 @@ def _require_login():
     if not current_user_id():
         if request.path.startswith("/api/"):
             return jsonify({"error": "請先登入"}), 401
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next=request.path))
 
 
 # ========== Auth routes ==========
@@ -169,9 +169,15 @@ def login():
             flash("帳號或密碼錯誤")
             return _no_cache_response(render_template("login.html", csrf_token=fresh_csrf_token), 401)
         session["user_id"] = user["id"]
+        next_url = (
+            (payload or {}).get("next") or request.form.get("next") or request.args.get("next") or ""
+        ).strip()
+        # Only allow local paths to prevent open redirect
+        if not (next_url.startswith("/") and not next_url.startswith("//")):
+            next_url = url_for("index")
         if request.is_json:
-            return jsonify({"ok": True, "redirect_to": url_for("index")})
-        return redirect(url_for("index"))
+            return jsonify({"ok": True, "redirect_to": next_url or url_for("index")})
+        return redirect(next_url or url_for("index"))
     return _no_cache_response(render_template("login.html", csrf_token=_issue_csrf_token("login")))
 
 
@@ -208,9 +214,13 @@ def _validate_register_uniqueness(username: str, email: str):
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+        next_url = (request.form.get("next") or "").strip()
+        if not (next_url.startswith("/") and not next_url.startswith("//")):
+            next_url = ""
+
         if not _validate_csrf_token("register"):
             flash("表單已失效，請再試一次")
-            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url), 400)
 
         username = (request.form.get("username") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
@@ -220,17 +230,20 @@ def register():
         input_error = _validate_register_inputs(username, email, password, confirm)
         if input_error:
             flash(input_error)
-            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url), 400)
 
         uniqueness_error = _validate_register_uniqueness(username, email)
         if uniqueness_error:
             flash(uniqueness_error)
-            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")), 400)
+            return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url), 400)
 
         user_id = db.create_user(username, email, generate_password_hash(password))
         session["user_id"] = user_id
-        return redirect(url_for("index"))
-    return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register")))
+        return redirect(next_url or url_for("index"))
+    next_url = request.args.get("next", "").strip()
+    if not (next_url.startswith("/") and not next_url.startswith("//")):
+        next_url = ""
+    return _no_cache_response(render_template("register.html", csrf_token=_issue_csrf_token("register"), next=next_url))
 
 
 @app.route("/logout")
@@ -275,6 +288,33 @@ def _send_password_reset_email(email: str, user_id: int, reset_url: str) -> None
             user_id,
             exc_info=True,
         )
+
+
+_ROLE_DISPLAY = {"read_only": "僅能檢視", "editor": "可編輯"}
+
+
+def _send_pet_invite_email(invitee_email: str, inviter_username: str, pet_name: str,
+                           role: str, join_url: str, inviter_user_id: int) -> bool:
+    role_display = _ROLE_DISPLAY.get(role, role)
+    msg = Message(
+        f"{inviter_username} 邀請您加入共同飼養 {pet_name}！- Pet Adorable Life",
+        recipients=[invitee_email],
+    )
+    msg.body = (
+        f"您好，\n\n{inviter_username} 邀請您以「{role_display}」身份共同飼養 {pet_name}。\n\n"
+        f"點擊以下連結加入（連結在 7 天後失效）：\n\n{join_url}\n\n"
+        "若非您本人操作，請忽略此信。"
+    )
+    try:
+        mail.send(msg)
+        return True
+    except Exception:
+        logger.warning(
+            "Failed to send pet invite email (inviter_user_id=%s).",
+            inviter_user_id,
+            exc_info=True,
+        )
+        return False
 
 
 def _request_password_reset(email: str) -> None:
@@ -482,8 +522,8 @@ def api_add_pet():
 
 @app.route("/api/pets/<int:pet_id>", methods=["GET"])
 def api_get_pet(pet_id):
-    """取得單一寵物"""
-    pet = db.get_pet(pet_id, user_id=current_user_id())
+    """取得單一寵物（擁有者或共同飼養人均可讀取）"""
+    pet = db.get_pet_accessible(pet_id, user_id=current_user_id())
     if not pet:
         return jsonify({"error": "找不到寵物"}), 404
     return jsonify(pet)
@@ -491,9 +531,9 @@ def api_get_pet(pet_id):
 
 @app.route("/api/pets/<int:pet_id>", methods=["PUT"])
 def api_update_pet(pet_id):
-    """更新寵物資料"""
+    """更新寵物資料（擁有者或 editor 共同飼養人均可）"""
     uid = current_user_id()
-    if not db.get_pet(pet_id, user_id=uid):
+    if not db.get_pet_if_editable(pet_id, user_id=uid):
         return jsonify({"error": "找不到寵物"}), 404
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()
@@ -505,9 +545,9 @@ def api_update_pet(pet_id):
         breed=(data.get("breed") or "").strip(),
         birthday=data.get("birthday") or None,
         photo_base64=data.get("photo_base64"),
-        user_id=uid,
+        user_id=None,  # access already verified by get_pet_if_editable
     )
-    return jsonify(db.get_pet(pet_id, user_id=uid))
+    return jsonify(db.get_pet_accessible(pet_id, user_id=uid))
 
 
 @app.route("/api/pets/<int:pet_id>", methods=["DELETE"])
@@ -526,14 +566,179 @@ def pets_page():
     return render_template("pets.html")
 
 
+# ========== Pet Shares API ==========
+
+@app.route("/api/pets/<int:pet_id>/shares", methods=["GET"])
+def api_get_pet_shares(pet_id):
+    """列出寵物的共同飼養人（僅擁有者可查詢）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    shares = db.get_pet_shares(pet_id, owner_user_id=uid)
+    return jsonify({"shares": shares})
+
+
+@app.route("/api/pets/<int:pet_id>/shares/<int:share_id>", methods=["DELETE"])
+def api_remove_pet_share(pet_id, share_id):
+    """移除共同飼養人（僅擁有者可操作）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    removed = db.remove_pet_share(share_id, owner_user_id=uid)
+    if not removed:
+        return jsonify({"error": "找不到共享紀錄"}), 404
+    return "", 204
+
+
+# ========== Pet Invitations API ==========
+
+_VALID_ROLES = {"read_only", "editor"}
+
+
+@app.route("/api/pets/<int:pet_id>/invitations", methods=["GET"])
+def api_get_pet_invitations(pet_id):
+    """列出寵物的待處理邀請（僅擁有者可查詢）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    invitations = db.get_pet_invitations_for_pet(pet_id, inviter_user_id=uid)
+    return jsonify({"invitations": invitations})
+
+
+@app.route("/api/pets/<int:pet_id>/invitations", methods=["POST"])
+def api_send_pet_invitation(pet_id):
+    """發送共同飼養邀請（僅擁有者可操作）"""
+    uid = current_user_id()
+    pet = db.get_pet(pet_id, user_id=uid)
+    if not pet:
+        return jsonify({"error": "找不到寵物"}), 404
+    data = request.get_json() or {}
+    username = (data.get("username") or "").strip()
+    role = (data.get("role") or "").strip()
+    if role not in _VALID_ROLES:
+        return jsonify({"error": "無效的角色"}), 400
+    invitee = db.get_user_by_username(username)
+    if not invitee:
+        return jsonify({"error": "找不到使用者"}), 404
+    if invitee["id"] == uid:
+        return jsonify({"error": "不能邀請自己"}), 400
+    if not invitee.get("email"):
+        return jsonify({"error": "該使用者未設定電子郵件"}), 400
+    if db.is_pet_co_owner(pet_id, invitee["id"]):
+        return jsonify({"error": "該使用者已是共同飼養人"}), 400
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    expires_at = _utcnow_naive() + timedelta(days=7)
+    inv_id = db.create_pet_share_invitation(
+        pet_id=pet_id,
+        inviter_user_id=uid,
+        invitee_user_id=invitee["id"],
+        role=role,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    inviter = db.get_user_by_id(uid)
+    join_url = url_for("pet_join_page", token=raw_token, _external=True)
+    email_sent = _send_pet_invite_email(
+        invitee_email=invitee["email"],
+        inviter_username=inviter["username"],
+        pet_name=pet["name"],
+        role=role,
+        join_url=join_url,
+        inviter_user_id=uid,
+    )
+    return jsonify({"id": inv_id, "invitee_username": username, "role": role, "email_sent": email_sent}), 201
+
+
+@app.route("/api/pets/<int:pet_id>/invitations/<int:inv_id>", methods=["DELETE"])
+def api_cancel_pet_invitation(pet_id, inv_id):
+    """取消邀請（僅擁有者可操作）"""
+    uid = current_user_id()
+    if not db.get_pet(pet_id, user_id=uid):
+        return jsonify({"error": "找不到寵物"}), 404
+    cancelled = db.cancel_pet_share_invitation(inv_id, inviter_user_id=uid)
+    if not cancelled:
+        return jsonify({"error": "找不到邀請"}), 404
+    return "", 204
+
+
+# ========== Pet Join (accept/decline invitation) ==========
+
+_INVITE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{32,128}$")
+
+
+def _get_valid_invitation(token):
+    """Validate raw token format, return invitation record or None."""
+    if not _INVITE_TOKEN_RE.fullmatch(token or ""):
+        return None
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    return db.get_pet_share_invitation_by_token(token_hash)
+
+
+@app.route("/pets/join/<token>")
+def pet_join_page(token):
+    """顯示邀請詳情，讓受邀者選擇接受或婉拒。"""
+    inv = _get_valid_invitation(token)
+    if not inv:
+        return render_template("pet_join.html", error="邀請連結無效或已過期",
+                               csrf_token=_issue_csrf_token("pet_join"))
+    uid = current_user_id()
+    if inv["invitee_user_id"] != uid:
+        return render_template("pet_join.html", error="邀請連結無效或已過期",
+                               csrf_token=_issue_csrf_token("pet_join"))
+    if inv["status"] != "pending":
+        msg = "此邀請已接受" if inv["status"] == "accepted" else "此邀請已使用或已取消"
+        return render_template("pet_join.html", error=msg,
+                               csrf_token=_issue_csrf_token("pet_join"))
+    if inv["expires_at"] < _utcnow_naive():
+        return render_template("pet_join.html", error="邀請已過期，請請求重新發送",
+                               csrf_token=_issue_csrf_token("pet_join"))
+    role_display = _ROLE_DISPLAY.get(inv["role"], inv["role"])
+    return render_template("pet_join.html", invitation=inv, role_display=role_display,
+                           token=token, csrf_token=_issue_csrf_token("pet_join"))
+
+
+@app.route("/pets/join/<token>", methods=["POST"])
+def pet_join_action(token):
+    """處理接受或婉拒邀請的表單提交。"""
+    if not _validate_csrf_token("pet_join"):
+        flash("表單已失效，請再試一次")
+        return redirect(url_for("pet_join_page", token=token))
+    uid = current_user_id()
+    inv = _get_valid_invitation(token)
+    if not inv or inv["invitee_user_id"] != uid or inv["status"] != "pending":
+        flash("邀請連結無效或已過期")
+        return redirect(url_for("index"))
+    action = (request.form.get("action") or "").strip()
+    if action == "accept":
+        joined = db.accept_pet_share_invitation(inv["id"], invitee_user_id=uid)
+        if joined:
+            flash(f"已加入「{inv['pet_name']}」的共同飼養人！")
+        else:
+            flash(f"您已是「{inv['pet_name']}」的共同飼養人")
+        return redirect(url_for("pets_page"))
+    elif action == "decline":
+        db.decline_pet_share_invitation(inv["id"], invitee_user_id=uid)
+        flash("已婉拒邀請")
+        return redirect(url_for("index"))
+    return redirect(url_for("pet_join_page", token=token))
+
+
 # ========== Products API ==========
 
 
 @app.route("/api/products", methods=["GET"])
 def api_get_products():
     """取得所有商品"""
+    uid = current_user_id()
     pet_id = request.args.get("pet_id", type=int)
-    return jsonify({"products": db.get_all_products(pet_id=pet_id, user_id=current_user_id())})
+    if pet_id and pet_id > 0:
+        if not db.get_pet_accessible(pet_id, uid):
+            return jsonify({"products": []})
+        user_id_filter = None  # show all users' content for shared pets
+    else:
+        user_id_filter = uid
+    return jsonify({"products": db.get_all_products(pet_id=pet_id, user_id=user_id_filter)})
 
 
 @app.route("/api/products", methods=["POST"])
@@ -544,6 +749,8 @@ def api_add_product():
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
     product_id = db.add_product(title, summary, pet_id=pet_id, user_id=uid)
     product = db.get_product(product_id, user_id=uid)
     if not product:
@@ -564,12 +771,14 @@ def api_get_product(product_id):
 def api_update_product(product_id):
     """更新商品"""
     uid = current_user_id()
-    if not db.get_product(product_id, user_id=uid):
-        return jsonify({"error": "找不到商品"}), 404
+    if not db.get_product_if_editable(product_id, user_id=uid):
+        return jsonify({"error": "找不到商品或無編輯權限"}), 404
     data = request.get_json() or {}
     title = (data.get("title") or "").strip() or "（未命名）"
     summary = (data.get("summary") or "").strip()
     pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
     db.update_product(product_id, title, summary, pet_id=pet_id, user_id=uid)
     return jsonify(db.get_product(product_id, user_id=uid))
 
@@ -578,8 +787,8 @@ def api_update_product(product_id):
 def api_delete_product(product_id):
     """刪除商品"""
     uid = current_user_id()
-    if not db.get_product(product_id, user_id=uid):
-        return jsonify({"error": "找不到商品"}), 404
+    if not db.get_product_if_editable(product_id, user_id=uid):
+        return jsonify({"error": "找不到商品或無編輯權限"}), 404
     db.remove_product(product_id, user_id=uid)
     return "", 204
 
@@ -600,8 +809,15 @@ def api_delete_products():
 @app.route("/api/diaries", methods=["GET"])
 def api_get_diaries():
     """取得所有日記"""
+    uid = current_user_id()
     pet_id = request.args.get("pet_id", type=int)
-    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id, user_id=current_user_id())})
+    if pet_id and pet_id > 0:
+        if not db.get_pet_accessible(pet_id, uid):
+            return jsonify({"diaries": []})
+        user_id_filter = None  # show all users' content for shared pets
+    else:
+        user_id_filter = uid
+    return jsonify({"diaries": db.get_all_diaries(pet_id=pet_id, user_id=user_id_filter)})
 
 
 @app.route("/api/diaries", methods=["POST"])
@@ -609,13 +825,16 @@ def api_add_diary():
     """新增日記"""
     uid = current_user_id()
     data = request.get_json() or {}
+    pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
     diary_id = db.add_diary(
         title=(data.get("title") or "").strip(),
         describe_text=(data.get("describe_text") or "").strip(),
         main_emotion=(data.get("main_emotion") or "").strip(),
         memo=(data.get("memo") or "").strip(),
         image_base64=(data.get("image_base64") or ""),
-        pet_id=data.get("pet_id") or None,
+        pet_id=pet_id,
         user_id=uid,
     )
     diary = db.get_diary(diary_id, user_id=uid)
@@ -628,8 +847,8 @@ def api_add_diary():
 def api_delete_diary(diary_id):
     """刪除單筆日記"""
     uid = current_user_id()
-    if not db.get_diary(diary_id, user_id=uid):
-        return jsonify({"error": "找不到日記"}), 404
+    if not db.get_diary_if_editable(diary_id, user_id=uid):
+        return jsonify({"error": "找不到日記或無編輯權限"}), 404
     db.remove_diaries([diary_id], user_id=uid)
     return "", 204
 

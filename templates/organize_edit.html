@@ -51,6 +51,10 @@
             const opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.name;
+            if (p.is_shared && p.role === 'read_only') {
+                opt.disabled = true;
+                opt.textContent += ' (僅檢視)';
+            }
             sel.appendChild(opt);
         });
         sel.value = product.pet_id || '';

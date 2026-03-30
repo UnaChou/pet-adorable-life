@@ -7,8 +7,10 @@ def test_get_diaries(authed_client, mock_db):
 
 def test_get_diaries_with_pet_filter(authed_client, mock_db):
     mock_db.get_all_diaries.return_value = []
+    mock_db.get_pet_accessible.return_value = {"id": 2, "name": "test"}
     authed_client.get("/api/diaries?pet_id=2")
-    mock_db.get_all_diaries.assert_called_with(pet_id=2, user_id=1)
+    # co-owner content: user_id=None so all users' items for this pet are returned
+    mock_db.get_all_diaries.assert_called_with(pet_id=2, user_id=None)
 
 
 def test_add_diary_returns_201(authed_client, mock_db):
@@ -20,14 +22,14 @@ def test_add_diary_returns_201(authed_client, mock_db):
 
 
 def test_delete_diary_returns_204(authed_client, mock_db):
-    mock_db.get_diary.return_value = {"id": 1, "title": "日記"}
+    mock_db.get_diary_if_editable.return_value = {"id": 1, "title": "日記"}
     res = authed_client.delete("/api/diaries/1")
     assert res.status_code == 204
     mock_db.remove_diaries.assert_called_once_with([1], user_id=1)
 
 
 def test_delete_diary_not_found_returns_404(authed_client, mock_db):
-    mock_db.get_diary.return_value = None
+    mock_db.get_diary_if_editable.return_value = None
     res = authed_client.delete("/api/diaries/999")
     assert res.status_code == 404
 
