@@ -84,3 +84,116 @@ The app is a pet care tool with three main domains:
 **Templates:** Jinja2 in `templates/`; base layout in `base.html`. Frontend uses vanilla JS with camera API and drag-and-drop upload. No build step — static assets served directly.
 
 **UI language:** Traditional Chinese (prompts and UI text).
+
+## Python Coding Guidelines
+
+All Python code in this project must follow these standards.
+
+### Formatting
+
+- **Formatter:** `black` with line length **120** (not the default 88)
+- **Indentation:** 4 spaces (no tabs)
+- **Max line length:** 120 characters
+
+`pyproject.toml` black config:
+```toml
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git | \.hg | \.mypy_cache | \.tox | \.venv
+  | _build | buck-out | build | dist
+)/
+'''
+```
+
+### Naming Conventions
+
+| Kind | Style | Example |
+|------|-------|---------|
+| Class | UpperCamelCase (noun) | `ExampleClassGPT` |
+| Function / method | `verb_noun` snake_case | `get_product_tags_dictionary` |
+| Local variable | snake_case (noun) | `example_local_variable` |
+| Global variable | UPPER_SNAKE_CASE | `EXAMPLE_GLOBAL_VARIABLE` |
+| Environment variable | UPPER_SNAKE_CASE | `EXAMPLE_ENV_VARIABLE` |
+| Protected method | leading underscore | `_update_df_to_db` |
+| Protected attribute | leading underscore + `@property` getter | `self._cupid_id` |
+
+### Imports
+
+All imports must be at the **top of the file**, before any other code.
+
+Use `from` for multi-level paths:
+```python
+# Bad
+import src.tagging_service
+
+# Good
+from src import tagging_service
+ser = tagging_service.ClassName()
+
+# Also acceptable when module is large (avoids loading whole module)
+from src.tagging_service import ClassName
+```
+
+### Docstrings
+
+All public functions must have a docstring with Args and Return type:
+```python
+def get_product_info(cupid_id: str) -> pd.DataFrame:
+    """
+    商品分群資訊
+
+    Args:
+        cupid_id (str): 店家ID
+
+    Returns:
+        pd.DataFrame: columns — cupid_id, outer_id, title, language_id, tokenized_title
+    """
+```
+
+### SQL Safety
+
+- Never hard-code the database name in SQL strings
+- Always use named parameters (`:param`) + `sqlalchemy.text()` to prevent SQL injection
+
+```python
+# Bad
+sql = f"SELECT id FROM product WHERE id={id}"
+
+# Good
+from sqlalchemy import text
+sql = "SELECT id FROM product WHERE id=:id"
+conn.execute(text(sql), {"id": id})
+```
+
+### Large DB Queries
+
+Use `chunksize` with `pd.read_sql` when processing large datasets to avoid connection timeouts:
+```python
+for chunk_df in pd.read_sql(text(sql), con=engine, params=params, chunksize=1000):
+    # process chunk
+```
+
+### Pre-commit Hooks
+
+The project uses pre-commit to enforce format before every commit: `check-ast`, `trailing-whitespace`, `end-of-file-fixer`, `isort`, and `black`.
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
