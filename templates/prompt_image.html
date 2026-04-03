@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}毛孩看圖機 - Pet Adorable Life{% endblock %}
+
+{% block content %}
+<div class="prompt-page">
+    <section class="prompt-hero">
+        <h1>毛孩看圖機</h1>
+        <p>上傳一張可愛照片或直接拍照，輸入你想問的內容，讓 AI 幫你看圖發想、產生有趣回覆。</p>
+    </section>
+
+    <section class="prompt-upload">
+        <div class="camera-header-actions">
+            <button type="button" class="btn btn-accent btn-sm" id="btnCamera">📷 開啟相機</button>
+        </div>
+
+        <div class="upload-container">
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden>
+                <input type="file" id="cameraFileInput" accept="image/*" capture="environment" hidden>
+                <div class="upload-placeholder" id="uploadPlaceholder">
+                    <span class="upload-icon">🖼️</span>
+                    <p>點擊或拖曳圖片到此處</p>
+                    <p class="upload-hint">支援 PNG、JPG、WebP、GIF</p>
+                </div>
+                <div class="upload-preview hidden" id="uploadPreview">
+                    <img id="previewImg" src="" alt="預覽">
+                    <video id="cameraVideo" autoplay playsinline class="hidden"></video>
+                    <canvas id="cameraCanvas" class="hidden"></canvas>
+                </div>
+            </div>
+            <div class="camera-controls">
+                <button type="button" class="btn btn-secondary hidden" id="btnCancelCamera">✕ 取消</button>
+                <button type="button" class="btn btn-accent btn-lg hidden" id="btnCapture">📸 拍照</button>
+            </div>
+        </div>
+
+        <div class="prompt-form-card">
+            <div class="form-group">
+                <label for="promptInput">Prompt</label>
+                <textarea id="promptInput" class="form-textarea prompt-textarea" rows="6" placeholder="例如：請描述這張圖片中的主體、場景氛圍，並列出 3 個適合社群貼文的標題。"></textarea>
+                <span class="form-hint">回傳格式會固定為 JSON：{"result":"..."}</span>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnAnalyze" disabled>送出分析</button>
+        </div>
+    </section>
+
+    <section class="analyze-error hidden" id="errorSection">
+        <p class="error-msg" id="errorMsg"></p>
+    </section>
+
+    <section class="prompt-result hidden" id="resultSection">
+        <div class="result-card">
+            <div class="prompt-result-header">
+                <h2>分析結果</h2>
+                <div class="prompt-result-actions">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCopyResult">複製 result</button>
+                </div>
+            </div>
+            <p class="copy-feedback hidden" id="copyFeedback"></p>
+            <div class="form-group">
+                <label for="resultText">result</label>
+                <textarea id="resultText" class="form-textarea result-textarea" rows="8" readonly></textarea>
+            </div>
+        </div>
+    </section>
+
+    <div class="loading hidden" id="loading">
+        <div class="spinner"></div>
+        <p>AI 分析中...</p>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const cameraFileInput = document.getElementById('cameraFileInput');
+        const btnCamera = document.getElementById('btnCamera');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const previewImg = document.getElementById('previewImg');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const btnCapture = document.getElementById('btnCapture');
+        const btnCancelCamera = document.getElementById('btnCancelCamera');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const promptInput = document.getElementById('promptInput');
+        const resultSection = document.getElementById('resultSection');
+        const resultText = document.getElementById('resultText');
+        const btnCopyResult = document.getElementById('btnCopyResult');
+        const copyFeedback = document.getElementById('copyFeedback');
+        const errorSection = document.getElementById('errorSection');
+        const errorMsg = document.getElementById('errorMsg');
+        const loading = document.getElementById('loading');
+
+        let selectedFile = null;
+        let mediaStream = null;
+
+        function updateAnalyzeButtonState() {
+            btnAnalyze.disabled = !(selectedFile && promptInput.value.trim());
+        }
+
+        function resetOutput() {
+            resultSection.classList.add('hidden');
+            errorSection.classList.add('hidden');
+            errorMsg.textContent = '';
+            copyFeedback.textContent = '';
+            copyFeedback.classList.add('hidden');
+        }
+
+        async function copyText(text, successMessage) {
+            if (!text) {
+                copyFeedback.textContent = '目前沒有可複製的內容';
+                copyFeedback.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                copyFeedback.textContent = successMessage;
+                copyFeedback.classList.remove('hidden');
+            } catch (err) {
+                copyFeedback.textContent = '複製失敗，請手動選取內容';
+                copyFeedback.classList.remove('hidden');
+            }
+        }
+
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            cameraVideo.classList.add('hidden');
+            btnCapture.classList.add('hidden');
+            btnCancelCamera.classList.add('hidden');
+            if (selectedFile) {
+                previewImg.classList.remove('hidden');
+            } else {
+                uploadPlaceholder.classList.remove('hidden');
+                uploadPreview.classList.add('hidden');
+            }
+        }
+
+        function handleFile(file) {
+            selectedFile = file;
+            previewImg.src = URL.createObjectURL(file);
+            previewImg.classList.remove('hidden');
+            uploadPlaceholder.classList.add('hidden');
+            uploadPreview.classList.remove('hidden');
+            resetOutput();
+            updateAnalyzeButtonState();
+        }
+
+        btnCamera.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const canUseGetUserMedia = window.isSecureContext && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            if (!canUseGetUserMedia) {
+                cameraFileInput.click();
+                return;
+            }
+
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false,
+                });
+                cameraVideo.srcObject = mediaStream;
+                cameraVideo.classList.remove('hidden');
+                previewImg.classList.add('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                uploadPreview.classList.remove('hidden');
+                btnCapture.classList.remove('hidden');
+                btnCancelCamera.classList.remove('hidden');
+                btnAnalyze.disabled = true;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('無法開啟相機，請確認瀏覽器已授權相機權限');
+            }
+        });
+
+        btnCapture.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const context = cameraCanvas.getContext('2d');
+            cameraCanvas.width = cameraVideo.videoWidth;
+            cameraCanvas.height = cameraVideo.videoHeight;
+            context.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+            cameraCanvas.toBlob((blob) => {
+                if (!blob) {
+                    errorMsg.textContent = '拍照失敗，請再試一次';
+                    errorSection.classList.remove('hidden');
+                    return;
+                }
+                selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+                previewImg.src = URL.createObjectURL(blob);
+                previewImg.classList.remove('hidden');
+                stopCamera();
+                resetOutput();
+                updateAnalyzeButtonState();
+            }, 'image/jpeg', 0.9);
+        });
+
+        btnCancelCamera.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            stopCamera();
+            updateAnalyzeButtonState();
+        });
+
+        uploadZone.addEventListener('click', (e) => {
+            if (e.target === btnCapture || e.target === btnCancelCamera) {
+                return;
+            }
+            fileInput.click();
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        cameraFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        promptInput.addEventListener('input', () => {
+            resetOutput();
+            updateAnalyzeButtonState();
+        });
+
+        btnAnalyze.addEventListener('click', async () => {
+            if (!selectedFile || !promptInput.value.trim()) {
+                return;
+            }
+
+            loading.classList.remove('hidden');
+            resetOutput();
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('prompt', promptInput.value.trim());
+
+            try {
+                const response = await fetch('/api/prompt-image/analyze', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    errorMsg.textContent = data.error || '分析失敗';
+                    errorSection.classList.remove('hidden');
+                    return;
+                }
+
+                resultText.value = data.result || '';
+                resultSection.classList.remove('hidden');
+            } catch (err) {
+                errorMsg.textContent = '請求失敗，請稍後再試';
+                errorSection.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        });
+
+        btnCopyResult.addEventListener('click', async () => {
+            await copyText(resultText.value, '已複製 result');
+        });
+    })();
+</script>
+{% endblock %}

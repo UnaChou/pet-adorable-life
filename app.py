@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from threading import Lock
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash, make_response
+from flask.typing import ResponseReturnValue
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -423,6 +424,39 @@ def index():
 def product_analyze_page():
     """商品分析頁面"""
     return render_template("product_analyze.html")
+
+
+@app.route("/prompt-image")
+def prompt_image_page() -> ResponseReturnValue:
+    return render_template("prompt_image.html")
+
+
+@app.route("/api/prompt-image/analyze", methods=["POST"])
+def api_prompt_image_analyze() -> ResponseReturnValue:
+    if "image" not in request.files:
+        return jsonify({"error": "未上傳圖片"}), 400
+
+    prompt = (request.form.get("prompt") or "").strip()
+    if not prompt:
+        return jsonify({"error": "請輸入 prompt"}), 400
+
+    file = request.files["image"]
+    err, status = _validate_image_file(file)
+    if err:
+        return err, status or 400
+
+    model_name = getattr(pet_model_config, "pet_model_name", "qwen3-vl:4b")
+    prompt_text = pet_model_config.build_image_prompt(prompt)
+    result = model_connector.get_model_response_by_image(model_name, file, prompt=prompt_text)
+    if result is None:
+        return jsonify({"error": "分析失敗，請確認 Ollama 服務是否運行"}), 500
+    if result.get("error"):
+        return jsonify(result), 500
+
+    return jsonify({
+        "result": result.get("result", ""),
+        "raw": result,
+    })
 
 
 @app.route("/api/product/analyze", methods=["POST"])
@@ -861,6 +895,51 @@ def api_delete_diaries():
     if ids:
         db.remove_diaries(ids, user_id=current_user_id())
     return "", 204
+
+
+@app.route("/api/calendar-items", methods=["GET"])
+def api_get_calendar_items():
+    """取得指定年月的日曆項目（商品 + 日記），合併後按日期分組回傳。"""
+    uid = current_user_id()
+
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+
+    if year is None or month is None:
+        return jsonify({"error": "year 與 month 為必填參數"}), 400
+    if not (1 <= month <= 12) or year < 1:
+        return jsonify({"error": "year 或 month 超出有效範圍"}), 400
+
+    products = db.get_all_products(user_id=uid)
+    diaries = db.get_all_diaries(user_id=uid)
+
+    items = []
+
+    for p in products:
+        created_at = p["created_at"]
+        if hasattr(created_at, "year") and created_at.year == year and created_at.month == month:
+            items.append(
+                {
+                    "type": "product",
+                    "id": p["id"],
+                    "title": p["title"],
+                    "date": created_at.date().isoformat(),
+                }
+            )
+
+    for d in diaries:
+        created_at = d["created_at"]
+        if hasattr(created_at, "year") and created_at.year == year and created_at.month == month:
+            items.append(
+                {
+                    "type": "diary",
+                    "id": d["id"],
+                    "title": d["title"],
+                    "date": created_at.date().isoformat(),
+                }
+            )
+
+    return jsonify({"items": items})
 
 
 def _get_watch_files():

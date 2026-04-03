@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/analyze.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/organize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/diary.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prompt_image.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    {% block head %}{% endblock %}
 </head>
 <body>
     <a href="#main-content" class="skip-to-content">跳到主要內容</a>
@@ -19,12 +21,13 @@
     <nav class="nav-bar">
         <a href="/" class="logo">Pet Adorable Life</a>
         <ul class="nav-links">
-            <li><a href="/" {% if request.endpoint == 'index' %}class="active"{% endif %}>首頁</a></li>
-            <li><a href="/organize" {% if request.endpoint in ['organize', 'organize_edit'] %}class="active"{% endif %}>📋 Pet Life</a></li>
-            <li><a href="/product/analyze" {% if request.endpoint == 'product_analyze_page' %}class="active"{% endif %}>商品分析</a></li>
-            <li><a href="/diary" {% if request.endpoint == 'diary' %}class="active"{% endif %}>寵物日記</a></li>
-            <li><a href="/pets" {% if request.endpoint == 'pets_page' %}class="active"{% endif %}>寵物</a></li>
-            <li><a href="/logout">登出</a></li>
+            <li><a href="/" {% if request.endpoint == 'index' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path><path d="M9.5 20v-5.5h5V20"></path></svg></span><span>首頁</span></a></li>
+            <li><a href="/organize" {% if request.endpoint in ['organize', 'organize_edit'] %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M9 2.5h6a1 1 0 0 1 1 1V5H8V3.5a1 1 0 0 1 1-1Z"></path><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M8 10h8"></path><path d="M8 14h8"></path><path d="M8 18h5"></path></svg></span><span>Pet Life</span></a></li>
+            <li><a href="/product/analyze" {% if request.endpoint == 'product_analyze_page' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8h11l-1 11h-9z"></path><path d="M9 8a3 3 0 0 1 6 0"></path><path d="M9 8v-1"></path><path d="M15 8v-1"></path></svg></span><span>商品分析</span></a></li>
+            <li><a href="/diary" {% if request.endpoint == 'diary' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h9a2 2 0 0 1 2 2V20a1 1 0 0 1-1.5.86L12 18.2l-4.5 2.66A1 1 0 0 1 6 20V5.5a2 2 0 0 1 1-2Z"></path><path d="M9 8h6"></path><path d="M9 11.5h6"></path></svg></span><span>寵物日記</span></a></li>
+            <li><a href="/prompt-image" {% if request.endpoint == 'prompt_image_page' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8Z"></path><path d="M18.5 14.5 19.4 16.6 21.5 17.5 19.4 18.4 18.5 20.5 17.6 18.4 15.5 17.5 17.6 16.6Z"></path><path d="M6 15.5 6.7 17 8.2 17.7 6.7 18.4 6 19.9 5.3 18.4 3.8 17.7 5.3 17Z"></path></svg></span><span>毛孩看圖機</span></a></li>
+            <li><a href="/pets" {% if request.endpoint == 'pets_page' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="1.8"></circle><circle cx="15.5" cy="7.5" r="1.8"></circle><circle cx="18" cy="12.5" r="1.8"></circle><circle cx="6" cy="13" r="1.8"></circle><path d="M12 20c3.2 0 5-1.7 5-3.9 0-1.9-1.3-3.1-3-3.1-1 0-1.6.4-2 .9-.4-.5-1-.9-2-.9-1.7 0-3 1.2-3 3.1C7 18.3 8.8 20 12 20Z"></path></svg></span><span>寵物</span></a></li>
+            <li><a href="/logout"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"></path><path d="M14 16l4-4-4-4"></path><path d="M9 12h9"></path></svg></span><span>登出</span></a></li>
         </ul>
     </nav>
     {% endif %}
