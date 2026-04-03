@@ -8,17 +8,17 @@
 
 {% block content %}
 <div class="landing">
+    <section class="hero">
+        <h1>和毛孩一起<br>把每一天都過得超可愛</h1>
+        <p class="tagline">陪你一起挖掘毛孩的小可愛日常，輕鬆找到最懂寶貝心意的貼心選擇</p>
+    </section>
+
     {% if session.get('user_id') %}
     <section class="cal-section">
-        <h2>我的日曆</h2>
+        <h2>毛孩行事曆</h2>
         <div id="cal-widget"></div>
     </section>
     {% endif %}
-
-    <section class="hero">
-        <h1>讓毛孩的每一天<br>都充滿可愛</h1>
-        <p class="tagline">智慧分析寵物商品，輕鬆找到最適合寶貝的選擇</p>
-    </section>
 
     <section class="nav-section-container">
         <!-- AI Section -->
@@ -28,12 +28,12 @@
                 <a href="/product/analyze" class="card">
                     <span class="card-icon">🐾</span>
                     <h3>商品分析</h3>
-                    <p>上傳商品圖片，AI 自動擷取標題與摘要</p>
+                    <p>拍張照片交給 AI，快速看看這款好物適不適合你家寶貝</p>
                 </a>
                 <a href="/diary" class="card">
                     <span class="card-icon">📔</span>
                     <h3>寵物日記</h3>
-                    <p>上傳照片，AI 分析心情，記錄毛孩日常</p>
+                    <p>把可愛瞬間存下來，讓 AI 一起讀懂毛孩今天的小心情</p>
                 </a>
             </div>
         </div>
@@ -45,14 +45,14 @@
                 <a href="/organize" class="card">
                     <span class="card-icon">📋</span>
                     <h3>Pet Life</h3>
-                    <p>結構化整理商品資訊與日記，一目了然</p>
+                    <p>把商品、日記和生活大小事整理好，毛孩日常一看就懂</p>
                 </a>
             </div>
         </div>
     </section>
 
     <section class="cta" id="about">
-        <p>開始探索，為毛孩挑選最棒的生活用品</p>
+        <p>現在就開始，陪毛孩把每天都過成軟萌又快樂的小日子</p>
     </section>
 </div>
 {% if session.get('user_id') %}
