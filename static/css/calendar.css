@@ -1,0 +1,282 @@
+/* ========== Homepage Calendar Widget ========== */
+
+.cal-section {
+    max-width: 960px;
+    margin: 0 auto 3rem;
+    padding: 0 2rem;
+}
+
+.cal-section h2 {
+    font-family: "Outfit", sans-serif;
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--forest);
+    margin-bottom: 1rem;
+}
+
+/* --- Header (prev / month-year / today / next) --- */
+.cal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.cal-header .cal-title {
+    flex: 1;
+    font-family: "Outfit", sans-serif;
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--forest);
+    text-align: center;
+}
+
+.cal-header button {
+    background: transparent;
+    border: 1px solid rgba(125, 155, 118, 0.35);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.65rem;
+    font-size: var(--text-sm);
+    color: var(--charcoal);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: inherit;
+}
+
+.cal-header button:hover {
+    background: rgba(125, 155, 118, 0.1);
+    border-color: var(--sage);
+}
+
+/* --- Grid --- */
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    background: rgba(125, 155, 118, 0.15);
+    border-radius: var(--radius-md);
+    overflow: visible;
+}
+
+.cal-day-header {
+    background: var(--sand);
+    text-align: center;
+    padding: 0.4rem 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--charcoal);
+    opacity: 0.7;
+}
+
+.cal-day {
+    background: white;
+    min-height: 80px;
+    padding: 0.35rem 0.4rem;
+    position: relative;
+    overflow: visible;
+    z-index: 0;
+}
+
+.cal-day:hover,
+.cal-day:focus-within {
+    z-index: 1;
+}
+
+.cal-day.empty {
+    background: rgba(253, 248, 243, 0.6);
+}
+
+.cal-day.today .cal-day-num {
+    background: var(--terracotta);
+    color: white;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cal-day-num {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--charcoal);
+    opacity: 0.6;
+    display: inline-block;
+    margin-bottom: 0.2rem;
+    line-height: 1.5rem;
+}
+
+/* --- Chips --- */
+.cal-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chip-product,
+.chip-diary {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+    max-width: 100%;
+    line-height: 1.4;
+}
+
+.chip-product {
+    background: rgba(125, 155, 118, 0.18);
+    color: var(--forest);
+}
+
+.chip-diary {
+    background: rgba(201, 123, 92, 0.15);
+    color: var(--terracotta);
+}
+
+.chip-product a,
+.chip-diary a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.chip-more {
+    font-size: 0.65rem;
+    color: var(--charcoal);
+    opacity: 0.5;
+    padding: 1px 5px;
+}
+
+/* --- Tooltip --- */
+.cal-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 200;
+    background: white;
+    border: 1px solid rgba(125, 155, 118, 0.25);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 16px rgba(61, 90, 74, 0.12);
+    padding: 0.5rem 0.6rem;
+    min-width: 160px;
+    max-width: 240px;
+}
+
+.cal-day:hover .cal-tooltip,
+.cal-day:focus-within .cal-tooltip {
+    display: block;
+}
+
+/* Flip tooltip to the left for the last two columns */
+.cal-day.flip-left .cal-tooltip {
+    left: auto;
+    right: 0;
+}
+
+.cal-tooltip-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--charcoal);
+    opacity: 0.55;
+    margin-bottom: 0.3rem;
+}
+
+.cal-tooltip-item {
+    font-size: 0.8rem;
+    color: var(--charcoal);
+    padding: 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cal-tooltip-item a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cal-tooltip-item a:hover {
+    color: var(--terracotta);
+    text-decoration: underline;
+}
+
+.cal-tooltip-item .chip-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.chip-badge.product {
+    background: rgba(125, 155, 118, 0.2);
+    color: var(--forest);
+}
+
+.chip-badge.diary {
+    background: rgba(201, 123, 92, 0.15);
+    color: var(--terracotta);
+}
+
+/* --- Shimmer loading skeleton --- */
+.cal-shimmer .cal-day {
+    pointer-events: none;
+}
+
+.shimmer-block {
+    height: 12px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #f0ece7 25%, #e8e2db 50%, #f0ece7 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    margin-top: 4px;
+}
+
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* --- Error state --- */
+.cal-error {
+    text-align: center;
+    padding: 2rem;
+    color: var(--terracotta);
+    font-size: var(--text-sm);
+}
+
+/* --- Mobile: dots-only at 480px --- */
+@media (max-width: 480px) {
+    .cal-day {
+        min-height: 32px;
+        padding: 0.2rem 0.25rem;
+    }
+
+    .chip-product,
+    .chip-diary {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        overflow: hidden;
+        font-size: 0;
+        padding: 0;
+        margin: 2px;
+        display: inline-block;
+    }
+
+    .chip-more {
+        display: none;
+    }
+
+    .cal-tooltip {
+        display: none !important;
+    }
+}
