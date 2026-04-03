@@ -290,6 +290,10 @@
             if (!res.ok) throw new Error();
             const data = await res.json();
             renderDiaries(data.diaries || []);
+            if (location.hash) {
+                const el = document.querySelector(location.hash);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
         } catch (e) {
             document.getElementById('diaryList').innerHTML = '<p>載入失敗，請重新整理</p>';
         } finally {
@@ -308,7 +312,7 @@
         el.innerHTML = `<div class="list-header"><h2>日記列表 <span class="count">共 ${diaries.length} 則</span></h2></div>
             <div class="diary-cards timeline-list">` +
             diaries.map(d => `
-            <article class="diary-card timeline-item">
+            <article class="diary-card timeline-item" id="diary-${d.id}">
                 <div class="timeline-dot"></div>
                 <div class="diary-card-body">
                     ${d.image_base64 ? `<div class="diary-image-wrapper"><img src="${d.image_base64}" alt="Diary Image" class="diary-thumbnail"></div>` : ''}
