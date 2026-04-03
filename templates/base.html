@@ -20,7 +20,12 @@
     {% if session.get('user_id') %}
     <nav class="nav-bar">
         <a href="/" class="logo">Pet Adorable Life</a>
-        <ul class="nav-links">
+        <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav-links" aria-label="切換導覽選單">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <ul class="nav-links" id="site-nav-links">
             <li><a href="/" {% if request.endpoint == 'index' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path><path d="M9.5 20v-5.5h5V20"></path></svg></span><span>首頁</span></a></li>
             <li><a href="/organize" {% if request.endpoint in ['organize', 'organize_edit'] %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M9 2.5h6a1 1 0 0 1 1 1V5H8V3.5a1 1 0 0 1 1-1Z"></path><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M8 10h8"></path><path d="M8 14h8"></path><path d="M8 18h5"></path></svg></span><span>Pet Life</span></a></li>
             <li><a href="/product/analyze" {% if request.endpoint == 'product_analyze_page' %}class="active"{% endif %}><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8h11l-1 11h-9z"></path><path d="M9 8a3 3 0 0 1 6 0"></path><path d="M9 8v-1"></path><path d="M15 8v-1"></path></svg></span><span>商品分析</span></a></li>
@@ -31,6 +36,26 @@
         </ul>
     </nav>
     {% endif %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const navBar = document.querySelector(".nav-bar");
+            const navToggle = document.querySelector(".nav-toggle");
+
+            if (!navBar || !navToggle) return;
+
+            navToggle.addEventListener("click", function () {
+                const isOpen = navBar.classList.toggle("nav-open");
+                navToggle.setAttribute("aria-expanded", String(isOpen));
+            });
+
+            window.addEventListener("resize", function () {
+                if (window.innerWidth > 820) {
+                    navBar.classList.remove("nav-open");
+                    navToggle.setAttribute("aria-expanded", "false");
+                }
+            });
+        });
+    </script>
     <main id="main-content">
     {% block content %}{% endblock %}
     </main>
