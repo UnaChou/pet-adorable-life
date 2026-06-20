@@ -1,9 +1,21 @@
 """Tests for authentication routes and the auth guard."""
+import logging
 import re
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from werkzeug.security import generate_password_hash
+
+from app import app as flask_app
+
+
+_MAIL_CONFIG = {
+    "MAIL_SERVER": "smtp.example.com",
+    "MAIL_PORT": 587,
+    "MAIL_USERNAME": "sender@example.com",
+    "MAIL_PASSWORD": "app-password",
+    "MAIL_DEFAULT_SENDER": "sender@example.com",
+}
 
 
 # ===== Auth guard =====
@@ -269,7 +281,7 @@ def test_forgot_password_creates_token_with_valid_csrf(client, mock_db):
     page = client.get("/forgot-password")
     csrf_token = _extract_csrf_token(page.get_data(as_text=True))
 
-    with patch("app.mail.send") as mock_send:
+    with patch.dict(flask_app.config, _MAIL_CONFIG), patch("app.mail.send") as mock_send:
         res = client.post("/forgot-password", data={
             "email": "user@example.com",
             "csrf_token": csrf_token,
@@ -351,13 +363,56 @@ def test_forgot_password_unknown_email_still_redirects(client, mock_db):
     page = client.get("/forgot-password")
     csrf_token = _extract_csrf_token(page.get_data(as_text=True))
 
-    res = client.post("/forgot-password", data={
-        "email": "nobody@example.com",
-        "csrf_token": csrf_token,
-    })
+    with patch.dict(flask_app.config, _MAIL_CONFIG):
+        res = client.post("/forgot-password", data={
+            "email": "nobody@example.com",
+            "csrf_token": csrf_token,
+        })
 
     assert res.status_code == 302
     mock_db.create_reset_token.assert_not_called()
+
+
+def test_forgot_password_missing_mail_config_shows_error_and_skips_db(client, mock_db):
+    page = client.get("/forgot-password")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+
+    with patch.dict(flask_app.config, {
+        "MAIL_USERNAME": "",
+        "MAIL_PASSWORD": "",
+        "MAIL_DEFAULT_SENDER": "",
+    }):
+        res = client.post("/forgot-password", data={
+            "email": "user@example.com",
+            "csrf_token": csrf_token,
+        }, follow_redirects=True)
+
+    assert res.status_code == 200
+    assert "系統信件設定未完成" in res.get_data(as_text=True)
+    mock_db.get_user_by_email.assert_not_called()
+
+
+def test_forgot_password_send_failure_is_logged(client, mock_db, caplog):
+    mock_db.get_user_by_email.return_value = {
+        "id": 8,
+        "email": "user@example.com",
+        "username": "user1",
+    }
+    mock_db.count_recent_reset_requests.return_value = 0
+    page = client.get("/forgot-password")
+    csrf_token = _extract_csrf_token(page.get_data(as_text=True))
+
+    with patch.dict(flask_app.config, _MAIL_CONFIG), patch("app.mail.send", side_effect=RuntimeError("smtp down")):
+        with caplog.at_level(logging.ERROR, logger="app"):
+            res = client.post("/forgot-password", data={
+                "email": "user@example.com",
+                "csrf_token": csrf_token,
+            })
+
+    assert res.status_code == 302
+    mock_db.create_reset_token.assert_called_once()
+    assert "Failed to send password reset email" in caplog.text
+    assert "u***@example.com" in caplog.text
 
 
 def test_forgot_password_invalid_email_format_still_redirects(client, mock_db):

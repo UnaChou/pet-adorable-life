@@ -54,6 +54,18 @@
     border-left: 3px solid var(--terracotta);
 }
 
+.auth-errors .auth-message-info {
+    background: rgba(125, 155, 118, 0.15);
+    color: var(--forest);
+    border-left-color: var(--sage);
+}
+
+.auth-errors .auth-message-error {
+    background: rgba(201, 123, 92, 0.15);
+    color: var(--terracotta);
+    border-left-color: var(--terracotta);
+}
+
 .auth-form {
     display: flex;
     flex-direction: column;

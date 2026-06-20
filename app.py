@@ -19,6 +19,12 @@ import model_connector
 import pet_model_config
 import db
 
+_LOG_LEVEL = getattr(logging, (os.getenv("LOG_LEVEL") or "INFO").upper(), logging.INFO)
+logging.basicConfig(
+    level=_LOG_LEVEL,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 logger = logging.getLogger(__name__)
@@ -52,7 +58,7 @@ app.config.update(
     MAIL_USE_TLS=os.getenv("MAIL_USE_TLS", "true").lower() == "true",
     MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER"),
+    MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER") or os.getenv("MAIL_USERNAME"),
 )
 mail = Mail(app)
 
@@ -60,6 +66,11 @@ _EXEMPT_ENDPOINTS = {"login", "register", "logout", "static", "forgot_password",
 
 _RESET_WINDOW_SECONDS = 300
 _RESET_MAX_REQUESTS_PER_IP = 10
+_PASSWORD_RESET_ACCEPTED_MESSAGE = (
+    "若此信箱已註冊且系統信件設定正常，您將收到重設連結；"
+    "若沒有收到，請檢查垃圾郵件或聯絡管理員。"
+)
+_PASSWORD_RESET_MAIL_CONFIG_MESSAGE = "系統信件設定未完成，暫時無法寄送重設連結，請聯絡管理員。"
 _reset_attempts_by_ip = defaultdict(deque)
 _reset_attempts_lock = Lock()
 
@@ -190,6 +201,22 @@ def _is_valid_email(email: str) -> bool:
     return bool(email and _EMAIL_RE.fullmatch(email))
 
 
+def _mask_email(email: str) -> str:
+    local, sep, domain = (email or "").partition("@")
+    if not sep:
+        return "<invalid>"
+    if len(local) <= 1:
+        masked_local = "*"
+    else:
+        masked_local = f"{local[0]}***"
+    return f"{masked_local}@{domain}"
+
+
+def _missing_mail_settings() -> list[str]:
+    required = ("MAIL_SERVER", "MAIL_PORT", "MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_DEFAULT_SENDER")
+    return [name for name in required if not str(app.config.get(name) or "").strip()]
+
+
 def _validate_register_inputs(username: str, email: str, password: str, confirm: str):
     if not username or len(username) > 100:
         return "帳號不得為空且長度須在 100 字以內"
@@ -272,7 +299,17 @@ def _validate_reset_token(token):
     return record, None
 
 
-def _send_password_reset_email(email: str, user_id: int, reset_url: str) -> None:
+def _send_password_reset_email(email: str, user_id: int, reset_url: str) -> bool:
+    missing_settings = _missing_mail_settings()
+    if missing_settings:
+        logger.error(
+            "Password reset email not sent because mail settings are missing (user_id=%s, recipient=%s, missing=%s).",
+            user_id,
+            _mask_email(email),
+            ",".join(missing_settings),
+        )
+        return False
+
     msg = Message(
         "重設您的密碼 - Pet Adorable Life",
         recipients=[email],
@@ -283,12 +320,19 @@ def _send_password_reset_email(email: str, user_id: int, reset_url: str) -> None
     )
     try:
         mail.send(msg)
-    except Exception:
-        logger.warning(
-            "Failed to send password reset email (user_id=%s).",
+        logger.info(
+            "Password reset email sent (user_id=%s, recipient=%s).",
             user_id,
-            exc_info=True,
+            _mask_email(email),
         )
+        return True
+    except Exception:
+        logger.exception(
+            "Failed to send password reset email (user_id=%s, recipient=%s).",
+            user_id,
+            _mask_email(email),
+        )
+        return False
 
 
 _ROLE_DISPLAY = {"read_only": "僅能檢視", "editor": "可編輯"}
@@ -318,18 +362,22 @@ def _send_pet_invite_email(invitee_email: str, inviter_username: str, pet_name: 
         return False
 
 
-def _request_password_reset(email: str) -> None:
+def _request_password_reset(email: str) -> str:
     user = db.get_user_by_email(email)
     if not user:
-        return
+        logger.info("Password reset requested for unknown email (recipient=%s).", _mask_email(email))
+        return "unknown_email"
     if db.count_recent_reset_requests(user["id"], since_minutes=60) >= 3:
-        return
+        logger.warning("Password reset request blocked by per-user limit (user_id=%s).", user["id"])
+        return "user_rate_limited"
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     expires_at = _utcnow_naive() + timedelta(hours=1)
     db.create_reset_token(user["id"], token_hash, expires_at)
     reset_url = url_for("reset_password", token=raw_token, _external=True)
-    _send_password_reset_email(email=email, user_id=user["id"], reset_url=reset_url)
+    if not _send_password_reset_email(email=email, user_id=user["id"], reset_url=reset_url):
+        return "send_failed"
+    return "sent"
 
 
 def _render_reset_password(token: str, error=None, status_code=None):
@@ -356,7 +404,7 @@ def _validate_reset_form_passwords(new_password: str, confirm: str):
 def forgot_password():
     if request.method == "POST":
         if not _validate_csrf_token("forgot_password"):
-            flash("表單已失效，請再試一次")
+            flash("表單已失效，請再試一次", "error")
             return _no_cache_response(render_template(
                 "forgot_password.html",
                 csrf_token=_issue_csrf_token("forgot_password"),
@@ -364,13 +412,33 @@ def forgot_password():
 
         remote_addr = (request.remote_addr or "unknown").strip() or "unknown"
         if _is_forgot_password_rate_limited(remote_addr):
-            flash("操作過於頻繁，請稍後再試。")
+            logger.warning("Password reset request blocked by IP limit (remote_addr=%s).", remote_addr)
+            flash("操作過於頻繁，請稍後再試。", "error")
             return redirect(url_for("forgot_password"))
 
         email = (request.form.get("email") or "").strip().lower()
-        if _is_valid_email(email):
-            _request_password_reset(email)
-        flash("若此信箱已註冊，您將收到重設連結，請檢查您的信箱。")
+        if not _is_valid_email(email):
+            logger.info("Password reset submitted with invalid email format (remote_addr=%s).", remote_addr)
+            flash("請輸入有效的電子信箱。", "error")
+            return redirect(url_for("forgot_password"))
+
+        missing_settings = _missing_mail_settings()
+        if missing_settings:
+            logger.error(
+                "Password reset email cannot be sent because mail settings are missing (remote_addr=%s, missing=%s).",
+                remote_addr,
+                ",".join(missing_settings),
+            )
+            flash(_PASSWORD_RESET_MAIL_CONFIG_MESSAGE, "error")
+            return redirect(url_for("forgot_password"))
+
+        reset_status = _request_password_reset(email)
+        if reset_status == "send_failed":
+            logger.error("Password reset request accepted but email send failed (recipient=%s).", _mask_email(email))
+        else:
+            logger.info("Password reset request processed (status=%s, recipient=%s).", reset_status, _mask_email(email))
+
+        flash(_PASSWORD_RESET_ACCEPTED_MESSAGE, "info")
         return redirect(url_for("forgot_password"))
     return _no_cache_response(render_template(
         "forgot_password.html",

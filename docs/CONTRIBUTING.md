@@ -7,11 +7,11 @@
 | Tool | Purpose | Version |
 |------|---------|---------|
 | Docker & Docker Compose | Run MySQL and the app container | Any recent |
-| Python | Local development (optional) | ≥ 3.14 (local) / 3.11 (Docker) |
+| Python | Local development (optional) | ≥ 3.13 (local) / 3.11 (Docker) |
 | Poetry | Dependency management (local only) | ≥ 2.0 |
 | Ollama | External AI inference server | Any with `qwen3-vl:8b` model |
 
-> **Note:** The Dockerfile uses Python 3.11-slim with plain `pip install`. `pyproject.toml` requires Python ≥ 3.14 for local Poetry-based development. These are different environments.
+> **Note:** The Dockerfile uses Python 3.11-slim with plain `pip install`. `pyproject.toml` requires Python ≥ 3.13 for local Poetry-based development. These are different environments.
 
 ---
 

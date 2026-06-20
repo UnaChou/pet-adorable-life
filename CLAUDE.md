@@ -22,7 +22,7 @@ poetry install       # Install dependencies
 poetry add <pkg>     # Add a new dependency
 ```
 
-Note: `pyproject.toml` requires Python >=3.14, but the `Dockerfile` uses Python 3.11-slim with `pip install` (not Poetry).
+Note: `pyproject.toml` requires Python >=3.13, but the `Dockerfile` uses Python 3.11-slim with `pip install` (not Poetry).
 
 **Run tests (requires Docker container running):**
 ```bash

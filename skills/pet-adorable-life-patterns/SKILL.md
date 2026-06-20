@@ -111,7 +111,7 @@ python app.py
 ```
 
 Notes:
-- Docker image uses Python 3.11 + pip; local Poetry requires Python >= 3.14 (see `pyproject.toml` and `Dockerfile`).
+- Docker image uses Python 3.11 + pip; local Poetry requires Python >= 3.13 (see `pyproject.toml` and `Dockerfile`).
 - Ollama is external to compose; configure with `OLLAMA_URL`.
 - Use `SECRET_KEY` in production; the repo includes a dev default.
 
