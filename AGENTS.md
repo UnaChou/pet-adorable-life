@@ -34,7 +34,7 @@ python app.py
 ```
 
 Notes:
-- `pyproject.toml` requires Python `>=3.14` for local Poetry installs.
+- `pyproject.toml` requires Python `>=3.13` for local Poetry installs.
 - `Dockerfile` uses Python 3.11, so local and container Python versions differ.
 - The app requires `SECRET_KEY` outside debug mode.
 
