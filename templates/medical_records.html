@@ -401,6 +401,8 @@
             btn.addEventListener('click', function () {
                 var val = btn.dataset.pet;
                 currentPetFilter = val === 'null' ? null : parseInt(val);
+                var recordSel = document.getElementById('recordPetId');
+                if (recordSel && currentPetFilter) recordSel.value = currentPetFilter;
                 renderPetFilter();
                 loadRecords();
                 loadLatestSummary();
