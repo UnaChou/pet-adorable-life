@@ -2,9 +2,39 @@
 MySQL 資料庫連線與商品 CRUD 操作
 """
 import os
+import gzip
+import base64
 import pymysql
 from contextlib import contextmanager
 from pymysql.cursors import DictCursor
+
+
+_PDF_PREFIX = "gz:"
+
+
+def _compress_pdf_data(image_base64):
+    """如果是 PDF data URL，gzip 壓縮後加 gz: 前綴。非 PDF 原樣回傳。"""
+    if not image_base64 or not image_base64.startswith("data:application/pdf"):
+        return image_base64
+    try:
+        raw = base64.b64decode(image_base64.split(",", 1)[1])
+        compressed = gzip.compress(raw, compresslevel=9)
+        return _PDF_PREFIX + base64.b64encode(compressed).decode("ascii")
+    except Exception:
+        return image_base64
+
+
+def _decompress_pdf_data(image_base64):
+    """如果有 gz: 前綴，解壓縮還原 PDF data URL。舊格式原樣回傳。"""
+    if not image_base64 or not image_base64.startswith(_PDF_PREFIX):
+        return image_base64
+    try:
+        compressed = base64.b64decode(image_base64[len(_PDF_PREFIX):])
+        raw = gzip.decompress(compressed)
+        b64 = base64.b64encode(raw).decode("ascii")
+        return "data:application/pdf;base64," + b64
+    except Exception:
+        return image_base64
 
 
 def _get_db_config():
@@ -135,6 +165,8 @@ def _apply_relationship_columns(cur):
     _guard_alter(cur, "ALTER TABLE pets ADD COLUMN user_id INT AFTER id")
     _guard_alter(cur, "ALTER TABLE products ADD COLUMN user_id INT AFTER pet_id")
     _guard_alter(cur, "ALTER TABLE pet_diaries ADD COLUMN user_id INT AFTER pet_id")
+    _guard_alter(cur, "ALTER TABLE medical_records ADD COLUMN pet_id INT AFTER image_base64")
+    _guard_alter(cur, "ALTER TABLE medical_records ADD COLUMN user_id INT AFTER pet_id")
 
 
 def _init_pet_shares_table(cur):
@@ -152,6 +184,34 @@ def _init_pet_shares_table(cur):
         )
     """)
     _guard_alter(cur, "ALTER TABLE pet_shares ADD COLUMN role ENUM('read_only', 'editor') NOT NULL DEFAULT 'read_only' AFTER shared_with_user_id", ignore_codes=(1060,))
+
+
+def _init_medical_records_table(cur):
+    """建立 medical_records 表。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS medical_records (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(500),
+            description TEXT,
+            occurred_date DATE,
+            image_base64 LONGTEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    """)
+
+
+def _init_pet_medical_summaries_table(cur):
+    """建立 pet_medical_summaries 表（每次 AI 摘要的紀錄）。"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pet_medical_summaries (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pet_id INT NOT NULL,
+            summary_text TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_pet_id (pet_id)
+        )
+    """)
 
 
 def _init_pet_share_invitations_table(cur):
@@ -179,6 +239,8 @@ def init_db():
         with conn.cursor() as cur:
             _init_products_table(cur)
             _init_pet_diaries_table(cur)
+            _init_medical_records_table(cur)
+            _init_pet_medical_summaries_table(cur)
             _init_pets_table(cur)
             _init_users_table(cur)
             _init_password_reset_tokens_table(cur)
@@ -640,7 +702,7 @@ def update_pet(pet_id, name, breed="", birthday=None, photo_base64=None, user_id
 
 
 def remove_pet(pet_id, user_id=None):
-    """刪除寵物，並清除相關商品/日記歸屬及共同飼養記錄。"""
+    """刪除寵物，並清除相關商品/日記/病歷歸屬及共同飼養記錄。"""
     with get_connection() as conn:
         with conn.cursor() as cur:
             if user_id is not None:
@@ -652,6 +714,14 @@ def remove_pet(pet_id, user_id=None):
                     "UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s",
                     (pet_id,),
                 )
+                cur.execute(
+                    "UPDATE medical_records SET pet_id = NULL WHERE pet_id = %s",
+                    (pet_id,),
+                )
+                cur.execute(
+                    "DELETE FROM pet_medical_summaries WHERE pet_id = %s",
+                    (pet_id,),
+                )
                 cur.execute("DELETE FROM pet_share_invitations WHERE pet_id = %s", (pet_id,))
                 cur.execute("DELETE FROM pet_shares WHERE pet_id = %s", (pet_id,))
                 cur.execute(
@@ -661,6 +731,8 @@ def remove_pet(pet_id, user_id=None):
             else:
                 cur.execute("UPDATE products SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
                 cur.execute("UPDATE pet_diaries SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
+                cur.execute("UPDATE medical_records SET pet_id = NULL WHERE pet_id = %s", (pet_id,))
+                cur.execute("DELETE FROM pet_medical_summaries WHERE pet_id = %s", (pet_id,))
                 cur.execute("DELETE FROM pet_share_invitations WHERE pet_id = %s", (pet_id,))
                 cur.execute("DELETE FROM pet_shares WHERE pet_id = %s", (pet_id,))
                 cur.execute("DELETE FROM pets WHERE id = %s", (pet_id,))
@@ -1012,3 +1084,283 @@ def remove_diaries(diary_ids, user_id=None):
                     f"DELETE FROM pet_diaries WHERE id IN ({placeholders})",
                     diary_ids,
                 )
+
+
+# ========== Medical Records ==========
+
+
+def get_all_medical_records(pet_id=None, user_id=None):
+    """取得病歷清單。pet_id=0 表示未指定寵物；user_id 限定擁有者（含共享寵物與自有寵物）。
+    回傳包含 pet_name，即使寵物已被刪除也會保留當時的寵物名稱。
+    """
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                user_clause = (
+                    " AND (r.user_id = %s"
+                    " OR r.pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s)"
+                    " OR r.pet_id IN (SELECT id FROM pets WHERE user_id = %s))"
+                )
+                user_params = (user_id, user_id, user_id)
+            else:
+                user_clause = ""
+                user_params = ()
+            if pet_id == 0:
+                cur.execute(
+                    f"SELECT r.id, r.title, r.description, r.occurred_date, r.image_base64,"
+                    f" r.pet_id, r.user_id, r.created_at, r.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM medical_records r"
+                    f" LEFT JOIN pets pet ON r.pet_id = pet.id"
+                    f" WHERE r.pet_id IS NULL{user_clause}"
+                    f" ORDER BY r.occurred_date DESC, r.id DESC",
+                    user_params,
+                )
+            elif pet_id:
+                cur.execute(
+                    f"SELECT r.id, r.title, r.description, r.occurred_date, r.image_base64,"
+                    f" r.pet_id, r.user_id, r.created_at, r.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM medical_records r"
+                    f" LEFT JOIN pets pet ON r.pet_id = pet.id"
+                    f" WHERE r.pet_id = %s{user_clause}"
+                    f" ORDER BY r.occurred_date DESC, r.id DESC",
+                    (pet_id,) + user_params,
+                )
+            else:
+                cur.execute(
+                    f"SELECT r.id, r.title, r.description, r.occurred_date, r.image_base64,"
+                    f" r.pet_id, r.user_id, r.created_at, r.updated_at,"
+                    f" COALESCE(pet.name, '（已移除）') as pet_name"
+                    f" FROM medical_records r"
+                    f" LEFT JOIN pets pet ON r.pet_id = pet.id"
+                    f" WHERE 1=1{user_clause}"
+                    f" ORDER BY r.occurred_date DESC, r.id DESC",
+                    user_params,
+                )
+            rows = cur.fetchall()
+    return [
+        {
+            "id": r["id"],
+            "title": r.get("title") or "",
+            "description": r["description"] or "",
+            "occurred_date": str(r["occurred_date"]) if r.get("occurred_date") else "",
+            "image_base64": _decompress_pdf_data(r.get("image_base64") or ""),
+            "pet_id": r.get("pet_id"),
+            "pet_name": r.get("pet_name") or "",
+            "user_id": r.get("user_id"),
+            "created_at": r["created_at"],
+            "updated_at": r.get("updated_at"),
+        }
+        for r in rows
+    ]
+
+
+def add_medical_record(title, description, occurred_date, image_base64="", pet_id=None, user_id=None):
+    """新增病歷，回傳 id。"""
+    image_base64 = _compress_pdf_data(image_base64 or "")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO medical_records"
+                " (title, description, occurred_date, image_base64, pet_id, user_id)"
+                " VALUES (%s, %s, %s, %s, %s, %s)",
+                (
+                    title or "",
+                    description or "",
+                    occurred_date or None,
+                    image_base64,
+                    pet_id or None,
+                    user_id,
+                ),
+            )
+            return cur.lastrowid
+
+
+def get_medical_record(record_id, user_id=None):
+    """依 id 取得單一病歷，不存在或無權限則回傳 None。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                cur.execute(
+                    "SELECT id, title, description, occurred_date, image_base64,"
+                    " pet_id, user_id, created_at, updated_at"
+                    " FROM medical_records WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))",
+                    (record_id, user_id, user_id, user_id),
+                )
+            else:
+                cur.execute(
+                    "SELECT id, title, description, occurred_date, image_base64,"
+                    " pet_id, user_id, created_at, updated_at"
+                    " FROM medical_records WHERE id = %s",
+                    (record_id,),
+                )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "title": row.get("title") or "",
+        "description": row["description"] or "",
+        "occurred_date": str(row["occurred_date"]) if row.get("occurred_date") else "",
+        "image_base64": _decompress_pdf_data(row.get("image_base64") or ""),
+        "pet_id": row.get("pet_id"),
+        "user_id": row.get("user_id"),
+        "created_at": row["created_at"],
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def get_medical_record_if_editable(record_id, user_id=None):
+    """依 id 取得單一病歷，只有擁有編輯權限時才回傳。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                cur.execute(
+                    "SELECT id, title, description, occurred_date, image_base64,"
+                    " pet_id, user_id, created_at, updated_at"
+                    " FROM medical_records WHERE id = %s"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    (record_id, user_id, user_id, user_id),
+                )
+            else:
+                cur.execute(
+                    "SELECT id, title, description, occurred_date, image_base64,"
+                    " pet_id, user_id, created_at, updated_at"
+                    " FROM medical_records WHERE id = %s",
+                    (record_id,),
+                )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "title": row.get("title") or "",
+        "description": row["description"] or "",
+        "occurred_date": str(row["occurred_date"]) if row.get("occurred_date") else "",
+        "image_base64": _decompress_pdf_data(row.get("image_base64") or ""),
+        "pet_id": row.get("pet_id"),
+        "user_id": row.get("user_id"),
+        "created_at": row["created_at"],
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def update_medical_record(record_id, title, description, occurred_date, image_base64=None, pet_id=None, user_id=None):
+    """更新病歷。image_base64=None 表示不更新圖片。"""
+    if image_base64 is not None:
+        image_base64 = _compress_pdf_data(image_base64 or "")
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            uid_clause = " AND user_id = %s" if user_id is not None else ""
+            uid_param = (user_id,) if user_id is not None else ()
+            if image_base64 is not None:
+                cur.execute(
+                    f"UPDATE medical_records SET title=%s, description=%s, occurred_date=%s,"
+                    f" image_base64=%s, pet_id=%s"
+                    f" WHERE id=%s{uid_clause}",
+                    (title or "", description or "", occurred_date or None, image_base64 or "", pet_id or None, record_id) + uid_param,
+                )
+            else:
+                cur.execute(
+                    f"UPDATE medical_records SET title=%s, description=%s, occurred_date=%s,"
+                    f" pet_id=%s"
+                    f" WHERE id=%s{uid_clause}",
+                    (title or "", description or "", occurred_date or None, pet_id or None, record_id) + uid_param,
+                )
+
+
+def remove_medical_records(record_ids, user_id=None):
+    """批次刪除病歷。有權限的條件：自己建立或是病歷所屬寵物的擁有者。"""
+    if not record_ids:
+        return
+    placeholders = ", ".join(["%s"] * len(record_ids))
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                cur.execute(
+                    f"DELETE FROM medical_records WHERE id IN ({placeholders})"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s AND role = 'editor'))",
+                    list(record_ids) + [user_id, user_id, user_id],
+                )
+            else:
+                cur.execute(
+                    f"DELETE FROM medical_records WHERE id IN ({placeholders})",
+                    record_ids,
+                )
+
+
+def get_medical_records_for_summary(pet_id, user_id=None):
+    """取得指定寵物的所有病歷文字與日期，用於 AI 摘要（不含圖片）。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if user_id is not None:
+                cur.execute(
+                    "SELECT title, description, occurred_date"
+                    " FROM medical_records"
+                    " WHERE (pet_id = %s OR (pet_id IS NULL AND %s IS NULL))"
+                    " AND (user_id = %s"
+                    " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
+                    " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))"
+                    " ORDER BY occurred_date DESC, id DESC",
+                    (pet_id, pet_id, user_id, user_id, user_id),
+                )
+            else:
+                cur.execute(
+                    "SELECT title, description, occurred_date"
+                    " FROM medical_records"
+                    " WHERE pet_id = %s OR (pet_id IS NULL AND %s IS NULL)"
+                    " ORDER BY occurred_date DESC, id DESC",
+                    (pet_id, pet_id),
+                )
+            rows = cur.fetchall()
+    return [
+        {
+            "title": r.get("title") or "",
+            "description": r["description"] or "",
+            "occurred_date": str(r["occurred_date"]) if r.get("occurred_date") else "",
+        }
+        for r in rows
+    ]
+
+
+# ========== Pet Medical Summaries ==========
+
+
+def save_medical_summary(pet_id, summary_text):
+    """儲存 AI 摘要，回傳 id。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO pet_medical_summaries (pet_id, summary_text) VALUES (%s, %s)",
+                (pet_id, summary_text),
+            )
+            return cur.lastrowid
+
+
+def get_latest_medical_summary(pet_id):
+    """取得指定寵物的最新摘要，不存在則回傳 None。"""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, pet_id, summary_text, created_at"
+                " FROM pet_medical_summaries WHERE pet_id = %s"
+                " ORDER BY id DESC LIMIT 1",
+                (pet_id,),
+            )
+            row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "pet_id": row["pet_id"],
+        "summary_text": row["summary_text"],
+        "created_at": row["created_at"],
+    }

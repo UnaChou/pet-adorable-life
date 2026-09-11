@@ -1,0 +1,944 @@
+{% extends "base.html" %}
+
+{% block title %}病歷紀錄 - Pet Adorable Life{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/medical_records.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if (window.pdfjsLib) { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }</script>
+{% endblock %}
+
+{% block content %}
+<div class="medical-page">
+    <section class="medical-hero">
+        <h1>🏥 病歷紀錄</h1>
+        <p>紀錄寵物的就診、用藥與健康狀況，AI 幫你整理重點</p>
+    </section>
+
+    <!-- Pet picker -->
+    <div class="pet-picker-strip" id="petPickerStrip"></div>
+
+    <!-- No pets prompt -->
+    <div class="no-pets-prompt hidden" id="noPetsPrompt">
+        <p>您還沒有新增寵物，請先新增寵物才能建立病歷紀錄。</p>
+        <a href="/pets" class="btn btn-primary">🐾 前往新增寵物</a>
+    </div>
+
+    <!-- Tabs: AI 摘要 / 新增病歷 -->
+    <div class="medical-tabs-container">
+        <div class="medical-tabs-header">
+            <button class="medical-tab-btn active" data-tab="tab-summary">📋 AI 摘要</button>
+            <button class="medical-tab-btn" data-tab="tab-new">➕ 新增病歷</button>
+        </div>
+
+        <!-- Tab: AI 摘要 -->
+        <div class="medical-tab-content active" id="tab-summary">
+            <div class="summary-content" id="summaryContent">
+                <div class="empty-state" id="summaryEmpty">
+                    <span class="empty-icon">📋</span>
+                    <p>選擇寵物後，按下「AI 幫我摘要」即可產生醫療紀錄統整</p>
+                </div>
+                <div class="summary-text hidden" id="summaryText"></div>
+            </div>
+            <div class="loading hidden" id="summaryLoading">
+                <div class="spinner"></div>
+                <p>AI 摘要中...</p>
+            </div>
+            <button type="button" class="btn btn-accent btn-summarize" id="btnSummarize">🤖 AI 幫我摘要</button>
+        </div>
+
+        <!-- Tab: 新增病歷 -->
+        <div class="medical-tab-content" id="tab-new">
+            <div class="medical-upload">
+                <div class="camera-header-actions">
+                    <button type="button" class="btn btn-accent btn-sm" id="btnCamera">📷 開啟相機</button>
+                </div>
+                <div class="upload-container">
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,application/pdf" hidden>
+                        <input type="file" id="cameraFileInput" accept="image/*" capture="environment" hidden>
+                        <div class="upload-placeholder" id="uploadPlaceholder">
+                            <span class="upload-icon">📷</span>
+                            <p>點擊或拖曳圖片到此處</p>
+                            <p class="upload-hint">支援 PNG、JPG、WebP、GIF、PDF</p>
+                        </div>
+                        <div class="upload-preview hidden" id="uploadPreview">
+                            <img id="previewImg" src="" alt="預覽">
+                            <video id="cameraVideo" autoplay playsinline class="hidden"></video>
+                            <canvas id="cameraCanvas" class="hidden"></canvas>
+                        </div>
+                    </div>
+                    <div class="camera-controls">
+                        <button type="button" class="btn btn-secondary hidden" id="btnCancelCamera">✕ 取消</button>
+                        <button type="button" class="btn btn-accent btn-lg hidden" id="btnCapture">📸 拍照</button>
+                    </div>
+                </div>
+                <div class="medical-ai-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="useAiAnalyze" checked>
+                        <span class="toggle-text">上傳後自動 AI 截取資訊</span>
+                    </label>
+                </div>
+                <button type="button" class="btn btn-primary" id="btnAnalyze" disabled>AI 分析</button>
+            </div>
+
+            <section class="medical-result hidden" id="resultSection">
+                <h3>病歷內容 <span class="edit-hint">（可編修後儲存）</span></h3>
+                <div class="medical-edit-form">
+                    <input type="hidden" id="imageBase64">
+                    <div class="medical-form-card">
+                        <div class="form-group">
+                            <label for="recordTitle">標題</label>
+                            <input type="text" id="recordTitle" placeholder="例如：感冒就診、皮膚治療">
+                        </div>
+                        <div class="form-group">
+                            <label for="recordDescription">描述</label>
+                            <textarea id="recordDescription" rows="5" placeholder="紀錄診斷內容、用藥、注意事項等..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="recordDate">發生日期</label>
+                            <input type="date" id="recordDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="recordPetId">哪隻寵物 <span class="required">*</span></label>
+                            <select id="recordPetId"><option value="">請選擇寵物</option></select>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-save-record" id="btnSaveRecord">💾 儲存</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="medical-error hidden" id="errorSection">
+                <p class="error-msg" id="errorMsg"></p>
+            </section>
+
+            <div class="loading hidden" id="loading">
+                <div class="spinner"></div>
+                <p id="loadingText">AI 分析中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit modal -->
+    <div class="modal-overlay hidden" id="editModal">
+        <div class="modal-content">
+            <h3>編輯病歷</h3>
+            <input type="hidden" id="editRecordId">
+            <div class="medical-edit-form">
+                <div class="form-group">
+                    <label for="editTitle">標題</label>
+                    <input type="text" id="editTitle">
+                </div>
+                <div class="form-group">
+                    <label for="editDescription">描述</label>
+                    <textarea id="editDescription" rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editDate">發生日期</label>
+                    <input type="date" id="editDate">
+                </div>
+                <div class="form-group">
+                    <label for="editPetId">哪隻寵物</label>
+                    <select id="editPetId"><option value="">未指定</option></select>
+                </div>
+                <div class="edit-image-section">
+                    <label class="form-label">圖片</label>
+                    <div class="edit-image-preview" id="editImagePreview"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnChangeEditImage">更換圖片</button>
+                    <input type="hidden" id="editImageBase64">
+                    <input type="file" id="editFileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,application/pdf" hidden>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelEdit">取消</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveEdit">💾 儲存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record list -->
+    <section class="medical-list-section">
+        <div class="list-header">
+            <h2>病歷列表 <span class="count" id="recordCount">共 0 筆</span></h2>
+        </div>
+        <div class="medical-records-list timeline-list" id="recordsList">
+            <div class="empty-state" id="emptyState">
+                <span class="empty-icon">🏥</span>
+                <p>尚無病歷紀錄，請從上方新增</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- PDF Viewer Modal -->
+    <div class="pdf-viewer-overlay hidden" id="pdfViewer">
+        <div class="pdf-viewer-header">
+            <span class="pdf-viewer-title" id="pdfViewerTitle"></span>
+            <div class="pdf-viewer-controls">
+                <button type="button" class="pdf-viewer-btn" id="pdfPrevPage" title="上一頁">◀</button>
+                <span class="pdf-page-info" id="pdfPageInfo">1 / 1</span>
+                <button type="button" class="pdf-viewer-btn" id="pdfNextPage" title="下一頁">▶</button>
+                <button type="button" class="pdf-viewer-btn" id="pdfZoomOut" title="縮小">−</button>
+                <span class="pdf-zoom-info" id="pdfZoomInfo">100%</span>
+                <button type="button" class="pdf-viewer-btn" id="pdfZoomIn" title="放大">+</button>
+                <button type="button" class="pdf-viewer-btn pdf-viewer-close" id="pdfCloseViewer" title="關閉">✕</button>
+            </div>
+        </div>
+        <div class="pdf-viewer-body" id="pdfViewerBody">
+            <canvas id="pdfViewerCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const currentUserId = {{ session.get('user_id') | tojson }};
+    let allPets = [];
+    let currentPetFilter = null;
+    let allRecords = [];
+
+    // DOM refs
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const btnCamera = document.getElementById('btnCamera');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const previewImg = document.getElementById('previewImg');
+    const cameraVideo = document.getElementById('cameraVideo');
+    const cameraCanvas = document.getElementById('cameraCanvas');
+    const btnCapture = document.getElementById('btnCapture');
+    const btnCancelCamera = document.getElementById('btnCancelCamera');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const resultSection = document.getElementById('resultSection');
+    const recordTitle = document.getElementById('recordTitle');
+    const recordDescription = document.getElementById('recordDescription');
+    const recordDate = document.getElementById('recordDate');
+    const imageBase64Input = document.getElementById('imageBase64');
+    const errorSection = document.getElementById('errorSection');
+    const errorMsg = document.getElementById('errorMsg');
+    const loading = document.getElementById('loading');
+    const loadingText = document.getElementById('loadingText');
+    const useAiAnalyze = document.getElementById('useAiAnalyze');
+    const recordsList = document.getElementById('recordsList');
+    const emptyState = document.getElementById('emptyState');
+    const recordCount = document.getElementById('recordCount');
+    const summaryContent = document.getElementById('summaryContent');
+    const summaryEmpty = document.getElementById('summaryEmpty');
+    const summaryText = document.getElementById('summaryText');
+    const summaryLoading = document.getElementById('summaryLoading');
+
+    let selectedFile = null;
+    let mediaStream = null;
+
+    // ---- PDF.js helpers ----
+    function isPdfDataUrl(s) { return s && s.startsWith('data:application/pdf'); }
+
+    function pdfDataUrlToBytes(dataUrl) {
+        var parts = dataUrl.split(',');
+        return Uint8Array.from(atob(parts[1]), function (c) { return c.charCodeAt(0); });
+    }
+
+    async function renderPdfFirstPage(dataUrl, maxWidth) {
+        if (!window.pdfjsLib) return null;
+        try {
+            var data = pdfDataUrlToBytes(dataUrl);
+            var doc = await pdfjsLib.getDocument({ data: data }).promise;
+            var page = await doc.getPage(1);
+            var scale = (maxWidth || 280) / page.getViewport({ scale: 1 }).width;
+            var viewport = page.getViewport({ scale: scale });
+            var canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+            var url = canvas.toDataURL('image/jpeg', 0.8);
+            doc.destroy();
+            return url;
+        } catch (e) { console.error('PDF render first page failed:', e); return null; }
+    }
+
+    async function renderPdfAllPages(dataUrl, maxWidth) {
+        if (!window.pdfjsLib) return [];
+        try {
+            var data = pdfDataUrlToBytes(dataUrl);
+            var doc = await pdfjsLib.getDocument({ data: data }).promise;
+            var results = [];
+            for (var i = 1; i <= doc.numPages; i++) {
+                var page = await doc.getPage(i);
+                var scale = (maxWidth || 280) / page.getViewport({ scale: 1 }).width;
+                var viewport = page.getViewport({ scale: scale });
+                var canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+                results.push({ pageNum: i, dataUrl: canvas.toDataURL('image/jpeg', 0.8), width: viewport.width, height: viewport.height });
+            }
+            doc.destroy();
+            return results;
+        } catch (e) { console.error('PDF render all pages failed:', e); return []; }
+    }
+
+    // ---- PDF Viewer ----
+    var pdfViewer = document.getElementById('pdfViewer');
+    var pdfViewerCanvas = document.getElementById('pdfViewerCanvas');
+    var pdfPageInfo = document.getElementById('pdfPageInfo');
+    var pdfZoomInfo = document.getElementById('pdfZoomInfo');
+    var pdfViewerTitle = document.getElementById('pdfViewerTitle');
+    var viewerDoc = null;
+    var viewerPages = [];
+    var viewerCurrentPage = 1;
+    var viewerTotalPages = 0;
+    var viewerScale = 1.5;
+
+    async function openPdfViewer(dataUrl, title) {
+        if (!window.pdfjsLib) { alert('PDF 瀏覽器不支援，請更新瀏覽器'); return; }
+        pdfViewerTitle.textContent = title || 'PDF 預覽';
+        pdfViewer.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        try {
+            var data = pdfDataUrlToBytes(dataUrl);
+            viewerDoc = await pdfjsLib.getDocument({ data: data }).promise;
+            viewerTotalPages = viewerDoc.numPages;
+            viewerCurrentPage = 1;
+            viewerScale = 1.5;
+            await renderViewerPage();
+        } catch (e) {
+            console.error('PDF viewer open failed:', e);
+            alert('PDF 開啟失敗');
+            closePdfViewer();
+        }
+    }
+
+    async function renderViewerPage() {
+        if (!viewerDoc) return;
+        var page = await viewerDoc.getPage(viewerCurrentPage);
+        var viewport = page.getViewport({ scale: viewerScale });
+        pdfViewerCanvas.width = viewport.width;
+        pdfViewerCanvas.height = viewport.height;
+        await page.render({ canvasContext: pdfViewerCanvas.getContext('2d'), viewport: viewport }).promise;
+        pdfPageInfo.textContent = viewerCurrentPage + ' / ' + viewerTotalPages;
+        pdfZoomInfo.textContent = Math.round(viewerScale * 100 / 1.5) + '%';
+    }
+
+    function closePdfViewer() {
+        pdfViewer.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (viewerDoc) { viewerDoc.destroy(); viewerDoc = null; }
+        viewerPages = [];
+        viewerCurrentPage = 1;
+        viewerTotalPages = 0;
+    }
+
+    document.getElementById('pdfCloseViewer').addEventListener('click', closePdfViewer);
+    pdfViewer.addEventListener('click', function (e) { if (e.target === pdfViewer) closePdfViewer(); });
+
+    document.getElementById('pdfPrevPage').addEventListener('click', async function () {
+        if (viewerCurrentPage > 1) { viewerCurrentPage--; await renderViewerPage(); }
+    });
+    document.getElementById('pdfNextPage').addEventListener('click', async function () {
+        if (viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; await renderViewerPage(); }
+    });
+    document.getElementById('pdfZoomIn').addEventListener('click', async function () {
+        if (viewerScale < 4) { viewerScale = Math.min(4, viewerScale + 0.3); await renderViewerPage(); }
+    });
+    document.getElementById('pdfZoomOut').addEventListener('click', async function () {
+        if (viewerScale > 0.5) { viewerScale = Math.max(0.5, viewerScale - 0.3); await renderViewerPage(); }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (pdfViewer.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closePdfViewer();
+        else if (e.key === 'ArrowLeft' && viewerCurrentPage > 1) { viewerCurrentPage--; renderViewerPage(); }
+        else if (e.key === 'ArrowRight' && viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; renderViewerPage(); }
+    });
+
+    // ---- Helper ----
+    function todayStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    recordDate.value = todayStr();
+
+    // ---- Tab switching ----
+    var tabBtns = document.querySelectorAll('.medical-tab-btn');
+    var tabContents = document.querySelectorAll('.medical-tab-content');
+    tabBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            tabBtns.forEach(function (b) { b.classList.remove('active'); });
+            tabContents.forEach(function (c) { c.classList.remove('active'); });
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+    });
+
+    // ---- Pet picker ----
+    var noPetsPrompt = document.getElementById('noPetsPrompt');
+
+    async function loadPets() {
+        try {
+            var res = await fetch('/api/pets');
+            if (!res.ok) throw new Error();
+            var data = await res.json();
+            allPets = data.pets || [];
+        } catch (e) { allPets = []; }
+        if (allPets.length === 0) {
+            noPetsPrompt.classList.remove('hidden');
+        } else {
+            noPetsPrompt.classList.add('hidden');
+        }
+        renderPetFilter();
+        populatePetSelects();
+    }
+
+    function renderPetFilter() {
+        var strip = document.getElementById('petPickerStrip');
+        var chips = [{ id: null, label: '全部', photo: null, isAll: true }, ...allPets.map(function (p) { return { id: p.id, label: p.name, photo: p.photo_base64 || null, isAll: false }; })];
+        strip.innerHTML = chips.map(function (c) {
+            return '<button class="pet-chip ' + (c.isAll ? 'pet-chip-all' : '') + ' ' + (c.id === currentPetFilter ? 'active' : '') + '" data-pet="' + (c.id === null ? 'null' : c.id) + '">' +
+                '<div class="pet-chip-avatar">' + (c.photo ? '<img src="' + c.photo + '" alt="' + c.label + '">' : '🐾') + '</div>' +
+                '<span class="pet-chip-name">' + c.label + '</span>' +
+            '</button>';
+        }).join('');
+        strip.querySelectorAll('.pet-chip').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var val = btn.dataset.pet;
+                currentPetFilter = val === 'null' ? null : parseInt(val);
+                renderPetFilter();
+                loadRecords();
+                loadLatestSummary();
+            });
+        });
+    }
+
+    function populatePetSelects() {
+        var recordSel = document.getElementById('recordPetId');
+        if (recordSel) {
+            var curRecord = recordSel.value;
+            recordSel.innerHTML = '<option value="">請選擇寵物</option>' +
+                allPets.map(function (p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join('');
+            recordSel.value = curRecord;
+        }
+        var editSel = document.getElementById('editPetId');
+        if (editSel) {
+            var curEdit = editSel.value;
+            editSel.innerHTML = '<option value="">未指定</option>' +
+                allPets.map(function (p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join('');
+            editSel.value = curEdit;
+        }
+    }
+
+    function petFilterQuery() {
+        if (currentPetFilter === null) return '';
+        return '?pet_id=' + currentPetFilter;
+    }
+
+    function petName(pet_id, pet_name) {
+        if (pet_name) return pet_name;
+        var p = allPets.find(function (x) { return x.id === pet_id; });
+        return p ? p.name : '';
+    }
+
+    // ---- Camera / Upload ----
+    if (btnCamera) {
+        btnCamera.addEventListener('click', async function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var canUse = window.isSecureContext && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            if (!canUse) { document.getElementById('cameraFileInput').click(); return; }
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                cameraVideo.srcObject = mediaStream;
+                cameraVideo.classList.remove('hidden');
+                previewImg.classList.add('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                uploadPreview.classList.remove('hidden');
+                btnCapture.classList.remove('hidden');
+                btnCancelCamera.classList.remove('hidden');
+                btnAnalyze.disabled = true;
+            } catch (err) { alert('無法開啟相機，請確保已授權相機權限'); }
+        });
+    }
+
+    if (btnCapture) {
+        btnCapture.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var ctx = cameraCanvas.getContext('2d');
+            cameraCanvas.width = cameraVideo.videoWidth;
+            cameraCanvas.height = cameraVideo.videoHeight;
+            ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+            cameraCanvas.toBlob(function (blob) {
+                selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+                previewImg.src = URL.createObjectURL(blob);
+                previewImg.classList.remove('hidden');
+                cameraVideo.classList.add('hidden');
+                btnCapture.classList.add('hidden');
+                btnCancelCamera.classList.add('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                uploadPreview.classList.remove('hidden');
+                if (mediaStream) { mediaStream.getTracks().forEach(function (t) { t.stop(); }); mediaStream = null; }
+                btnAnalyze.disabled = false;
+                resultSection.classList.add('hidden');
+                errorSection.classList.add('hidden');
+                compressImage(selectedFile, 150).then(function (b64) { imageBase64Input.value = b64; });
+            }, 'image/jpeg', 0.9);
+        });
+    }
+
+    if (btnCancelCamera) {
+        btnCancelCamera.addEventListener('click', function (e) { e.stopPropagation(); stopCamera(); });
+    }
+
+    function stopCamera() {
+        if (mediaStream) { mediaStream.getTracks().forEach(function (t) { t.stop(); }); mediaStream = null; }
+        cameraVideo.classList.add('hidden');
+        btnCapture.classList.add('hidden');
+        btnCancelCamera.classList.add('hidden');
+        if (selectedFile) { previewImg.classList.remove('hidden'); }
+        else { uploadPlaceholder.classList.remove('hidden'); uploadPreview.classList.add('hidden'); }
+    }
+
+    if (uploadZone) {
+        uploadZone.addEventListener('click', function (e) {
+            if (e.target === btnCapture || e.target === btnCancelCamera) return;
+            fileInput.click();
+        });
+        uploadZone.addEventListener('dragover', function (e) { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+        uploadZone.addEventListener('dragleave', function () { uploadZone.classList.remove('drag-over'); });
+        uploadZone.addEventListener('drop', function (e) {
+            e.preventDefault(); uploadZone.classList.remove('drag-over');
+            var file = e.dataTransfer.files[0];
+            if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) handleFile(file);
+        });
+    }
+    if (fileInput) {
+        fileInput.addEventListener('change', function (e) { var f = e.target.files[0]; if (f) handleFile(f); });
+    }
+    document.getElementById('cameraFileInput').addEventListener('change', function (e) { var f = e.target.files[0]; if (f) handleFile(f); });
+
+    function handleFile(file) {
+        selectedFile = file;
+        var isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (isPdf) {
+            previewImg.classList.add('hidden');
+            uploadPlaceholder.innerHTML = '<span class="upload-icon">📄</span><p>' + escapeHtml(file.name) + '</p><p class="upload-hint">PDF 檔案</p>';
+            uploadPlaceholder.classList.remove('hidden');
+            uploadPreview.classList.add('hidden');
+            btnAnalyze.disabled = false;
+            var reader = new FileReader();
+            reader.onload = function (e) { imageBase64Input.value = e.target.result; };
+            reader.readAsDataURL(file);
+        } else {
+            previewImg.src = URL.createObjectURL(file);
+            uploadPlaceholder.classList.add('hidden');
+            uploadPreview.classList.remove('hidden');
+            btnAnalyze.disabled = false;
+            compressImage(file, 150).then(function (b64) { imageBase64Input.value = b64; });
+            resultSection.classList.add('hidden');
+        }
+        errorSection.classList.add('hidden');
+    }
+
+    function compressImage(file, maxSizeKB) {
+        return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function (event) {
+                var img = new Image();
+                img.src = event.target.result;
+                img.onload = function () {
+                    var canvas = document.createElement('canvas');
+                    var ctx = canvas.getContext('2d');
+                    var w = img.width, h = img.height;
+                    var MAX_DIM = 1200;
+                    if (w > MAX_DIM || h > MAX_DIM) {
+                        var ratio = Math.min(MAX_DIM / w, MAX_DIM / h);
+                        w *= ratio; h *= ratio;
+                    }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    var quality = 0.9;
+                    var dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    var curSize = Math.round((dataUrl.length * 3) / 4);
+                    function doCompress() {
+                        var maxBytes = maxSizeKB * 1024;
+                        if (curSize <= maxBytes || quality <= 0.1) { resolve(dataUrl); return; }
+                        quality -= 0.1;
+                        dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        curSize = Math.round((dataUrl.length * 3) / 4);
+                        if (quality <= 0.1 && curSize > maxBytes) {
+                            w *= 0.8; h *= 0.8;
+                            canvas.width = w; canvas.height = h;
+                            ctx.drawImage(img, 0, 0, w, h);
+                            quality = 0.5;
+                        }
+                        doCompress();
+                    }
+                    doCompress();
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    }
+
+    // ---- AI Analyze ----
+    btnAnalyze.addEventListener('click', async function () {
+        if (!selectedFile) return;
+        var useAi = useAiAnalyze.checked;
+        if (!useAi) {
+            resultSection.classList.remove('hidden');
+            recordTitle.value = '';
+            recordDescription.value = '';
+            recordDate.value = todayStr();
+            return;
+        }
+        loading.classList.remove('hidden');
+        loadingText.textContent = 'AI 分析中...';
+        resultSection.classList.add('hidden');
+        errorSection.classList.add('hidden');
+
+        var formData = new FormData();
+        formData.append('image', selectedFile);
+
+        var res, rawText = '', success = false, attempts = 0;
+        while (!success && attempts < 3) {
+            attempts++;
+            try {
+                res = await fetch('/api/medical-records/analyze', { method: 'POST', body: formData });
+                rawText = await res.text();
+                if (res.ok) success = true;
+                else if (attempts < 3) console.log('Attempt ' + attempts + ' failed, retrying...');
+            } catch (err) {
+                if (attempts >= 3) { errorMsg.textContent = err.message || '網路錯誤'; errorSection.classList.remove('hidden'); loading.classList.add('hidden'); return; }
+            }
+        }
+
+        try {
+            var data = rawText ? JSON.parse(rawText) : {};
+            if (!res || res.status !== 200 || data.error) {
+                errorMsg.textContent = data.error || '分析失敗';
+                errorSection.classList.remove('hidden');
+            } else {
+                recordTitle.value = data.title || '';
+                recordDescription.value = data.description || '';
+                recordDate.value = todayStr();
+                resultSection.classList.remove('hidden');
+            }
+        } catch (e) {
+            errorMsg.textContent = '伺服器回傳非 JSON，請確認 Ollama 服務是否運行。';
+            errorSection.classList.remove('hidden');
+        }
+        loading.classList.add('hidden');
+    });
+
+    // ---- Save record ----
+    document.getElementById('btnSaveRecord').addEventListener('click', async function () {
+        var petId = document.getElementById('recordPetId').value;
+        if (!petId) {
+            if (allPets.length === 0) {
+                if (confirm('您還沒有新增寵物，是否前往新增寵物？')) {
+                    window.location.href = '/pets';
+                }
+            } else {
+                errorMsg.textContent = '請先選擇一隻寵物';
+                errorSection.classList.remove('hidden');
+            }
+            return;
+        }
+        var body = {
+            title: recordTitle.value.trim(),
+            description: recordDescription.value.trim(),
+            occurred_date: recordDate.value || null,
+            image_base64: imageBase64Input.value,
+            pet_id: parseInt(petId),
+        };
+        try {
+            var res = await fetch('/api/medical-records', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (res.ok) {
+                resultSection.classList.add('hidden');
+                selectedFile = null;
+                imageBase64Input.value = '';
+                uploadPlaceholder.classList.remove('hidden');
+                uploadPreview.classList.add('hidden');
+                btnAnalyze.disabled = true;
+                recordTitle.value = '';
+                recordDescription.value = '';
+                recordDate.value = todayStr();
+                loadRecords();
+                tabBtns.forEach(function (b) { b.classList.remove('active'); });
+                tabContents.forEach(function (c) { c.classList.remove('active'); });
+                tabBtns[0].classList.add('active');
+                document.getElementById('tab-summary').classList.add('active');
+            } else {
+                alert('儲存失敗，請重試');
+            }
+        } catch (e) { alert('操作失敗，請稍後再試'); }
+    });
+
+    // ---- Load records ----
+    async function loadRecords() {
+        try {
+            var res = await fetch('/api/medical-records' + petFilterQuery());
+            if (!res.ok) throw new Error();
+            var data = await res.json();
+            allRecords = data.medical_records || [];
+            renderRecords(allRecords);
+        } catch (e) {
+            recordsList.innerHTML = '<p>載入失敗，請重新整理</p>';
+        }
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function renderRecords(records) {
+        recordCount.textContent = '共 ' + records.length + ' 筆';
+        if (!records.length) {
+            recordsList.innerHTML = '';
+            recordsList.appendChild(emptyState);
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        emptyState.classList.add('hidden');
+        recordsList.innerHTML = records.map(function (r) {
+            var dateDisplay = r.occurred_date || '-';
+            var canEdit = (!allPets.find(function (p) { return p.id === r.pet_id; })?.is_shared ||
+                allPets.find(function (p) { return p.id === r.pet_id; })?.role === 'editor' ||
+                r.user_id === currentUserId);
+            var actionsHtml = canEdit
+                ? '<div class="medical-card-actions">' +
+                    '<button class="btn-icon edit btn-edit" data-id="' + r.id + '" title="編輯">✎</button>' +
+                    '<button class="btn-icon remove btn-remove" data-id="' + r.id + '" title="移除">✕</button>' +
+                  '</div>'
+                : '';
+            var isPdf = r.image_base64 && isPdfDataUrl(r.image_base64);
+            var attachmentHtml = '';
+            if (r.image_base64) {
+                if (isPdf) {
+                    attachmentHtml = '<div class="medical-attachment-wrapper pdf-attachment" data-record-id="' + r.id + '" data-image="' + encodeURIComponent(r.image_base64) + '" data-title="' + escapeHtml(r.title || 'PDF') + '">' +
+                        '<div class="pdf-thumb-loading"><div class="spinner-sm"></div></div>' +
+                    '</div>';
+                } else {
+                    attachmentHtml = '<div class="medical-image-wrapper"><img src="' + r.image_base64 + '" alt="病歷圖片" class="medical-thumbnail"></div>';
+                }
+            }
+            return '<article class="medical-record-card timeline-item" id="record-' + r.id + '">' +
+                '<div class="timeline-dot"></div>' +
+                '<div class="medical-card-body">' +
+                    attachmentHtml +
+                    '<div class="medical-meta">' +
+                        '<span class="medical-id">#' + r.id + '</span>' +
+                        '<span class="medical-date">' + escapeHtml(dateDisplay) + '</span>' +
+                        (r.pet_id ? '<span class="pet-tag">🐾 ' + escapeHtml(petName(r.pet_id, r.pet_name)) + '</span>' : '') +
+                    '</div>' +
+                    (r.title ? '<h4 class="medical-title">' + escapeHtml(r.title) + '</h4>' : '') +
+                    '<div class="medical-description">' + escapeHtml(r.description || '').replace(/\n/g, '<br>') + '</div>' +
+                '</div>' +
+                actionsHtml +
+            '</article>';
+        }).join('');
+
+        recordsList.querySelectorAll('.btn-remove').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('確定要刪除此病歷嗎？')) return;
+                try {
+                    await fetch('/api/medical-records/' + btn.dataset.id, { method: 'DELETE' });
+                    loadRecords();
+                } catch (e) { alert('刪除失敗，請稍後再試'); }
+            });
+        });
+
+        recordsList.querySelectorAll('.btn-edit').forEach(function (btn) {
+            btn.addEventListener('click', function () { openEditModal(parseInt(btn.dataset.id)); });
+        });
+
+        // Render PDF thumbnails
+        recordsList.querySelectorAll('.pdf-attachment').forEach(function (el) {
+            var dataUrl = decodeURIComponent(el.dataset.image);
+            var title = el.dataset.title;
+            renderPdfFirstPage(dataUrl, 280).then(function (thumbUrl) {
+                if (thumbUrl) {
+                    el.innerHTML = '<img src="' + thumbUrl + '" alt="PDF 預覽" class="medical-thumbnail pdf-thumb">' +
+                        '<div class="pdf-page-count"></div>';
+                    // Async page count badge
+                    var data = pdfDataUrlToBytes(dataUrl);
+                    pdfjsLib.getDocument({ data: data }).promise.then(function (doc) {
+                        var count = doc.numPages; doc.destroy();
+                        var badge = el.querySelector('.pdf-page-count');
+                        if (badge) badge.innerHTML = '<span class="pdf-page-badge">📄 ' + count + ' 頁</span>';
+                    }).catch(function () {});
+                } else {
+                    el.innerHTML = '<div class="medical-pdf-badge">📄 PDF 附件</div>';
+                }
+            });
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', function (e) {
+                if (e.target.closest('.btn-icon')) return;
+                openPdfViewer(decodeURIComponent(el.dataset.image), el.dataset.title);
+            });
+        });
+    }
+
+    // ---- Edit modal ----
+    function openEditModal(recordId) {
+        var record = allRecords.find(function (r) { return r.id === recordId; });
+        if (!record) return;
+        document.getElementById('editRecordId').value = record.id;
+        document.getElementById('editTitle').value = record.title;
+        document.getElementById('editDescription').value = record.description;
+        document.getElementById('editDate').value = record.occurred_date || '';
+        document.getElementById('editImageBase64').value = record.image_base64 || '';
+        var previewEl = document.getElementById('editImagePreview');
+        if (record.image_base64) {
+            if (isPdfDataUrl(record.image_base64)) {
+                renderPdfFirstPage(record.image_base64, 200).then(function (thumbUrl) {
+                    previewEl.innerHTML = thumbUrl
+                        ? '<img src="' + thumbUrl + '" alt="PDF 預覽">'
+                        : '<p class="no-image">📄 PDF</p>';
+                });
+            } else {
+                previewEl.innerHTML = '<img src="' + record.image_base64 + '" alt="病歷圖片">';
+            }
+        } else {
+            previewEl.innerHTML = '<p class="no-image">無圖片</p>';
+        }
+        var sel = document.getElementById('editPetId');
+        sel.value = record.pet_id || '';
+        document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    document.getElementById('btnCancelEdit').addEventListener('click', function () {
+        document.getElementById('editModal').classList.add('hidden');
+    });
+
+    document.getElementById('editModal').addEventListener('click', function (e) {
+        if (e.target === document.getElementById('editModal')) {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+    });
+
+    document.getElementById('btnChangeEditImage').addEventListener('click', function () {
+        document.getElementById('editFileInput').click();
+    });
+
+    document.getElementById('editFileInput').addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (isPdf) {
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                document.getElementById('editImageBase64').value = ev.target.result;
+                document.getElementById('editImagePreview').innerHTML = '<p class="no-image">📄 ' + escapeHtml(file.name) + '</p>';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            compressImage(file, 150).then(function (b64) {
+                document.getElementById('editImageBase64').value = b64;
+                document.getElementById('editImagePreview').innerHTML = '<img src="' + b64 + '" alt="病歷圖片">';
+            });
+        }
+    });
+
+    document.getElementById('btnSaveEdit').addEventListener('click', async function () {
+        var id = document.getElementById('editRecordId').value;
+        var body = {
+            title: document.getElementById('editTitle').value.trim(),
+            description: document.getElementById('editDescription').value.trim(),
+            occurred_date: document.getElementById('editDate').value || null,
+            image_base64: document.getElementById('editImageBase64').value,
+            pet_id: document.getElementById('editPetId').value ? parseInt(document.getElementById('editPetId').value) : null,
+        };
+        try {
+            var res = await fetch('/api/medical-records/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (res.ok) {
+                document.getElementById('editModal').classList.add('hidden');
+                loadRecords();
+            } else {
+                alert('更新失敗，請重試');
+            }
+        } catch (e) { alert('操作失敗，請稍後再試'); }
+    });
+
+    // ---- Summary ----
+    async function loadLatestSummary() {
+        if (!currentPetFilter) {
+            summaryContent.classList.add('hidden');
+            summaryEmpty.classList.remove('hidden');
+            summaryContent.classList.remove('hidden');
+            summaryText.classList.add('hidden');
+            return;
+        }
+        try {
+            var res = await fetch('/api/medical-records/summary/latest?pet_id=' + currentPetFilter);
+            if (!res.ok) throw new Error();
+            var data = await res.json();
+            if (data.summary && data.summary.summary_text) {
+                summaryText.textContent = data.summary.summary_text;
+                summaryText.classList.remove('hidden');
+                summaryEmpty.classList.add('hidden');
+                summaryContent.classList.remove('hidden');
+            } else {
+                summaryText.classList.add('hidden');
+                summaryEmpty.classList.remove('hidden');
+                summaryContent.classList.remove('hidden');
+            }
+        } catch (e) {
+            summaryText.classList.add('hidden');
+            summaryEmpty.classList.remove('hidden');
+            summaryContent.classList.remove('hidden');
+        }
+    }
+
+    document.getElementById('btnSummarize').addEventListener('click', async function () {
+        if (!currentPetFilter) {
+            if (allPets.length === 0) {
+                if (confirm('您還沒有新增寵物，是否前往新增寵物？')) {
+                    window.location.href = '/pets';
+                }
+            } else {
+                alert('請先選擇一隻寵物');
+            }
+            return;
+        }
+        summaryLoading.classList.remove('hidden');
+        document.getElementById('btnSummarize').disabled = true;
+        try {
+            var res = await fetch('/api/medical-records/summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pet_id: currentPetFilter }),
+            });
+            var data = await res.json();
+            if (!res.ok || data.error) {
+                alert(data.error || '摘要失敗');
+            } else {
+                summaryText.textContent = data.summary;
+                summaryText.classList.remove('hidden');
+                summaryEmpty.classList.add('hidden');
+                summaryContent.classList.remove('hidden');
+            }
+        } catch (e) { alert('摘要失敗，請稍後再試'); }
+        summaryLoading.classList.add('hidden');
+        document.getElementById('btnSummarize').disabled = false;
+    });
+
+    // ---- Init ----
+    async function init() {
+        await loadPets();
+        loadRecords();
+        loadLatestSummary();
+    }
+    init();
+})();
+</script>
+{% endblock %}

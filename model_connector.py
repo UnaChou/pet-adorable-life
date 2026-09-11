@@ -4,6 +4,7 @@ import base64
 import logging
 import os
 import re
+import io
 from typing import Any, Dict, Optional, Union
 
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
@@ -157,6 +158,43 @@ def _get_image_base64(image_source):
     if hasattr(image_source, "read"):
         return base64.b64encode(image_source.read()).decode("utf-8")
     return encode_image_to_base64(image_source)
+
+
+def convert_pdf_to_image(pdf_source, page_num=0, dpi=150):
+    """將 PDF 指定頁面轉為 JPEG 圖片的 raw bytes。回傳 bytes 或 None。"""
+    try:
+        import fitz
+    except ImportError:
+        logger.warning("PyMuPDF (fitz) not installed, cannot convert PDF")
+        return None
+
+    try:
+        if isinstance(pdf_source, (bytes, bytearray)):
+            doc = fitz.open(stream=pdf_source, filetype="pdf")
+        elif hasattr(pdf_source, "read"):
+            data = pdf_source.read()
+            pdf_source.seek(0)
+            doc = fitz.open(stream=data, filetype="pdf")
+        elif isinstance(pdf_source, str):
+            doc = fitz.open(pdf_source)
+        else:
+            logger.error("Unsupported PDF source type: %s", type(pdf_source))
+            return None
+
+        if doc.page_count == 0:
+            logger.error("PDF has no pages")
+            doc.close()
+            return None
+        if page_num >= doc.page_count:
+            page_num = 0
+        page = doc[page_num]
+        pix = page.get_pixmap(dpi=dpi)
+        img_bytes = pix.tobytes("jpeg")
+        doc.close()
+        return img_bytes
+    except Exception as e:
+        logger.error("PDF to image conversion failed: %s", e, exc_info=True)
+        return None
 
 
 def get_model_response_by_image(model: str, image_source: Union[str, bytes, Any], prompt: Optional[str] = None) -> Optional[Dict[str, Any]]:

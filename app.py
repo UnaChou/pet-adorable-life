@@ -124,15 +124,17 @@ def current_user_id():
     return session.get("user_id")
 
 _ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
+_ALLOWED_MEDICAL_EXTS = _ALLOWED_IMAGE_EXTS | {"pdf"}
 
 
-def _validate_image_file(file):
+def _validate_image_file(file, allow_pdf=False):
     """回傳 (None, None) 表示驗證通過；否則回傳 (error_response, status_code)。"""
     if file.filename == "":
         return jsonify({"error": "未選擇檔案"}), 400
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-    if ext not in _ALLOWED_IMAGE_EXTS:
-        return jsonify({"error": f"不支援的格式，請使用: {', '.join(_ALLOWED_IMAGE_EXTS)}"}), 400
+    allowed = _ALLOWED_MEDICAL_EXTS if allow_pdf else _ALLOWED_IMAGE_EXTS
+    if ext not in allowed:
+        return jsonify({"error": f"不支援的格式，請使用: {', '.join(allowed)}"}), 400
     return None, None
 
 
@@ -1008,6 +1010,187 @@ def api_get_calendar_items():
             )
 
     return jsonify({"items": items})
+
+
+# ========== Medical Records ==========
+
+
+@app.route("/medical-records")
+def medical_records_page():
+    """病歷紀錄頁面"""
+    return render_template("medical_records.html")
+
+
+@app.route("/api/medical-records", methods=["GET"])
+def api_get_medical_records():
+    """取得所有病歷"""
+    uid = current_user_id()
+    pet_id = request.args.get("pet_id", type=int)
+    if pet_id and pet_id > 0:
+        if not db.get_pet_accessible(pet_id, uid):
+            return jsonify({"medical_records": []})
+        user_id_filter = None
+    else:
+        user_id_filter = uid
+    return jsonify({"medical_records": db.get_all_medical_records(pet_id=pet_id, user_id=user_id_filter)})
+
+
+@app.route("/api/medical-records", methods=["POST"])
+def api_add_medical_record():
+    """新增病歷"""
+    uid = current_user_id()
+    data = request.get_json() or {}
+    pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
+    record_id = db.add_medical_record(
+        title=(data.get("title") or "").strip(),
+        description=(data.get("description") or "").strip(),
+        occurred_date=data.get("occurred_date") or None,
+        image_base64=(data.get("image_base64") or ""),
+        pet_id=pet_id,
+        user_id=uid,
+    )
+    record = db.get_medical_record(record_id, user_id=uid)
+    if not record:
+        return jsonify({"error": "病歷儲存失敗"}), 500
+    return jsonify(record), 201
+
+
+@app.route("/api/medical-records/<int:record_id>", methods=["GET"])
+def api_get_medical_record(record_id):
+    """取得單一病歷"""
+    record = db.get_medical_record(record_id, user_id=current_user_id())
+    if not record:
+        return jsonify({"error": "找不到病歷"}), 404
+    return jsonify(record)
+
+
+@app.route("/api/medical-records/<int:record_id>", methods=["PUT"])
+def api_update_medical_record(record_id):
+    """更新病歷"""
+    uid = current_user_id()
+    if not db.get_medical_record_if_editable(record_id, user_id=uid):
+        return jsonify({"error": "找不到病歷或無編輯權限"}), 404
+    data = request.get_json() or {}
+    pet_id = data.get("pet_id") or None
+    if pet_id and pet_id > 0 and not db.get_pet_if_editable(pet_id, uid):
+        return jsonify({"error": "找不到寵物或無編輯權限"}), 404
+    db.update_medical_record(
+        record_id=record_id,
+        title=(data.get("title") or "").strip(),
+        description=(data.get("description") or "").strip(),
+        occurred_date=data.get("occurred_date") or None,
+        image_base64=data.get("image_base64"),
+        pet_id=pet_id,
+        user_id=uid,
+    )
+    return jsonify(db.get_medical_record(record_id, user_id=uid))
+
+
+@app.route("/api/medical-records/<int:record_id>", methods=["DELETE"])
+def api_delete_medical_record(record_id):
+    """刪除單筆病歷"""
+    uid = current_user_id()
+    if not db.get_medical_record_if_editable(record_id, user_id=uid):
+        return jsonify({"error": "找不到病歷或無編輯權限"}), 404
+    db.remove_medical_records([record_id], user_id=uid)
+    return "", 204
+
+
+@app.route("/api/medical-records", methods=["DELETE"])
+def api_delete_medical_records():
+    """批次刪除病歷"""
+    data = request.get_json() or {}
+    ids = [int(i) for i in (data.get("ids") or []) if str(i).lstrip("-").isdigit()]
+    if ids:
+        db.remove_medical_records(ids, user_id=current_user_id())
+    return "", 204
+
+
+@app.route("/api/medical-records/analyze", methods=["POST"])
+def api_medical_record_analyze():
+    """上傳圖片或 PDF 並以 medical_record_prompt 分析"""
+    try:
+        if "image" not in request.files:
+            return jsonify({"error": "未上傳檔案"}), 400
+        file = request.files["image"]
+        err, status = _validate_image_file(file, allow_pdf=True)
+        if err:
+            return err, status
+
+        model_name = getattr(pet_model_config, "pet_model_name", "qwen3.5:9b")
+        prompt_text = getattr(pet_model_config, "medical_record_prompt", None)
+
+        filename = (file.filename or "").lower()
+        if filename.endswith(".pdf"):
+            file_data = file.read()
+            file.seek(0)
+            image_b64 = model_connector.convert_pdf_to_image(file_data)
+            if not image_b64:
+                logging.error("convert_pdf_to_image returned None, file_data length=%d, filename=%s", len(file_data), filename)
+                return jsonify({"error": "PDF 轉圖片失敗，請確認檔案格式正確"}), 400
+            result = model_connector.get_model_response_by_image(model_name, image_b64, prompt=prompt_text)
+        else:
+            result = model_connector.get_model_response_by_image(model_name, file, prompt=prompt_text)
+
+        if result is None:
+            return jsonify({"error": "分析失敗，請確認 Ollama 服務是否運行"}), 500
+        if result.get("error"):
+            return jsonify(result), 500
+        return jsonify({
+            "title": result.get("title", ""),
+            "description": result.get("description", ""),
+        })
+    except Exception as e:
+        return jsonify({"error": f"伺服器錯誤：{str(e)}"}), 500
+
+
+@app.route("/api/medical-records/summary", methods=["POST"])
+def api_medical_record_summary():
+    """依據寵物的所有病歷，AI 產生摘要"""
+    try:
+        uid = current_user_id()
+        data = request.get_json() or {}
+        pet_id = data.get("pet_id")
+        if not pet_id:
+            return jsonify({"error": "請先選擇寵物"}), 400
+
+        records = db.get_medical_records_for_summary(pet_id=pet_id, user_id=uid)
+        if not records:
+            return jsonify({"error": "該寵物尚無病歷紀錄"}), 400
+
+        records_text = ""
+        for r in records:
+            records_text += f"日期：{r['occurred_date'] or '未記錄'}\n"
+            records_text += f"標題：{r['title']}\n"
+            records_text += f"描述：{r['description']}\n\n"
+
+        prompt = f"以下是寵物的醫療紀錄：\n\n{records_text}\n請依照 medical_summary_prompt 的格式要求進行摘要。"
+
+        model_name = getattr(pet_model_config, "pet_model_name", "qwen3.5:9b")
+        summary_prompt = getattr(pet_model_config, "medical_summary_prompt", "") + "\n\n" + prompt
+        result = model_connector.get_model_response(model_name, summary_prompt)
+        if result is None:
+            return jsonify({"error": "摘要失敗，請確認 Ollama 服務是否運行"}), 500
+
+        db.save_medical_summary(pet_id=pet_id, summary_text=result.strip())
+        return jsonify({"summary": result.strip()})
+    except Exception as e:
+        return jsonify({"error": f"伺服器錯誤：{str(e)}"}), 500
+
+
+@app.route("/api/medical-records/summary/latest", methods=["GET"])
+def api_get_latest_medical_summary():
+    """取得指定寵物的最新摘要"""
+    uid = current_user_id()
+    pet_id = request.args.get("pet_id", type=int)
+    if not pet_id:
+        return jsonify({"summary": None})
+    summary = db.get_latest_medical_summary(pet_id)
+    if not summary:
+        return jsonify({"summary": None})
+    return jsonify({"summary": summary})
 
 
 def _get_watch_files():
