@@ -2,6 +2,7 @@
 MySQL 資料庫連線與商品 CRUD 操作
 """
 import os
+import json
 import gzip
 import base64
 import pymysql
@@ -12,8 +13,8 @@ from pymysql.cursors import DictCursor
 _PDF_PREFIX = "gz:"
 
 
-def _compress_pdf_data(image_base64):
-    """如果是 PDF data URL，gzip 壓縮後加 gz: 前綴。非 PDF 原樣回傳。"""
+def _compress_single(image_base64):
+    """壓縮單一 PDF data URL。非 PDF 原樣回傳。"""
     if not image_base64 or not image_base64.startswith("data:application/pdf"):
         return image_base64
     try:
@@ -24,8 +25,8 @@ def _compress_pdf_data(image_base64):
         return image_base64
 
 
-def _decompress_pdf_data(image_base64):
-    """如果有 gz: 前綴，解壓縮還原 PDF data URL。舊格式原樣回傳。"""
+def _decompress_single(image_base64):
+    """解壓縮單一 gz: 前綴的 PDF。舊格式原樣回傳。"""
     if not image_base64 or not image_base64.startswith(_PDF_PREFIX):
         return image_base64
     try:
@@ -35,6 +36,32 @@ def _decompress_pdf_data(image_base64):
         return "data:application/pdf;base64," + b64
     except Exception:
         return image_base64
+
+
+def _compress_pdf_data(image_base64):
+    """壓縮圖片/_pdf 欄位。支援單一字串或 JSON 陣列。"""
+    if not image_base64:
+        return image_base64
+    if image_base64.startswith("["):
+        try:
+            items = json.loads(image_base64)
+            return json.dumps([_compress_single(x) for x in items])
+        except Exception:
+            return image_base64
+    return _compress_single(image_base64)
+
+
+def _decompress_pdf_data(image_base64):
+    """解壓縮圖片/_pdf 欄位。支援單一字串或 JSON 陣列。"""
+    if not image_base64:
+        return image_base64
+    if image_base64.startswith("["):
+        try:
+            items = json.loads(image_base64)
+            return [_decompress_single(x) for x in items]
+        except Exception:
+            return image_base64
+    return _decompress_single(image_base64)
 
 
 def _get_db_config():

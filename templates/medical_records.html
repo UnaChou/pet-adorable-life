@@ -55,15 +55,15 @@
                 </div>
                 <div class="upload-container">
                     <div class="upload-zone" id="uploadZone">
-                        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,application/pdf" hidden>
+                        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,application/pdf" multiple hidden>
                         <input type="file" id="cameraFileInput" accept="image/*" capture="environment" hidden>
                         <div class="upload-placeholder" id="uploadPlaceholder">
                             <span class="upload-icon">📷</span>
-                            <p>點擊或拖曳圖片到此處</p>
-                            <p class="upload-hint">支援 PNG、JPG、WebP、GIF、PDF</p>
+                            <p>點擊或拖曳檔案到此處</p>
+                            <p class="upload-hint">支援圖片與 PDF，最多 20 個檔案</p>
                         </div>
                         <div class="upload-preview hidden" id="uploadPreview">
-                            <img id="previewImg" src="" alt="預覽">
+                            <div class="file-grid" id="fileGrid"></div>
                             <video id="cameraVideo" autoplay playsinline class="hidden"></video>
                             <canvas id="cameraCanvas" class="hidden"></canvas>
                         </div>
@@ -226,8 +226,9 @@
     const summaryText = document.getElementById('summaryText');
     const summaryLoading = document.getElementById('summaryLoading');
 
-    let selectedFile = null;
+    let selectedFiles = [];
     let mediaStream = null;
+    const MAX_FILES = 20;
 
     // ---- PDF.js helpers ----
     function isPdfDataUrl(s) { return s && s.startsWith('data:application/pdf'); }
@@ -282,38 +283,63 @@
     var pdfPageInfo = document.getElementById('pdfPageInfo');
     var pdfZoomInfo = document.getElementById('pdfZoomInfo');
     var pdfViewerTitle = document.getElementById('pdfViewerTitle');
-    var viewerDoc = null;
     var viewerPages = [];
     var viewerCurrentPage = 1;
     var viewerTotalPages = 0;
     var viewerScale = 1.5;
 
-    async function openPdfViewer(dataUrl, title) {
+    async function openPdfViewer(images, title, startIdx) {
         if (!window.pdfjsLib) { alert('PDF 瀏覽器不支援，請更新瀏覽器'); return; }
-        pdfViewerTitle.textContent = title || 'PDF 預覽';
+        pdfViewerTitle.textContent = title || '預覽';
         pdfViewer.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        viewerPages = [];
+        viewerCurrentPage = (startIdx || 0) + 1;
+        viewerScale = 1.5;
         try {
-            var data = pdfDataUrlToBytes(dataUrl);
-            viewerDoc = await pdfjsLib.getDocument({ data: data }).promise;
-            viewerTotalPages = viewerDoc.numPages;
-            viewerCurrentPage = 1;
-            viewerScale = 1.5;
+            for (var i = 0; i < images.length; i++) {
+                var img = images[i];
+                if (isPdfDataUrl(img)) {
+                    var data = pdfDataUrlToBytes(img);
+                    var doc = await pdfjsLib.getDocument({ data: data }).promise;
+                    for (var p = 1; p <= doc.numPages; p++) {
+                        var page = await doc.getPage(p);
+                        var viewport = page.getViewport({ scale: 1 });
+                        viewerPages.push({ doc: doc, pageNum: p, width: viewport.width, height: viewport.height, type: 'pdf' });
+                    }
+                } else {
+                    viewerPages.push({ src: img, type: 'image' });
+                }
+            }
+            viewerTotalPages = viewerPages.length;
+            if (viewerCurrentPage > viewerTotalPages) viewerCurrentPage = 1;
             await renderViewerPage();
         } catch (e) {
-            console.error('PDF viewer open failed:', e);
-            alert('PDF 開啟失敗');
+            console.error('Viewer open failed:', e);
+            alert('檔案開啟失敗');
             closePdfViewer();
         }
     }
 
     async function renderViewerPage() {
-        if (!viewerDoc) return;
-        var page = await viewerDoc.getPage(viewerCurrentPage);
-        var viewport = page.getViewport({ scale: viewerScale });
-        pdfViewerCanvas.width = viewport.width;
-        pdfViewerCanvas.height = viewport.height;
-        await page.render({ canvasContext: pdfViewerCanvas.getContext('2d'), viewport: viewport }).promise;
+        if (viewerPages.length === 0) return;
+        var item = viewerPages[viewerCurrentPage - 1];
+        var canvas = pdfViewerCanvas;
+        var ctx = canvas.getContext('2d');
+        if (item.type === 'pdf') {
+            var viewport = item.page.getViewport({ scale: viewerScale * (700 / item.width) });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await item.page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        } else {
+            var img = new Image();
+            img.src = item.src;
+            await new Promise(function (resolve) { img.onload = resolve; });
+            var scale = viewerScale;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
         pdfPageInfo.textContent = viewerCurrentPage + ' / ' + viewerTotalPages;
         pdfZoomInfo.textContent = Math.round(viewerScale * 100 / 1.5) + '%';
     }
@@ -321,7 +347,6 @@
     function closePdfViewer() {
         pdfViewer.classList.add('hidden');
         document.body.style.overflow = '';
-        if (viewerDoc) { viewerDoc.destroy(); viewerDoc = null; }
         viewerPages = [];
         viewerCurrentPage = 1;
         viewerTotalPages = 0;
@@ -332,6 +357,22 @@
 
     document.getElementById('pdfPrevPage').addEventListener('click', async function () {
         if (viewerCurrentPage > 1) { viewerCurrentPage--; await renderViewerPage(); }
+    });
+    document.getElementById('pdfNextPage').addEventListener('click', async function () {
+        if (viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; await renderViewerPage(); }
+    });
+    document.getElementById('pdfZoomIn').addEventListener('click', async function () {
+        if (viewerScale < 4) { viewerScale = Math.min(4, viewerScale + 0.3); await renderViewerPage(); }
+    });
+    document.getElementById('pdfZoomOut').addEventListener('click', async function () {
+        if (viewerScale > 0.5) { viewerScale = Math.max(0.5, viewerScale - 0.3); await renderViewerPage(); }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (pdfViewer.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closePdfViewer();
+        else if (e.key === 'ArrowLeft' && viewerCurrentPage > 1) { viewerCurrentPage--; renderViewerPage(); }
+        else if (e.key === 'ArrowRight' && viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; renderViewerPage(); }
     });
     document.getElementById('pdfNextPage').addEventListener('click', async function () {
         if (viewerCurrentPage < viewerTotalPages) { viewerCurrentPage++; await renderViewerPage(); }
@@ -438,6 +479,86 @@
         return p ? p.name : '';
     }
 
+    // ---- File grid helpers ----
+    var fileGrid = document.getElementById('fileGrid');
+
+    function addFiles(fileList) {
+        for (var i = 0; i < fileList.length && selectedFiles.length < MAX_FILES; i++) {
+            var f = fileList[i];
+            if (f.type.startsWith('image/') || f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
+                selectedFiles.push(f);
+            }
+        }
+        if (fileList.length > 0 && selectedFiles.length >= MAX_FILES) {
+            errorMsg.textContent = '最多 ' + MAX_FILES + ' 個檔案';
+            errorSection.classList.remove('hidden');
+        }
+        renderFileGrid();
+        syncImageBase64();
+        btnAnalyze.disabled = selectedFiles.length === 0;
+    }
+
+    function removeFile(idx) {
+        selectedFiles.splice(idx, 1);
+        renderFileGrid();
+        syncImageBase64();
+        btnAnalyze.disabled = selectedFiles.length === 0;
+    }
+
+    function renderFileGrid() {
+        if (selectedFiles.length === 0) {
+            uploadPlaceholder.classList.remove('hidden');
+            uploadPreview.classList.add('hidden');
+            return;
+        }
+        uploadPlaceholder.classList.add('hidden');
+        uploadPreview.classList.remove('hidden');
+        var html = '';
+        selectedFiles.forEach(function (f, i) {
+            var isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+            if (isPdf) {
+                html += '<div class="file-grid-item"><div class="file-grid-thumb pdf-thumb-box">📄</div>' +
+                    '<button class="file-grid-remove" data-idx="' + i + '">✕</button></div>';
+            } else {
+                var url = URL.createObjectURL(f);
+                html += '<div class="file-grid-item"><img src="' + url + '" class="file-grid-thumb">' +
+                    '<button class="file-grid-remove" data-idx="' + i + '">✕</button></div>';
+            }
+        });
+        if (selectedFiles.length < MAX_FILES) {
+            html += '<div class="file-grid-item file-grid-add" id="fileGridAdd"><span>+</span></div>';
+        }
+        fileGrid.innerHTML = html;
+        fileGrid.querySelectorAll('.file-grid-remove').forEach(function (btn) {
+            btn.addEventListener('click', function (e) { e.stopPropagation(); removeFile(parseInt(btn.dataset.idx)); });
+        });
+        var addBtn = document.getElementById('fileGridAdd');
+        if (addBtn) {
+            addBtn.addEventListener('click', function (e) { e.stopPropagation(); fileInput.click(); });
+        }
+    }
+
+    async function syncImageBase64() {
+        if (selectedFiles.length === 0) { imageBase64Input.value = ''; return; }
+        var arr = [];
+        for (var i = 0; i < selectedFiles.length; i++) {
+            var f = selectedFiles[i];
+            var isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+            if (isPdf) {
+                var b64 = await new Promise(function (resolve) {
+                    var r = new FileReader();
+                    r.onload = function (e) { resolve(e.target.result); };
+                    r.readAsDataURL(f);
+                });
+                arr.push(b64);
+            } else {
+                var compressed = await compressImage(f, 150);
+                arr.push(compressed);
+            }
+        }
+        imageBase64Input.value = JSON.stringify(arr);
+    }
+
     // ---- Camera / Upload ----
     if (btnCamera) {
         btnCamera.addEventListener('click', async function (e) {
@@ -449,9 +570,9 @@
                 mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
                 cameraVideo.srcObject = mediaStream;
                 cameraVideo.classList.remove('hidden');
-                previewImg.classList.add('hidden');
                 uploadPlaceholder.classList.add('hidden');
                 uploadPreview.classList.remove('hidden');
+                fileGrid.innerHTML = '';
                 btnCapture.classList.remove('hidden');
                 btnCancelCamera.classList.remove('hidden');
                 btnAnalyze.disabled = true;
@@ -467,19 +588,12 @@
             cameraCanvas.height = cameraVideo.videoHeight;
             ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
             cameraCanvas.toBlob(function (blob) {
-                selectedFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
-                previewImg.src = URL.createObjectURL(blob);
-                previewImg.classList.remove('hidden');
+                var file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
                 cameraVideo.classList.add('hidden');
                 btnCapture.classList.add('hidden');
                 btnCancelCamera.classList.add('hidden');
-                uploadPlaceholder.classList.add('hidden');
-                uploadPreview.classList.remove('hidden');
                 if (mediaStream) { mediaStream.getTracks().forEach(function (t) { t.stop(); }); mediaStream = null; }
-                btnAnalyze.disabled = false;
-                resultSection.classList.add('hidden');
-                errorSection.classList.add('hidden');
-                compressImage(selectedFile, 150).then(function (b64) { imageBase64Input.value = b64; });
+                addFiles([file]);
             }, 'image/jpeg', 0.9);
         });
     }
@@ -493,50 +607,25 @@
         cameraVideo.classList.add('hidden');
         btnCapture.classList.add('hidden');
         btnCancelCamera.classList.add('hidden');
-        if (selectedFile) { previewImg.classList.remove('hidden'); }
-        else { uploadPlaceholder.classList.remove('hidden'); uploadPreview.classList.add('hidden'); }
+        if (selectedFiles.length === 0) { uploadPlaceholder.classList.remove('hidden'); uploadPreview.classList.add('hidden'); }
     }
 
     if (uploadZone) {
         uploadZone.addEventListener('click', function (e) {
-            if (e.target === btnCapture || e.target === btnCancelCamera) return;
+            if (e.target === btnCapture || e.target === btnCancelCamera || e.target.closest('.file-grid-remove')) return;
             fileInput.click();
         });
         uploadZone.addEventListener('dragover', function (e) { e.preventDefault(); uploadZone.classList.add('drag-over'); });
         uploadZone.addEventListener('dragleave', function () { uploadZone.classList.remove('drag-over'); });
         uploadZone.addEventListener('drop', function (e) {
             e.preventDefault(); uploadZone.classList.remove('drag-over');
-            var file = e.dataTransfer.files[0];
-            if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) handleFile(file);
+            addFiles(e.dataTransfer.files);
         });
     }
     if (fileInput) {
-        fileInput.addEventListener('change', function (e) { var f = e.target.files[0]; if (f) handleFile(f); });
+        fileInput.addEventListener('change', function (e) { addFiles(e.target.files); fileInput.value = ''; });
     }
     document.getElementById('cameraFileInput').addEventListener('change', function (e) { var f = e.target.files[0]; if (f) handleFile(f); });
-
-    function handleFile(file) {
-        selectedFile = file;
-        var isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-        if (isPdf) {
-            previewImg.classList.add('hidden');
-            uploadPlaceholder.innerHTML = '<span class="upload-icon">📄</span><p>' + escapeHtml(file.name) + '</p><p class="upload-hint">PDF 檔案</p>';
-            uploadPlaceholder.classList.remove('hidden');
-            uploadPreview.classList.add('hidden');
-            btnAnalyze.disabled = false;
-            var reader = new FileReader();
-            reader.onload = function (e) { imageBase64Input.value = e.target.result; };
-            reader.readAsDataURL(file);
-        } else {
-            previewImg.src = URL.createObjectURL(file);
-            uploadPlaceholder.classList.add('hidden');
-            uploadPreview.classList.remove('hidden');
-            btnAnalyze.disabled = false;
-            compressImage(file, 150).then(function (b64) { imageBase64Input.value = b64; });
-            resultSection.classList.add('hidden');
-        }
-        errorSection.classList.add('hidden');
-    }
 
     function compressImage(file, maxSizeKB) {
         return new Promise(function (resolve, reject) {
@@ -583,7 +672,7 @@
 
     // ---- AI Analyze ----
     btnAnalyze.addEventListener('click', async function () {
-        if (!selectedFile) return;
+        if (selectedFiles.length === 0) return;
         var useAi = useAiAnalyze.checked;
         if (!useAi) {
             resultSection.classList.remove('hidden');
@@ -598,7 +687,7 @@
         errorSection.classList.add('hidden');
 
         var formData = new FormData();
-        formData.append('image', selectedFile);
+        formData.append('image', selectedFiles[0]);
 
         var res, rawText = '', success = false, attempts = 0;
         while (!success && attempts < 3) {
@@ -660,10 +749,11 @@
             });
             if (res.ok) {
                 resultSection.classList.add('hidden');
-                selectedFile = null;
+                selectedFiles = [];
                 imageBase64Input.value = '';
                 uploadPlaceholder.classList.remove('hidden');
                 uploadPreview.classList.add('hidden');
+                fileGrid.innerHTML = '';
                 btnAnalyze.disabled = true;
                 recordTitle.value = '';
                 recordDescription.value = '';
@@ -698,6 +788,12 @@
         return div.innerHTML;
     }
 
+    function getImageList(r) {
+        if (!r.image_base64) return [];
+        if (Array.isArray(r.image_base64)) return r.image_base64;
+        return [r.image_base64];
+    }
+
     function renderRecords(records) {
         recordCount.textContent = '共 ' + records.length + ' 筆';
         if (!records.length) {
@@ -718,16 +814,19 @@
                     '<button class="btn-icon remove btn-remove" data-id="' + r.id + '" title="移除">✕</button>' +
                   '</div>'
                 : '';
-            var isPdf = r.image_base64 && isPdfDataUrl(r.image_base64);
+            var images = getImageList(r);
             var attachmentHtml = '';
-            if (r.image_base64) {
-                if (isPdf) {
-                    attachmentHtml = '<div class="medical-attachment-wrapper pdf-attachment" data-record-id="' + r.id + '" data-image="' + encodeURIComponent(r.image_base64) + '" data-title="' + escapeHtml(r.title || 'PDF') + '">' +
-                        '<div class="pdf-thumb-loading"><div class="spinner-sm"></div></div>' +
-                    '</div>';
-                } else {
-                    attachmentHtml = '<div class="medical-image-wrapper"><img src="' + r.image_base64 + '" alt="病歷圖片" class="medical-thumbnail"></div>';
-                }
+            if (images.length > 0) {
+                var gridItems = images.map(function (img, idx) {
+                    if (isPdfDataUrl(img)) {
+                        return '<div class="record-grid-item pdf-grid-item" data-rid="' + r.id + '" data-idx="' + idx + '">' +
+                            '<div class="pdf-thumb-loading"><div class="spinner-sm"></div></div></div>';
+                    } else {
+                        return '<div class="record-grid-item" data-rid="' + r.id + '" data-idx="' + idx + '">' +
+                            '<img src="' + img + '" class="record-grid-thumb" alt="病歷圖片"></div>';
+                    }
+                }).join('');
+                attachmentHtml = '<div class="record-file-grid" data-record-id="' + r.id + '" data-images=\'' + escapeHtml(JSON.stringify(images)) + '\' data-title="' + escapeHtml(r.title || '病歷') + '">' + gridItems + '</div>';
             }
             return '<article class="medical-record-card timeline-item" id="record-' + r.id + '">' +
                 '<div class="timeline-dot"></div>' +
@@ -759,29 +858,29 @@
             btn.addEventListener('click', function () { openEditModal(parseInt(btn.dataset.id)); });
         });
 
-        // Render PDF thumbnails
-        recordsList.querySelectorAll('.pdf-attachment').forEach(function (el) {
-            var dataUrl = decodeURIComponent(el.dataset.image);
-            var title = el.dataset.title;
+        // Render PDF thumbnails in record list
+        recordsList.querySelectorAll('.pdf-grid-item').forEach(function (el) {
+            var images = JSON.parse(el.closest('.record-file-grid').dataset.images);
+            var idx = parseInt(el.dataset.idx);
+            var dataUrl = images[idx];
             renderPdfFirstPage(dataUrl, 280).then(function (thumbUrl) {
                 if (thumbUrl) {
-                    el.innerHTML = '<img src="' + thumbUrl + '" alt="PDF 預覽" class="medical-thumbnail pdf-thumb">' +
-                        '<div class="pdf-page-count"></div>';
-                    // Async page count badge
-                    var data = pdfDataUrlToBytes(dataUrl);
-                    pdfjsLib.getDocument({ data: data }).promise.then(function (doc) {
-                        var count = doc.numPages; doc.destroy();
-                        var badge = el.querySelector('.pdf-page-count');
-                        if (badge) badge.innerHTML = '<span class="pdf-page-badge">📄 ' + count + ' 頁</span>';
-                    }).catch(function () {});
+                    el.innerHTML = '<img src="' + thumbUrl + '" alt="PDF 預覽" class="record-grid-thumb">';
                 } else {
-                    el.innerHTML = '<div class="medical-pdf-badge">📄 PDF 附件</div>';
+                    el.innerHTML = '<div class="medical-pdf-badge">📄 PDF</div>';
                 }
             });
+        });
+
+        // Click to open viewer
+        recordsList.querySelectorAll('.record-grid-item').forEach(function (el) {
             el.style.cursor = 'pointer';
             el.addEventListener('click', function (e) {
                 if (e.target.closest('.btn-icon')) return;
-                openPdfViewer(decodeURIComponent(el.dataset.image), el.dataset.title);
+                var grid = el.closest('.record-file-grid');
+                var images = JSON.parse(grid.dataset.images);
+                var startIdx = parseInt(el.dataset.idx) || 0;
+                openPdfViewer(images, grid.dataset.title, startIdx);
             });
         });
     }
@@ -794,18 +893,29 @@
         document.getElementById('editTitle').value = record.title;
         document.getElementById('editDescription').value = record.description;
         document.getElementById('editDate').value = record.occurred_date || '';
-        document.getElementById('editImageBase64').value = record.image_base64 || '';
+        var imgData = record.image_base64;
+        document.getElementById('editImageBase64').value = typeof imgData === 'string' ? imgData : JSON.stringify(imgData || []);
         var previewEl = document.getElementById('editImagePreview');
-        if (record.image_base64) {
-            if (isPdfDataUrl(record.image_base64)) {
-                renderPdfFirstPage(record.image_base64, 200).then(function (thumbUrl) {
-                    previewEl.innerHTML = thumbUrl
-                        ? '<img src="' + thumbUrl + '" alt="PDF 預覽">'
-                        : '<p class="no-image">📄 PDF</p>';
-                });
-            } else {
-                previewEl.innerHTML = '<img src="' + record.image_base64 + '" alt="病歷圖片">';
-            }
+        var images = getImageList(record);
+        if (images.length > 0) {
+            var html = '<div class="edit-file-grid">';
+            images.forEach(function (img) {
+                if (isPdfDataUrl(img)) {
+                    html += '<div class="edit-file-item"><div class="pdf-thumb-loading"><div class="spinner-sm"></div></div></div>';
+                } else {
+                    html += '<div class="edit-file-item"><img src="' + img + '" alt="病歷圖片"></div>';
+                }
+            });
+            html += '</div>';
+            previewEl.innerHTML = html;
+            previewEl.querySelectorAll('.edit-file-item').forEach(function (el, i) {
+                if (isPdfDataUrl(images[i])) {
+                    renderPdfFirstPage(images[i], 120).then(function (thumb) {
+                        if (thumb) el.innerHTML = '<img src="' + thumb + '" alt="PDF">';
+                        else el.innerHTML = '<p class="no-image">📄 PDF</p>';
+                    });
+                }
+            });
         } else {
             previewEl.innerHTML = '<p class="no-image">無圖片</p>';
         }

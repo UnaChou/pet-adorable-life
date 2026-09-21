@@ -397,6 +397,129 @@
     }
 }
 
+/* ---- File upload grid ---- */
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.file-grid-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(125, 155, 118, 0.25);
+    background: var(--cream);
+}
+
+.file-grid-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pdf-thumb-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+}
+
+.file-grid-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.file-grid-remove:hover {
+    background: rgba(220, 80, 60, 0.9);
+}
+
+.file-grid-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed rgba(125, 155, 118, 0.4);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    font-size: 1.5rem;
+    color: var(--sage);
+    min-height: 90px;
+}
+
+.file-grid-add:hover {
+    border-color: var(--sage);
+}
+
+/* ---- Record list file grid ---- */
+.record-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    max-width: 100%;
+}
+
+.record-grid-item {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(125, 155, 118, 0.2);
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+    background: var(--cream);
+}
+
+.record-grid-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.record-grid-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ---- Edit modal file grid ---- */
+.edit-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.edit-file-item {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(125, 155, 118, 0.2);
+    background: var(--cream);
+}
+
+.edit-file-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 /* ---- PDF thumbnail in record list ---- */
 .pdf-attachment {
     cursor: pointer;
