@@ -67,7 +67,7 @@ def _call_model_with_retry(data: Dict[str, Any], parse_response: bool = False) -
         retry=retry_if_exception_type(requests.exceptions.RequestException),
     )
     def _make_request() -> requests.Response:
-        response = requests.post(url, json=data)
+        response = requests.post(url, json=data, timeout=120)
         if response.status_code != 200:
             raise requests.exceptions.RequestException(
                 f"Model API failed with status {response.status_code}: {response.text}"

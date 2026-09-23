@@ -1175,8 +1175,9 @@ def api_medical_record_summary():
         if result is None:
             return jsonify({"error": "摘要失敗，請確認 Ollama 服務是否運行"}), 500
 
-        db.save_medical_summary(pet_id=pet_id, summary_text=result.strip())
-        return jsonify({"summary": result.strip()})
+        result = re.sub(r"<think>.*?</think>", "", result, flags=re.DOTALL).strip()
+        db.save_medical_summary(pet_id=pet_id, summary_text=result)
+        return jsonify({"summary": result})
     except Exception as e:
         return jsonify({"error": f"伺服器錯誤：{str(e)}"}), 500
 
