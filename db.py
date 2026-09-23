@@ -1336,7 +1336,8 @@ def get_medical_records_for_summary(pet_id, user_id=None):
                     " AND (user_id = %s"
                     " OR pet_id IN (SELECT id FROM pets WHERE user_id = %s)"
                     " OR pet_id IN (SELECT pet_id FROM pet_shares WHERE shared_with_user_id = %s))"
-                    " ORDER BY occurred_date DESC, id DESC",
+                    " ORDER BY occurred_date DESC, id DESC"
+                    " LIMIT 30",
                     (pet_id, pet_id, user_id, user_id, user_id),
                 )
             else:
@@ -1344,7 +1345,8 @@ def get_medical_records_for_summary(pet_id, user_id=None):
                     "SELECT title, description, occurred_date"
                     " FROM medical_records"
                     " WHERE pet_id = %s OR (pet_id IS NULL AND %s IS NULL)"
-                    " ORDER BY occurred_date DESC, id DESC",
+                    " ORDER BY occurred_date DESC, id DESC"
+                    " LIMIT 30",
                     (pet_id, pet_id),
                 )
             rows = cur.fetchall()

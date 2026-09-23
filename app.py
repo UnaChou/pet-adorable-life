@@ -1162,13 +1162,14 @@ def api_medical_record_summary():
 
         records_text = ""
         for r in records:
+            desc = (r['description'] or '')[:200]
             records_text += f"日期：{r['occurred_date'] or '未記錄'}\n"
             records_text += f"標題：{r['title']}\n"
-            records_text += f"描述：{r['description']}\n\n"
+            records_text += f"描述：{desc}\n\n"
 
         prompt = f"以下是寵物的醫療紀錄：\n\n{records_text}\n請依照 medical_summary_prompt 的格式要求進行摘要。"
 
-        model_name = getattr(pet_model_config, "pet_model_name", "qwen3.5:9b")
+        model_name = "qwen3.5:4b"
         summary_prompt = getattr(pet_model_config, "medical_summary_prompt", "") + "\n\n" + prompt
         result = model_connector.get_model_response(model_name, summary_prompt)
         if result is None:
