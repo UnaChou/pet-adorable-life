@@ -1162,7 +1162,7 @@ def api_medical_record_summary():
 
         records_text = ""
         for r in records:
-            desc = (r['description'] or '')[:200]
+            desc = r['description'] or ''
             records_text += f"日期：{r['occurred_date'] or '未記錄'}\n"
             records_text += f"標題：{r['title']}\n"
             records_text += f"描述：{desc}\n\n"
